@@ -3,16 +3,16 @@ BIOLINK_SPOKE_NODE_MAPPINGS = {
     "Gene": "Gene",
     #:"SideEffect",
     "BiologicalProcess": "BiologicalProcess",
-    "MolecularActivity":"MolecularFunction",
+    "MolecularActivity": "MolecularFunction",
     "ChemicalSubstance": "Compound",
     "CellularComponent": "CellularComponent",
     #:"PharmacologicClass",
     "Pathway": "Pathway",
     "Disease": "Disease",
-    #"":"Symptom",
+    # "":"Symptom",
     "GrossAnatomicalStructure": "Anatomy",
     "Protein": "Protein",
-    #"": "Food"
+    # "": "Food"
 }
 
 SPOKE_BIOLINK_NODE_MAPPINGS = {
@@ -28,14 +28,14 @@ SPOKE_BIOLINK_NODE_MAPPINGS = {
     "Symptom": "Thing",
     "Anatomy": "GrossAnatomicalStructure",
     "Protein": "Protein",
-    "Food": "Thing"
+    "Food": "Thing",
 }
 
 SPOKE_NODE_IDENTIFIERS = {
-    "Compound": "chembl_id", # should also include drugbank as list
+    "Compound": "chembl_id",  # should also include drugbank as list
     "Protein": "identifier",
     "Gene": "identifier",
-    "Anatomy": "identifier"
+    "Anatomy": "identifier",
 }
 
 # BIOLINK_SPOKE_EDGE_MAPPINGS = {

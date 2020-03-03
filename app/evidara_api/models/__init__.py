@@ -2,6 +2,7 @@
 
 # flake8: noqa
 from __future__ import absolute_import
+
 # import models into model package
 from evidara_api.models.edge import Edge
 from evidara_api.models.edge_attribute import EdgeAttribute

@@ -15,7 +15,15 @@ class QEdge(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, edge_id=None, type=None, relation=None, source_id=None, target_id=None, negated=None):  # noqa: E501
+    def __init__(
+        self,
+        edge_id=None,
+        type=None,
+        relation=None,
+        source_id=None,
+        target_id=None,
+        negated=None,
+    ):  # noqa: E501
         """QEdge - a model defined in OpenAPI
 
         :param edge_id: The edge_id of this QEdge.  # noqa: E501
@@ -32,21 +40,21 @@ class QEdge(Model):
         :type negated: bool
         """
         self.openapi_types = {
-            'edge_id': str,
-            'type': str,
-            'relation': str,
-            'source_id': str,
-            'target_id': str,
-            'negated': bool
+            "edge_id": str,
+            "type": str,
+            "relation": str,
+            "source_id": str,
+            "target_id": str,
+            "negated": bool,
         }
 
         self.attribute_map = {
-            'edge_id': 'edge_id',
-            'type': 'type',
-            'relation': 'relation',
-            'source_id': 'source_id',
-            'target_id': 'target_id',
-            'negated': 'negated'
+            "edge_id": "edge_id",
+            "type": "type",
+            "relation": "relation",
+            "source_id": "source_id",
+            "target_id": "target_id",
+            "negated": "negated",
         }
 
         self._edge_id = edge_id
@@ -57,7 +65,7 @@ class QEdge(Model):
         self._negated = negated
 
     @classmethod
-    def from_dict(cls, dikt) -> 'QEdge':
+    def from_dict(cls, dikt) -> "QEdge":
         """Returns the dict as a model
 
         :param dikt: A dict.

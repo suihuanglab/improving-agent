@@ -25,24 +25,16 @@ class QNode(Model):
         :param type: The type of this QNode.  # noqa: E501
         :type type: str
         """
-        self.openapi_types = {
-            'node_id': str,
-            'curie': str,
-            'type': str
-        }
+        self.openapi_types = {"node_id": str, "curie": str, "type": str}
 
-        self.attribute_map = {
-            'node_id': 'node_id',
-            'curie': 'curie',
-            'type': 'type'
-        }
+        self.attribute_map = {"node_id": "node_id", "curie": "curie", "type": "type"}
 
         self._node_id = node_id
         self._curie = curie
         self._type = type
 
     @classmethod
-    def from_dict(cls, dikt) -> 'QNode':
+    def from_dict(cls, dikt) -> "QNode":
         """Returns the dict as a model
 
         :param dikt: A dict.
