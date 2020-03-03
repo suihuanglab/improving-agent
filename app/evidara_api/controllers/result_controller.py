@@ -15,4 +15,4 @@ def get_result(result_id):  # noqa: E501
 
     :rtype: Result
     """
-    return 'do some magic!'
+    return "do some magic!"

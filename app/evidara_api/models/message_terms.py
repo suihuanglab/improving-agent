@@ -15,7 +15,14 @@ class MessageTerms(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, disease=None, protein=None, anatomical_entity=None, chemical_substance=None, metabolite=None):  # noqa: E501
+    def __init__(
+        self,
+        disease=None,
+        protein=None,
+        anatomical_entity=None,
+        chemical_substance=None,
+        metabolite=None,
+    ):  # noqa: E501
         """MessageTerms - a model defined in OpenAPI
 
         :param disease: The disease of this MessageTerms.  # noqa: E501
@@ -30,19 +37,19 @@ class MessageTerms(Model):
         :type metabolite: str
         """
         self.openapi_types = {
-            'disease': str,
-            'protein': str,
-            'anatomical_entity': str,
-            'chemical_substance': str,
-            'metabolite': str
+            "disease": str,
+            "protein": str,
+            "anatomical_entity": str,
+            "chemical_substance": str,
+            "metabolite": str,
         }
 
         self.attribute_map = {
-            'disease': 'disease',
-            'protein': 'protein',
-            'anatomical_entity': 'anatomical_entity',
-            'chemical_substance': 'chemical_substance',
-            'metabolite': 'metabolite'
+            "disease": "disease",
+            "protein": "protein",
+            "anatomical_entity": "anatomical_entity",
+            "chemical_substance": "chemical_substance",
+            "metabolite": "metabolite",
         }
 
         self._disease = disease
@@ -52,7 +59,7 @@ class MessageTerms(Model):
         self._metabolite = metabolite
 
     @classmethod
-    def from_dict(cls, dikt) -> 'MessageTerms':
+    def from_dict(cls, dikt) -> "MessageTerms":
         """Returns the dict as a model
 
         :param dikt: A dict.

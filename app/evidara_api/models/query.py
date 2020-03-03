@@ -15,7 +15,9 @@ class Query(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, asynchronous=None, max_results=None, reasoner_ids=None, query_message=None):  # noqa: E501
+    def __init__(
+        self, asynchronous=None, max_results=None, reasoner_ids=None, query_message=None
+    ):  # noqa: E501
         """Query - a model defined in OpenAPI
 
         :param asynchronous: The asynchronous of this Query.  # noqa: E501
@@ -28,17 +30,17 @@ class Query(Model):
         :type query_message: object
         """
         self.openapi_types = {
-            'asynchronous': str,
-            'max_results': int,
-            'reasoner_ids': List[str],
-            'query_message': object
+            "asynchronous": str,
+            "max_results": int,
+            "reasoner_ids": List[str],
+            "query_message": object,
         }
 
         self.attribute_map = {
-            'asynchronous': 'asynchronous',
-            'max_results': 'max_results',
-            'reasoner_ids': 'reasoner_ids',
-            'query_message': 'query_message'
+            "asynchronous": "asynchronous",
+            "max_results": "max_results",
+            "reasoner_ids": "reasoner_ids",
+            "query_message": "query_message",
         }
 
         self._asynchronous = asynchronous
@@ -47,7 +49,7 @@ class Query(Model):
         self._query_message = query_message
 
     @classmethod
-    def from_dict(cls, dikt) -> 'Query':
+    def from_dict(cls, dikt) -> "Query":
         """Returns the dict as a model
 
         :param dikt: A dict.

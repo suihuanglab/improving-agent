@@ -27,18 +27,13 @@ class NodeAttribute(Model):
         :param url: The url of this NodeAttribute.  # noqa: E501
         :type url: str
         """
-        self.openapi_types = {
-            'type': str,
-            'name': str,
-            'value': str,
-            'url': str
-        }
+        self.openapi_types = {"type": str, "name": str, "value": str, "url": str}
 
         self.attribute_map = {
-            'type': 'type',
-            'name': 'name',
-            'value': 'value',
-            'url': 'url'
+            "type": "type",
+            "name": "name",
+            "value": "value",
+            "url": "url",
         }
 
         self._type = type
@@ -47,7 +42,7 @@ class NodeAttribute(Model):
         self._url = url
 
     @classmethod
-    def from_dict(cls, dikt) -> 'NodeAttribute':
+    def from_dict(cls, dikt) -> "NodeAttribute":
         """Returns the dict as a model
 
         :param dikt: A dict.

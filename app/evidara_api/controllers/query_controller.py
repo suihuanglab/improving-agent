@@ -6,6 +6,7 @@ from evidara_api.models.query import Query  # noqa: E501
 from evidara_api import util
 from evidara_api import core
 
+
 def query(body):  # noqa: E501
     """Query reasoner via one of several inputs
 
