@@ -59,18 +59,18 @@ def get_n4j_str_repr(query_part, name):
     # TODO support empty query nodes, i.e. only a label, * node, etc.
 
     # not supporting specific edge types until mapped to biolink
-    if isinstance(query_part, models.Edge):
+    if isinstance(query_part, models.QEdge):
         return f"[{name}]"
 
     # start constructing the string, then add optional features
     node_repr = f"({name}"
     # add a label if we can, then add parameters if possible
     if query_part.type:
-        spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[query_part.type[0]]
+        spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[query_part.type]
         node_repr += f":{spoke_label} "
         # add a parameter if we can
-        if query_part.id:  # TODO change `id` to `curie` with change to qnode
-            split_curie = query_part.id.split(":")
+        if query_part.curie:  # TODO change `id` to `curie` with change to qnode
+            split_curie = query_part.curie.split(":")
             if len(split_curie) > 2:
                 split_curie = [split_curie[0], ":".join(split_curie[1:])]
             try:
@@ -129,22 +129,22 @@ def linear_spoke_query(session, nodes, edges, n_results):
     edges_copy = edges.copy()
     while len(query_order) < target_query_length:
         found_flag = False
-        if isinstance(query_order[-1], models.Node):
+        if isinstance(query_order[-1], models.QNode):
             for i, edge in enumerate(edges_copy):
-                if query_order[-1].id in (edge.source_id, edge.target_id):
+                if query_order[-1].node_id in (edge.source_id, edge.target_id):
                     found_flag = True
                     break
             if found_flag:
                 query_order.append(edges_copy.pop(i))
             else:
-                return f"Couldn't find edge corresponding to node {query_order[-1].id}"
+                return f"Couldn't find edge corresponding to {query_order[-1].node_id}"
         else:
             next_node = [query_order[-1].source_id, query_order[-1].target_id]
-            next_node.remove(query_order[-2].id)
+            next_node.remove(query_order[-2].node_id)
             if len(next_node) == 1:
                 query_order.append(node_d[next_node[0]])
             else:
-                return f"Couldn't find both nodes {next_node}"
+                return f"Missing one of {next_node}"
 
     # spoke diameter is <7 but consider enforcing max query length anyway
     query_names = "abcdefghijklmn"[: len(query_order)]
@@ -169,25 +169,33 @@ def linear_spoke_query(session, nodes, edges, n_results):
 
 
 def make_node_dictionary(nodes):
-    """Creates a dictionary from a list of evidara.models.nodes
-    
-    Keys are node identifiers for lookup from edge source_id & target_id
-    """
+    """Validates that SPOKE contains requested node type and creates a 
+    dictionary from a list of evidara.models.nodes
 
-    # once we support empty nodes, this whole function should just go
-    # away and become a dictionary comprehension in the calling func
+    Parameters
+    ----------
+    nodes (list of evidara.models.QNode): array of nodes from a 
+        user/ARS QueryGraph
+
+    Returns
+    -------
+    node_d (dict or str) OR errors(str): dictionary of 
+        str -> evidara.models.QNode on success; string of incompatible
+        node types on failure
+    """
+    # here we just validate that we can actually look up nodes of a 
+    # requested type
     node_d = {}
+    errors = []
     for node in nodes:
-        # this whole conditional can go away with the change to qnode
         if node.type:
             try:
-                node.spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[node.type[0]]
+                node.spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[node.type]
             except KeyError:
-                return f"Node type {node.type[0]} not yet supported by evidARA"
-        else:
-            # todo make this okay by handling empty nodes later
-            return f"Please specify node type for {node.id}"
-        node_d[node.id] = node
+                errors.append(f"Node type {node.type} not (yet) supported by evidARA")
+        node_d[node.node_id] = node
+    if len(errors):
+        return ", ".join(errors)
     return node_d
 
 
@@ -242,7 +250,7 @@ def make_result_node(n4j_object):
         description=n4j_object.get("description"),
     )
     result_node.node_attributes = [
-        models.NodeAttribute(type=i[0], value=i[1]) for i in n4j_object.items()
+        models.NodeAttribute(type=k, value=v) for k, v in n4j_object.items()
     ]
     return result_node
 
@@ -268,7 +276,7 @@ def make_result_edge(n4j_object):
         type=n4j_object.type,
     )
     result_edge.edge_attributes = [
-        models.EdgeAttribute(type=i[0], value=i[1]) for i in n4j_object.items()
+        models.EdgeAttribute(type=k, value=v) for k, v in n4j_object.items()
     ]
     return result_edge
 
@@ -296,20 +304,8 @@ def process_query(query):
         query_message = models.Message(**query.query_message)
         query_graph = models.QueryGraph(**query_message.query_graph)
         # TODO change to QNode and QEdge
-        nodes = [models.Node(**node) for node in query_graph.nodes]
-        for node in nodes:
-            if node.node_attributes:
-                node.node_attributes = [
-                    models.NodeAttribute(**attribute)
-                    for attribute in node.node_attributes
-                ]
-        edges = [models.Edge(**edge) for edge in query_graph.edges]
-        for edge in edges:
-            if edge.edge_attributes:
-                edge.edge_attributes = [
-                    models.EdgeAttribute(**attribute)
-                    for attribute in edge.edge_attributes
-                ]
+        nodes = [models.QNode(**node) for node in query_graph.nodes]
+        edges = [models.QEdge(**edge) for edge in query_graph.edges]
     except TypeError as e:
         return f"Bad Request with keyword {str(e).split()[-1]}", 400
     # now query SPOKE
