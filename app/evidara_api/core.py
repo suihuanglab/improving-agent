@@ -303,7 +303,6 @@ def process_query(query):
         # .from_dict() method on these objects instead of ** syntax
         query_message = models.Message(**query.query_message)
         query_graph = models.QueryGraph(**query_message.query_graph)
-        # TODO change to QNode and QEdge
         nodes = [models.QNode(**node) for node in query_graph.nodes]
         edges = [models.QEdge(**edge) for edge in query_graph.edges]
     except TypeError as e:
