@@ -281,7 +281,7 @@ def get_psev_id(node):
     id (str) or None: identifier for SPOKE psev node lookup; returns
         None if no psev id can be found
     """
-    preferred_psev_id = PSEV_PREFERRED_IDS[node.type]
+    preferred_psev_id = BIOLINK_SPOKE_NODE_MAPPINGS[PSEV_PREFERRED_IDS[node.type]]
     id = [na.value for na in node.node_attributes if na.type == preferred_psev_id]
     if len(id):
         return id[0]
