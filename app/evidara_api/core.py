@@ -149,12 +149,16 @@ def linear_spoke_query(session, nodes, edges, n_results):
 
     # spoke diameter is <7 but consider enforcing max query length anyway
     query_names = "abcdefghijklmn"[: len(query_order)]
-    query_string = "-".join(
-        [
-            get_n4j_str_repr(query_part, name)
-            for query_part, name in zip(query_order, query_names)
-        ]
-    )
+    query_parts = []
+    query_mapping = {"edges": {}, "nodes": {}}
+    for query_part, name in zip(query_order, query_names):
+        query_parts.append(get_n4j_str_repr(query_part, name))
+        if isinstance(query_part, models.QNode):
+            query_mapping["nodes"][name] = query_part.node_id
+        else:
+            query_mapping["edges"][name] = query_part.edge_id
+    print(query_mapping)
+    query_string = "-".join(query_parts)
     # set max results b/c no default set by reasoner-standard,
     # possibly enforce a max on the query too
     n_results = n_results if n_results else 30
@@ -162,7 +166,7 @@ def linear_spoke_query(session, nodes, edges, n_results):
 
     # create the results
     results = [
-        make_evidara_result(record, i, query_names)
+        make_evidara_result(record, i, query_names, query_mapping, psev_context=None)
         for i, record in enumerate(r.records())
     ]
 
@@ -200,7 +204,9 @@ def make_node_dictionary(nodes):
     return node_d
 
 
-def make_evidara_result(n4j_result, record_number, query_names, psev_context=None):
+def make_evidara_result(
+    n4j_result, record_number, query_names, query_mapping, psev_context=None
+):
     """Constructs a reasoner-standard result from the result of a neo4j 
     query
 
@@ -211,6 +217,8 @@ def make_evidara_result(n4j_result, record_number, query_names, psev_context=Non
     record_number (int): record index
     query_names (str): string of letters corresponding to aliases in
         `n4j_result`
+    query_mapping (dict): str -> str mappings of QNode/QEdge ids to
+        query names
     psev_context (str): disease/psev identifying context,
         e.g. 'DOID:9351'
 
@@ -221,11 +229,14 @@ def make_evidara_result(n4j_result, record_number, query_names, psev_context=Non
     """
     # need to add mappings to qnodes/qedges here
     result_nodes, result_edges = [], []
+    knowledge_map = {"edges": {}, "nodes": {}}
     for name in query_names:
         if isinstance(n4j_result[name], neo4j.types.graph.Node):
             result_nodes.append(make_result_node(n4j_result[name]))
+            knowledge_map["nodes"][query_mapping["nodes"][name]] = result_nodes[-1].id
         else:
             result_edges.append(make_result_edge(n4j_result[name]))
+            knowledge_map["edges"][query_mapping["edges"][name]] = result_edges[-1].id
     # get psev weighting, ideally this actually happens when we
     # create nodes, and they simply become NodeAttributes, but we
     # spec'ed it otherwise
@@ -235,7 +246,10 @@ def make_evidara_result(n4j_result, record_number, query_names, psev_context=Non
         scores = {}
     result_knowledge_graph = models.KnowledgeGraph(result_nodes, result_edges)
     return models.Result(
-        id=record_number, result_graph=result_knowledge_graph, **scores
+        id=record_number,
+        result_graph=result_knowledge_graph,
+        knowledge_map=knowledge_map,
+        **scores,
     )
 
 
@@ -332,6 +346,7 @@ def make_result_edge(n4j_object):
     """
     result_edge = models.Edge(
         # TODO next two lines look up and include database per standards
+        # TODO get reliable edge identifiers for `id` attribute
         source_id=n4j_object.start_node["identifier"],
         target_id=n4j_object.end_node["identifier"],
         type=n4j_object.type,
