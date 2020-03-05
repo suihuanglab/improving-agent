@@ -17,6 +17,7 @@ from evidara_api.spoke_constants import (
     BIOLINK_SPOKE_NODE_MAPPINGS,
     SPOKE_BIOLINK_NODE_MAPPINGS,
     SPOKE_NODE_IDENTIFIERS,
+    PSEV_PREFERRED_IDS,
 )
 
 
@@ -183,7 +184,7 @@ def make_node_dictionary(nodes):
         str -> evidara.models.QNode on success; string of incompatible
         node types on failure
     """
-    # here we just validate that we can actually look up nodes of a 
+    # here we just validate that we can actually look up nodes of a
     # requested type
     node_d = {}
     errors = []
@@ -199,7 +200,7 @@ def make_node_dictionary(nodes):
     return node_d
 
 
-def make_evidara_result(n4j_result, record_number, query_names):
+def make_evidara_result(n4j_result, record_number, query_names, psev_context=None):
     """Constructs a reasoner-standard result from the result of a neo4j 
     query
 
@@ -210,6 +211,8 @@ def make_evidara_result(n4j_result, record_number, query_names):
     record_number (int): record index
     query_names (str): string of letters corresponding to aliases in
         `n4j_result`
+    psev_context (str): disease/psev identifying context,
+        e.g. 'DOID:9351'
 
     Returns
     -------
@@ -223,9 +226,67 @@ def make_evidara_result(n4j_result, record_number, query_names):
             result_nodes.append(make_result_node(n4j_result[name]))
         else:
             result_edges.append(make_result_edge(n4j_result[name]))
-
+    # get psev weighting, ideally this actually happens when we
+    # create nodes, and they simply become NodeAttributes, but we
+    # spec'ed it otherwise
+    if psev_context:
+        scores = score_with_psev(psev_context, result_nodes)
+    else:
+        scores = {}
     result_knowledge_graph = models.KnowledgeGraph(result_nodes, result_edges)
-    return models.Result(id=record_number, result_graph=result_knowledge_graph)
+    return models.Result(
+        id=record_number, result_graph=result_knowledge_graph, **scores
+    )
+
+
+def score_with_psev(psev_context, nodes):
+    """Returns a dict with a score based on SPOKE psevs
+
+    NOTE: Ideally this will actually happen when creating these 
+    nodes so we don't have to do multiple lookups/iterations through
+    NodeAttribute objects. 
+
+    Parameters
+    ----------
+    psev_context (str): disease/psev identifying context, 
+        e.g. 'DOID:9351'
+    nodes (list of models.Node): reasoner-standard nodes for which to 
+        retrieve psev weightings based on `psev_context`
+    """
+    scores = {}
+    spoke_psev_ids = [get_psev_id(node) for node in nodes]
+    # optional None filter if weight-getting fucntion can't handle None:
+    # spoke_psev_ids = list(filter(None, spoke_psev_ids))
+    ### PLACEHOLDER FOR KHARTHIK'S FUNCTION
+    ### psev_weights = get_psev_weights(disease_id, spoke_psev_ids) PLACEHOLDER FOR KHARTHIK'S FUNCTION
+    ### PLACEHOLDER FOR KHARTHIK'S FUNCTION
+    scores["score_name"] = "spoke_propagated_entry_vector"
+    # scores["score"] = sum(psev_weights)
+    return scores
+
+
+def get_psev_id(node):
+    """Returns a node identifier to pass to psev weighting function 
+    
+    NOTE: Ideally this will actually happen when creating these 
+    nodes so we don't have to do multiple lookups/iterations through
+    NodeAttribute objects. 
+
+    Parameters
+    ----------
+    node (models.Node): a reasoner-standard Node object
+
+    Returns
+    -------
+    id (str) or None: identifier for SPOKE psev node lookup; returns
+        None if no psev id can be found
+    """
+    preferred_psev_id = PSEV_PREFERRED_IDS[node.type]
+    id = [na.value for na in node.node_attributes if na.type == preferred_psev_id]
+    if len(id):
+        return id[0]
+    else:
+        return None
 
 
 def make_result_node(n4j_object):

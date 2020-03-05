@@ -38,6 +38,21 @@ SPOKE_NODE_IDENTIFIERS = {
     "Anatomy": "identifier",
 }
 
+PSEV_PREFERRED_IDS = {
+    "Gene": "",
+    "SideEffect": "",
+    "BiologicalProcess": "",
+    "MolecularFunction": "",
+    "Compound": "",
+    "CellularComponent": "",
+    "PharmacologicClass": "",
+    "Pathway": "",
+    "Disease": "",
+    "Symptom": "",
+    "Anatomy": "",
+    "Protein": "",
+    "Food": "",
+}
 # BIOLINK_SPOKE_EDGE_MAPPINGS = {
 # not worth it right now
 #     : "EXPRESSES_AeG",
