@@ -4,9 +4,10 @@ import connexion
 import neo4j
 import os
 
-from flask import g
+from flask import g, render_template
 
 from evidara_api import encoder
+from evidara_api.spoke_constants import BIOLINK_SPOKE_NODE_MAPPINGS
 
 uri = "bolt://localhost:7687"
 neo4j_user = os.getenv("NEO4J_SPOKE_USER")
@@ -40,6 +41,14 @@ app.add_api(
     arguments={"title": "evidARA - a query (im)proving Autonomous Relay Agent"},
     pythonic_params=True,
 )
+
+
+@app.route("/")
+def index():
+    """returns welcome home page"""
+    return render_template(
+        "home.html", node_types=list(BIOLINK_SPOKE_NODE_MAPPINGS.keys())
+    )
 
 
 @app.app.teardown_appcontext

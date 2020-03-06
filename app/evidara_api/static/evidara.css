@@ -1,0 +1,15 @@
+.red-emphasis {
+    color: red;
+    font-style: italic;
+}
+
+.add-card {
+    display: flex;
+    align-items: center;
+    text-align: center;
+  }
+
+.add-card-button {
+    min-width: 100%;
+    display: block;
+}
