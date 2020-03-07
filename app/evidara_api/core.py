@@ -58,7 +58,7 @@ def get_n4j_str_repr(query_part, name):
         e.g. "(c:Compound {chembl_id: 'CHEMBL1234'})"
     """
     # TODO support empty query nodes, i.e. only a label, * node, etc.
-
+    # TODO figure out curie splitting for different identifiers, e.g. DOID:123 that need to remain together
     # not supporting specific edge types until mapped to biolink
     if isinstance(query_part, models.QEdge):
         return f"[{name}]"
@@ -66,7 +66,11 @@ def get_n4j_str_repr(query_part, name):
     # start constructing the string, then add optional features
     node_repr = f"({name}"
     # add a label if we can, then add parameters if possible
-    if query_part.type:
+    try: 
+        spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[query_part.type]
+    except KeyError: # these should have been validated, so it's okay
+        spoke_label = False
+    if spoke_label:
         spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[query_part.type]
         node_repr += f":{spoke_label} "
         # add a parameter if we can
