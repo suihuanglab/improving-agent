@@ -9,7 +9,7 @@ from flask import g, render_template
 from evidara_api import encoder
 from evidara_api.spoke_constants import BIOLINK_SPOKE_NODE_MAPPINGS
 
-uri = "bolt://localhost:7687"
+uri = "bolt://0.0.0.0:7687"
 neo4j_user = os.getenv("NEO4J_SPOKE_USER")
 neo4j_pass = os.getenv("NEO4J_SPOKE_PASSWORD")
 driver = neo4j.GraphDatabase.driver(uri, auth=("neo4j", neo4j_pass))
