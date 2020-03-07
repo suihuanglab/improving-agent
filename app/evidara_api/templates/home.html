@@ -40,7 +40,7 @@
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
       <div class="container">
-        <a class="navbar-brand" href="#">evidARA</a>
+        <a class="navbar-brand" href="#">evidARA: the query (im)proving Autonomous Relay Agent</a>
         <button
           class="navbar-toggler"
           type="button"
@@ -78,18 +78,19 @@
       <header class="evidara-welcome col-12 my-5">
         <div class="container">
           <div class="row justify-content-center">
-            <div class="col-lg-6 col-md-10" id="evidara-intro">
+            <div class="col-lg-8 col-md-8" id="evidara-intro">
+                <div>
               <h3>Welcome to evidARA</h3>
               <p>
                 Use the menus and search boxes below to construct a query to
                 send to evidARA
-              </p>
+              </p></div>
             </div>
             <div
-              class="col-lg-2 col-md-2 justify-content-center"
+              class="col-lg-3 col-md-3 justify-content-center"
               id="right-header-col"
             >
-              <!-- logo image should go here-->
+              <img src="../static/evidara.png" class="logo" />
             </div>
           </div>
         </div>
@@ -122,9 +123,9 @@
             </div>
           </div>
         </div>
-        <div class="add-card col-lg-1 col-md-1 mx-3">
+        <div class="add-card col-lg-1 col-md-1 mx-3" id="node-adder">
           <div class="add-card-button">
-            <button>add node</button>
+            <button onclick="add_node_selector()">add node</button>
           </div>
         </div>
         <div
@@ -139,7 +140,7 @@
               </h5>
               <h6>Search CURIE</h6>
               <input
-                id="start-node-curie"
+                id="end-node-curie"
                 class="node-curie"
                 placeholder="e.g. ENTREZ:59272"
               />

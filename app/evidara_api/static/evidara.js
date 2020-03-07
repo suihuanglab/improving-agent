@@ -48,3 +48,39 @@ query = function() {
       console.log("Success:", data);
     });
 };
+
+add_node_selector = function() {
+  let newCardBody = document.createElement("div");
+  newCardBody.className = "card-body";
+  let innerA = document.createElement("a")
+  innerA.appendChild(document.createTextNode("intermediate node"))
+  let innerh5 = document.createElement("h5")
+  innerh5.className = "card-title text-center"
+  innerh5.appendChild(innerA)
+  newCardBody.appendChild(innerh5)
+  newCardBody
+    .appendChild(document.createElement("h6"))
+    .appendChild(document.createTextNode("Search CURIE"));
+  let newInput = document.createElement("input");
+  newInput.className = "node-curie";
+  newInput.setAttribute("placeholder", "e.g. ENTREZ:59272");
+  newCardBody.appendChild(newInput);
+  let newSelect = document.createElement("select");
+  newSelect.className = "node-type-selector";
+  let firstChoice = document.createElement("option");
+  firstChoice.setAttribute("value", 0);
+  firstChoice.appendChild(document.createTextNode("Select a node type"));
+  newSelect.appendChild(firstChoice);
+  newCardBody.appendChild(newSelect);
+  //now we must iterate get the other select menu and iterate through its node types
+  let newNode = document.createElement("div");
+  newNode.className = "query-parameter-card col-lg-3 col-md-4 col-sm-6";
+  let cardContainer = document.createElement("div");
+  cardContainer.className = "card h-100";
+  cardContainer.appendChild(newCardBody);
+  newNode.appendChild(cardContainer);
+  console.log(newNode);
+  let endNode = document.getElementById("node-adder");
+  console.log(endNode);
+  endNode.parentNode.insertBefore(newNode, endNode);
+};
