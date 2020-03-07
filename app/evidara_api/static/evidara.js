@@ -25,6 +25,19 @@ getEdges = function(nodes) {
   return edges;
 };
 
+getNodeTypes = function() {
+  // this could just be a post request to the api, which should presumably have a
+  // supported "get_valid_nodes" endpoint
+  let nodeTypes = [];
+  let startNodeSelector = document.getElementById("start-node-type");
+  for (x = 0; x < startNodeSelector.length; x++) {
+    if (startNodeSelector[x].value !== "0") {
+      nodeTypes.push(startNodeSelector[x].value);
+    }
+  }
+  return nodeTypes;
+};
+
 query = function() {
   let nodesArray = getNodes();
   let edgesArray = getEdges(nodesArray);
@@ -52,12 +65,12 @@ query = function() {
 add_node_selector = function() {
   let newCardBody = document.createElement("div");
   newCardBody.className = "card-body";
-  let innerA = document.createElement("a")
-  innerA.appendChild(document.createTextNode("intermediate node"))
-  let innerh5 = document.createElement("h5")
-  innerh5.className = "card-title text-center"
-  innerh5.appendChild(innerA)
-  newCardBody.appendChild(innerh5)
+  let innerA = document.createElement("a");
+  innerA.appendChild(document.createTextNode("intermediate node"));
+  let innerh5 = document.createElement("h5");
+  innerh5.className = "card-title text-center";
+  innerh5.appendChild(innerA);
+  newCardBody.appendChild(innerh5);
   newCardBody
     .appendChild(document.createElement("h6"))
     .appendChild(document.createTextNode("Search CURIE"));
@@ -72,15 +85,23 @@ add_node_selector = function() {
   firstChoice.appendChild(document.createTextNode("Select a node type"));
   newSelect.appendChild(firstChoice);
   newCardBody.appendChild(newSelect);
-  //now we must iterate get the other select menu and iterate through its node types
+  //now get the other select menu and iterate through its node types
+  getNodeTypes().forEach(
+    nodeType =>
+      {
+        let newOption = document.createElement("option");
+        newOption.setAttribute("value", nodeType);
+        newOption.appendChild(document.createTextNode(nodeType));
+        newSelect.appendChild(newOption);
+      }
+  );
+
   let newNode = document.createElement("div");
   newNode.className = "query-parameter-card col-lg-3 col-md-4 col-sm-6";
   let cardContainer = document.createElement("div");
   cardContainer.className = "card h-100";
   cardContainer.appendChild(newCardBody);
   newNode.appendChild(cardContainer);
-  console.log(newNode);
   let endNode = document.getElementById("node-adder");
-  console.log(endNode);
   endNode.parentNode.insertBefore(newNode, endNode);
 };
