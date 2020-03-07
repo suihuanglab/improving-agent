@@ -46,9 +46,9 @@ app.add_api(
 @app.route("/")
 def index():
     """returns welcome home page"""
-    return render_template(
-        "home.html", node_types=list(BIOLINK_SPOKE_NODE_MAPPINGS.keys())
-    )
+    node_types = list(BIOLINK_SPOKE_NODE_MAPPINGS.keys())
+    node_types.remove("0")
+    return render_template("home.html", node_types=node_types)
 
 
 @app.app.teardown_appcontext
