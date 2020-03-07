@@ -19,9 +19,17 @@
     max-height:100%;
 }
 
+.query-parameter-card {
+    padding-top: 1em;
+    padding-bottom: 2em;
+}
+.node-type-selector {
+    margin-top: 1em;
+}
+
 #evidara-intro {
     display: flex;
     align-items: center;
     text-align: center;
-    
+
 }
