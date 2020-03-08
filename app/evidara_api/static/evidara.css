@@ -41,3 +41,8 @@
 .improving-parameters {
   align-items: center;
 }
+
+.destroy-button {
+    margin-top: -2.5em;
+    margin-left: 0.5em;
+}

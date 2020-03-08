@@ -43,7 +43,7 @@ getAlgoritmParameters = function() {
       }
     });
   }
-  return extraParams
+  return extraParams;
 };
 
 getNodeTypes = function() {
@@ -68,7 +68,7 @@ query = function() {
         nodes: nodesArray,
         edges: edgesArray
       },
-    query_options: getAlgoritmParameters()
+      query_options: getAlgoritmParameters()
     }
   };
   let response = fetch("api/v1/query", {
@@ -84,15 +84,40 @@ query = function() {
     });
 };
 
+destroyCard = function(cardButton) {
+  let parentCard = cardButton.closest(".query-parameter-card");
+  while (parentCard.firstChild) {
+    parentCard.firstChild.remove();
+  }
+  parentCard.remove();
+};
+
 add_node_selector = function() {
+  // body container
   let newCardBody = document.createElement("div");
   newCardBody.className = "card-body";
+  // title and destroy button
+  let cardTitleRow = document.createElement("div");
+  cardTitleRow.className = "row justify-content-center";
+  let cardTitleCol = document.createElement("div");
+  cardTitleCol.className = "col-8 offset-1";
   let innerA = document.createElement("a");
   innerA.appendChild(document.createTextNode("intermediate node"));
   let innerh5 = document.createElement("h5");
   innerh5.className = "card-title text-center";
+  let removeButton = document.createElement("button");
+  removeButton.setAttribute("onclick", "destroyCard(this);");
+  removeButton.appendChild(document.createTextNode("X"));
+  removeButton.className = "btn btn-light btn-sm destroy-button";
+  let removeContainer = document.createElement("div");
+  removeContainer.className = "col-1";
+  removeContainer.appendChild(removeButton);
   innerh5.appendChild(innerA);
-  newCardBody.appendChild(innerh5);
+  cardTitleCol.appendChild(innerh5);
+  cardTitleRow.appendChild(cardTitleCol);
+  cardTitleRow.appendChild(removeContainer);
+  newCardBody.appendChild(cardTitleRow);
+  // search header and box
   newCardBody
     .appendChild(document.createElement("h6"))
     .appendChild(document.createTextNode("Search CURIE"));
@@ -100,6 +125,7 @@ add_node_selector = function() {
   newInput.className = "node-curie";
   newInput.setAttribute("placeholder", "e.g. ENTREZ:59272");
   newCardBody.appendChild(newInput);
+  // select menu
   let newSelect = document.createElement("select");
   newSelect.className = "node-type-selector";
   let firstChoice = document.createElement("option");
@@ -114,13 +140,14 @@ add_node_selector = function() {
     newOption.appendChild(document.createTextNode(nodeType));
     newSelect.appendChild(newOption);
   });
-
+  // outermost container
   let newNode = document.createElement("div");
   newNode.className = "query-parameter-card col-lg-3 col-md-4 col-sm-6";
   let cardContainer = document.createElement("div");
   cardContainer.className = "card h-100";
   cardContainer.appendChild(newCardBody);
   newNode.appendChild(cardContainer);
+  //shove it in
   let endNode = document.getElementById("node-adder");
   endNode.parentNode.insertBefore(newNode, endNode);
 };
