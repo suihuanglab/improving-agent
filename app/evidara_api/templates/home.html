@@ -83,7 +83,8 @@
                 <h3>Welcome to evidARA</h3>
                 <p>
                   evidARA is the (im)proving Autonomous Relay Agent that uses
-                  node weightings derived from EHR disease cohorts and edges
+                  node weightings in the <a href="https://spoke.ucsf.edu/">Scalable Precision Medicine Knowledge
+                  Engine</a> that were derived from EHR disease cohorts and edges
                   derived from multi-omic empirical studies to rank and prune
                   knowledge graphs from Translator Knowledge Providers.
                 </p>
@@ -174,7 +175,7 @@
             </div>
             <div class="col-lg-5 col-md-4 col-sm-12">
               <select id="psev-term">
-                <option value="diabetes">Diabetes mellitus</option>
+                <option value="DOID:9351">Diabetes mellitus</option>
               </select>
             </div>
           </div>
@@ -196,7 +197,7 @@
               <div class="row">
                 <div class="col">
                   <label for="auto-find"
-                    ><input id="auto-find" name="auto-find" type="checkbox" />
+                    ><input id="auto-find" name="evidence-algorithm" type="radio" value="auto-find"/>
                     Add in automatically
                   </label>
                 </div>
@@ -207,8 +208,9 @@
                   <label for="cohort-find"
                     ><input
                       id="cohort-find"
-                      name="cohort-find"
-                      type="checkbox"
+                      name="evidence-algorithm"
+                      type="radio"
+                      value="select-cohort"
                     />
                     Find in cohort:
                   </label>
