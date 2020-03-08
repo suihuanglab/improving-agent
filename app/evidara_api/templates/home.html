@@ -83,10 +83,13 @@
                 <h3>Welcome to evidARA</h3>
                 <p>
                   evidARA is the (im)proving Autonomous Relay Agent that uses
-                  node weightings in the <a href="https://spoke.ucsf.edu/">Scalable Precision Medicine Knowledge
-                  Engine</a> that were derived from EHR disease cohorts and edges
-                  derived from multi-omic empirical studies to rank and prune
-                  knowledge graphs from Translator Knowledge Providers.
+                  node weightings in the
+                  <a href="https://spoke.ucsf.edu/"
+                    >Scalable Precision Medicine Knowledge Engine</a
+                  >
+                  that were derived from EHR disease cohorts and edges derived
+                  from multi-omic empirical studies to rank and prune knowledge
+                  graphs from Translator Knowledge Providers.
                 </p>
               </div>
             </div>
@@ -103,7 +106,7 @@
       <!-- query parameterization -->
       <div class="row justify-content-center" id="query-parameters">
         <div
-          class="query-parameter-card col-lg-3 col-md-4 col-sm-6"
+          class="query-parameter-card col-lg-3 col-md-12 col-sm-12"
           id="query-start"
         >
           <div class="card h-100">
@@ -130,12 +133,12 @@
             </div>
           </div>
         </div>
-        <div class="add-card col-lg-1 col-md-1 mx-3" id="node-adder">
+        <div class="add-card col-lg-1 col-md-12 col-sm-12 mx-3" id="node-adder">
           <div class="add-card-button">
             <button onclick="add_node_selector()">+</button>
           </div>
         </div>
-        <div class="query-parameter-card col-lg-3 col-md-4 col-sm-6">
+        <div class="query-parameter-card col-lg-3 col-md-12 col-sm-12">
           <div class="card h-100">
             <a href="#"></a>
             <div class="card-body">
@@ -169,18 +172,20 @@
       <div class="row">
         <div class="col-lg-6 offset-lg-2 col-md-8">
           <div class="row improving-parameters my-2 py-2">
-            <div class="col-lg-5 col-md-4 col-sm-12">
-              <input type="checkbox" id="psev" name="algo1" value="psev" />
-              <label for="psev"> PSEV Context Term</label>
+            <div class="col-lg-5 col-md-5 col-sm-6">
+              <label for="psev">
+                <input type="checkbox" id="psev" name="algo1" value="psev" />
+                PSEV Context Term</label
+              >
             </div>
-            <div class="col-lg-5 col-md-4 col-sm-12">
+            <div class="col-lg-5 col-md-5 col-sm-6">
               <select id="psev-term">
                 <option value="DOID:9351">Diabetes mellitus</option>
               </select>
             </div>
           </div>
           <div class="row improving-parameters my-2 py-2">
-            <div class="col-lg-5 col-md-4 col-sm-12 col-xs-12">
+            <div class="col-lg-5 col-md-6 col-sm-12 col-xs-12">
               <label for="evidentiary" class="long-label"
                 ><input
                   type="checkbox"
@@ -196,16 +201,21 @@
             <div class="col-lg-7 col-md-4 col-sm-12 algo-selector">
               <div class="row">
                 <div class="col">
-                  <label for="auto-find"
-                    ><input id="auto-find" name="evidence-algorithm" type="radio" value="auto-find"/>
+                  <label for="auto-find" class="long-label"
+                    ><input
+                      id="auto-find"
+                      name="evidence-algorithm"
+                      type="radio"
+                      value="auto-find"
+                    />
                     Add in automatically
                   </label>
                 </div>
               </div>
 
               <div class="row">
-                <div class="col-6">
-                  <label for="cohort-find"
+                <div class="col-7">
+                  <label for="cohort-find" class="long-label"
                     ><input
                       id="cohort-find"
                       name="evidence-algorithm"

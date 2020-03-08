@@ -142,7 +142,7 @@ add_node_selector = function() {
   });
   // outermost container
   let newNode = document.createElement("div");
-  newNode.className = "query-parameter-card col-lg-3 col-md-4 col-sm-6";
+  newNode.className = "query-parameter-card col-lg-3 col-md-12 col-sm-12";
   let cardContainer = document.createElement("div");
   cardContainer.className = "card h-100";
   cardContainer.appendChild(newCardBody);
