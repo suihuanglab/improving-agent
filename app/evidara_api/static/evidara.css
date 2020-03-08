@@ -1,35 +1,43 @@
 .red-emphasis {
-    color: red;
-    font-style: italic;
+  color: red;
+  font-style: italic;
 }
 
 .add-card {
-    display: flex;
-    align-items: center;
-    text-align: center;
-  }
-
-.add-card-button {
-    min-width: 100%;
-    display: block;
+  display: flex;
+  align-items: center;
+  text-align: center;
 }
 
-.logo{
-    max-width:100%;
-    max-height:100%;
+.add-card-button {
+  min-width: 100%;
+  display: block;
+}
+
+.logo {
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .query-parameter-card {
-    padding-top: 1em;
-    padding-bottom: 2em;
+  padding-top: 1em;
+  padding-bottom: 2em;
 }
 .node-type-selector {
-    margin-top: 1em;
+  margin-top: 1em;
 }
 
 #evidara-intro {
-    display: flex;
-    align-items: center;
-    text-align: center;
+  display: flex;
+  align-items: center;
+  text-align: center;
+}
 
+.long-label {
+  text-indent: -17px;
+  padding-left: 17px;
+}
+
+.improving-parameters {
+  align-items: center;
 }

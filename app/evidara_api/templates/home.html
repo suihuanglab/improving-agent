@@ -40,9 +40,7 @@
   <body>
     <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
       <div class="container">
-        <a class="navbar-brand" href="#"
-          >evidARA: the query (im)proving Autonomous Relay Agent</a
-        >
+        <a class="navbar-brand" href="#">evidARA: query (im)proving ARA</a>
         <button
           class="navbar-toggler"
           type="button"
@@ -77,15 +75,16 @@
     </nav>
 
     <div class="container py-4" id="main-content">
-      <header class="evidara-welcome col-12 my-5">
+      <header class="evidara-welcome col-12 mt-5 mb-3">
         <div class="container">
           <div class="row justify-content-center">
             <div class="col-lg-8 col-md-8" id="evidara-intro">
               <div>
                 <h3>Welcome to evidARA</h3>
                 <p>
-                  evidARA uses node weightings derived from EHR disease cohorts
-                  and edges derived from multi-omic empirical studies to rank and prune
+                  evidARA is the (im)proving Autonomous Relay Agent that uses
+                  node weightings derived from EHR disease cohorts and edges
+                  derived from multi-omic empirical studies to rank and prune
                   knowledge graphs from Translator Knowledge Providers.
                 </p>
               </div>
@@ -113,8 +112,11 @@
                 <a>Query <span class="red-emphasis">start</span></a>
               </h5>
               <h6>Search CURIE</h6>
-              <input id="start-node-curie" class="node-curie" "placeholder="e.g.
-              ENTREZ:59272">
+              <input
+                id="start-node-curie"
+                class="node-curie"
+                placeholder="e.g.ENTREZ:59272"
+              />
               <select id="start-node-type" class="node-type-selector">
                 <option value="0" disabled selected hidden
                   >Select a node type</option
@@ -129,7 +131,7 @@
         </div>
         <div class="add-card col-lg-1 col-md-1 mx-3" id="node-adder">
           <div class="add-card-button">
-            <button onclick="add_node_selector()">add node</button>
+            <button onclick="add_node_selector()">+</button>
           </div>
         </div>
         <div class="query-parameter-card col-lg-3 col-md-4 col-sm-6">
@@ -158,8 +160,74 @@
           </div>
         </div>
       </div>
-      <div class="row justify-content-center" id="query-parameters">
-        <div><button onclick="query()">submit query</button></div>
+      <div class="row mt-4">
+        <div class="col-lg-6 offset-lg-2 col-md-8">
+          <h5>Knowledge graph (im)proving algorithm</h5>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6 offset-lg-2 col-md-8">
+          <div class="row improving-parameters my-2 py-2">
+            <div class="col-lg-5 col-md-4 col-sm-12">
+              <input type="checkbox" id="psev" name="algo1" value="psev" />
+              <label for="psev"> PSEV Context Term</label>
+            </div>
+            <div class="col-lg-5 col-md-4 col-sm-12">
+              <select id="psev-term">
+                <option value="diabetes">Diabetes mellitus</option>
+              </select>
+            </div>
+          </div>
+          <div class="row improving-parameters my-2 py-2">
+            <div class="col-lg-5 col-md-4 col-sm-12 col-xs-12">
+              <label for="evidentiary" class="long-label"
+                ><input
+                  type="checkbox"
+                  id="evidentiary"
+                  name="algo2"
+                  value="evidentiary"
+                  class="long-input"
+                /><span>
+                  Cohort for Observational Association Evidence
+                </span></label
+              >
+            </div>
+            <div class="col-lg-7 col-md-4 col-sm-12 algo-selector">
+              <div class="row">
+                <div class="col">
+                  <label for="auto-find"
+                    ><input id="auto-find" name="auto-find" type="checkbox" />
+                    Add in automatically
+                  </label>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-6">
+                  <label for="cohort-find"
+                    ><input
+                      id="cohort-find"
+                      name="cohort-find"
+                      type="checkbox"
+                    />
+                    Find in cohort:
+                  </label>
+                </div>
+                <div class="col-4">
+                  <select id="cohort">
+                    <option value="p100">P100</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="col-lg-2 improving-parameters justify-content-center align-items-end py-3"
+          style="display: flex"
+        >
+          <button onclick="query()">submit query</button>
+        </div>
       </div>
     </div>
   </body>
