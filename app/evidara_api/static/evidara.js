@@ -25,6 +25,27 @@ getEdges = function(nodes) {
   return edges;
 };
 
+getAlgoritmParameters = function() {
+  let extraParams = {};
+  if (document.getElementById("psev").checked) {
+    extraParams["psev-context"] = document.getElementById("psev-term").value;
+  }
+  if (document.getElementById("evidentiary").checked) {
+    document.getElementsByName("evidence-algorithm").forEach(element => {
+      if (element.checked) {
+        if (element.value === "select-cohort") {
+          extraParams["evidentiary"] = document.getElementById("cohort").value;
+        } else {
+          extraParams["evidentiary"] = document.getElementById(
+            "auto-find"
+          ).value;
+        }
+      }
+    });
+  }
+  return extraParams
+};
+
 getNodeTypes = function() {
   // this could just be a post request to the api, which should presumably have a
   // supported "get_valid_nodes" endpoint
@@ -46,7 +67,8 @@ query = function() {
       query_graph: {
         nodes: nodesArray,
         edges: edgesArray
-      }
+      },
+    query_options: getAlgoritmParameters()
     }
   };
   let response = fetch("api/v1/query", {
@@ -86,15 +108,12 @@ add_node_selector = function() {
   newSelect.appendChild(firstChoice);
   newCardBody.appendChild(newSelect);
   //now get the other select menu and iterate through its node types
-  getNodeTypes().forEach(
-    nodeType =>
-      {
-        let newOption = document.createElement("option");
-        newOption.setAttribute("value", nodeType);
-        newOption.appendChild(document.createTextNode(nodeType));
-        newSelect.appendChild(newOption);
-      }
-  );
+  getNodeTypes().forEach(nodeType => {
+    let newOption = document.createElement("option");
+    newOption.setAttribute("value", nodeType);
+    newOption.appendChild(document.createTextNode(nodeType));
+    newSelect.appendChild(newOption);
+  });
 
   let newNode = document.createElement("div");
   newNode.className = "query-parameter-card col-lg-3 col-md-4 col-sm-6";
