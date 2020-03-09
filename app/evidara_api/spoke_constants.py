@@ -13,7 +13,7 @@ BIOLINK_SPOKE_NODE_MAPPINGS = {
     "GrossAnatomicalStructure": "Anatomy",
     "Protein": "Protein",
     # "": "Food"
-    "0":False, # for "any node type"
+    "0": False,  # for "any node type"
 }
 
 SPOKE_BIOLINK_NODE_MAPPINGS = {
