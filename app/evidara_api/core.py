@@ -19,6 +19,7 @@ from evidara_api.spoke_constants import (
     SPOKE_NODE_IDENTIFIERS,
     PSEV_PREFERRED_IDS,
 )
+from evidara_api.psev import get_psev_weights
 
 
 def get_n4j_param_str(parameters):
@@ -57,7 +58,6 @@ def get_n4j_str_repr(query_part, name):
     node_repr (str): string representation of a query part, 
         e.g. "(c:Compound {chembl_id: 'CHEMBL1234'})"
     """
-    # TODO support empty query nodes, i.e. only a label, * node, etc.
     # TODO figure out curie splitting for different identifiers, e.g. DOID:123 that need to remain together
     # not supporting specific edge types until mapped to biolink
     if isinstance(query_part, models.QEdge):
@@ -66,15 +66,15 @@ def get_n4j_str_repr(query_part, name):
     # start constructing the string, then add optional features
     node_repr = f"({name}"
     # add a label if we can, then add parameters if possible
-    try: 
+    try:
         spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[query_part.type]
-    except KeyError: # these should have been validated, so it's okay
+    except KeyError:  # these should have been validated, so it's okay
         spoke_label = False
     if spoke_label:
         spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[query_part.type]
         node_repr += f":{spoke_label} "
         # add a parameter if we can
-        if query_part.curie:  # TODO change `id` to `curie` with change to qnode
+        if query_part.curie:
             split_curie = query_part.curie.split(":")
             if len(split_curie) > 2:
                 split_curie = [split_curie[0], ":".join(split_curie[1:])]
@@ -87,7 +87,7 @@ def get_n4j_str_repr(query_part, name):
             parameter_string = get_n4j_param_str(
                 {SPOKE_NODE_IDENTIFIERS[spoke_label]: split_curie[1]}
             )
-            # need to make better label dict to handle lists of
+            # TODO: need to make better label dict to handle lists of
             # possible identifiers, e.g. Compound's drugbank and
             # chembl_ids
             node_repr += f"{parameter_string}"
@@ -95,7 +95,7 @@ def get_n4j_str_repr(query_part, name):
     return node_repr
 
 
-def linear_spoke_query(session, nodes, edges, n_results):
+def linear_spoke_query(session, nodes, edges, query_options, n_results):
     """Returns the SPOKE node label equivalent to `node_type`
 
     Parameters
@@ -105,6 +105,8 @@ def linear_spoke_query(session, nodes, edges, n_results):
         that constitute the query graph
     edges (list of evidara.models.Edge): reasoner-standard Edge objects
         that consitute the query graph
+    query_options (dict or None): str-> str mappings of knowledge graph pruning
+        and ranking algorithm 
     n_results (int): maximum number of results to return
 
     Returns
@@ -113,6 +115,9 @@ def linear_spoke_query(session, nodes, edges, n_results):
         reasoner-standard evidara.models.Result objects; alternatively 
         returns str message on error
     """
+    # check for query_options and replace saves lots of `if`ing later
+    if not query_options:
+        query_options = {}
     # get nodes as dict for later lookup by identifier
     node_d = make_node_dictionary(nodes)
     if isinstance(node_d, str):
@@ -129,7 +134,7 @@ def linear_spoke_query(session, nodes, edges, n_results):
     # start query order with either of the terminal nodes
     query_order = [node_d[terminal_nodes[0]]]
     target_query_length = len(nodes) + len(edges)
-    # TODO remember need to map back to query
+
     # create copy of edges that can be destroyed
     edges_copy = edges.copy()
     while len(query_order) < target_query_length:
@@ -161,20 +166,22 @@ def linear_spoke_query(session, nodes, edges, n_results):
             query_mapping["nodes"][name] = query_part.node_id
         else:
             query_mapping["edges"][name] = query_part.edge_id
-    print(query_mapping)
     query_string = "-".join(query_parts)
-    # set max results b/c no default set by reasoner-standard,
+    # set max results b/c reasoner-standard default is None
     # possibly enforce a max on the query too
     n_results = n_results if n_results else 30
     r = session.run(f"match p = {query_string} " f"return * limit {n_results}")
 
-    # create the results
-    results = [
-        make_evidara_result(record, i, query_names, query_mapping, psev_context=None)
-        for i, record in enumerate(r.records())
-    ]
-
-    return {"results": results[0]}  # only returning one result during dev
+    # create the results, then sort on score
+    results = sorted(
+        [
+            make_evidara_result(record, i, query_names, query_mapping, query_options)
+            for i, record in enumerate(r.records())
+        ],
+        key=lambda x: x.score,
+        reverse=True,
+    )
+    return {"results": results}
 
 
 def make_node_dictionary(nodes):
@@ -209,7 +216,7 @@ def make_node_dictionary(nodes):
 
 
 def make_evidara_result(
-    n4j_result, record_number, query_names, query_mapping, psev_context=None
+    n4j_result, record_number, query_names, query_mapping, query_options
 ):
     """Constructs a reasoner-standard result from the result of a neo4j 
     query
@@ -223,31 +230,27 @@ def make_evidara_result(
         `n4j_result`
     query_mapping (dict): str -> str mappings of QNode/QEdge ids to
         query names
-    psev_context (str): disease/psev identifying context,
-        e.g. 'DOID:9351'
+    query_options (dict): str-> str mappings of knowledge graph pruning
+        and ranking algorithm
 
     Returns
     -------
     <unnamed> (models.Result): reasoner-standard result that can be 
         returned to the user/ARS
     """
-    # need to add mappings to qnodes/qedges here
+    # set up objects to collect results and query mappings
     result_nodes, result_edges = [], []
     knowledge_map = {"edges": {}, "nodes": {}}
+    # iterate through results and add to result objects
     for name in query_names:
         if isinstance(n4j_result[name], neo4j.types.graph.Node):
-            result_nodes.append(make_result_node(n4j_result[name]))
+            result_nodes.append(make_result_node(n4j_result[name], query_options))
             knowledge_map["nodes"][query_mapping["nodes"][name]] = result_nodes[-1].id
         else:
             result_edges.append(make_result_edge(n4j_result[name]))
             knowledge_map["edges"][query_mapping["edges"][name]] = result_edges[-1].id
-    # get psev weighting, ideally this actually happens when we
-    # create nodes, and they simply become NodeAttributes, but we
-    # spec'ed it otherwise
-    if psev_context:
-        scores = score_with_psev(psev_context, result_nodes)
-    else:
-        scores = {}
+    # score result, instiate result objects and return
+    scores = get_result_score(result_nodes, result_edges, query_options)
     result_knowledge_graph = models.KnowledgeGraph(result_nodes, result_edges)
     return models.Result(
         id=record_number,
@@ -257,29 +260,77 @@ def make_evidara_result(
     )
 
 
-def score_with_psev(psev_context, nodes):
-    """Returns a dict with a score based on SPOKE psevs
-
-    NOTE: Ideally this will actually happen when creating these 
-    nodes so we don't have to do multiple lookups/iterations through
-    NodeAttribute objects. 
+def get_result_score(nodes, edges, query_options):
+    """Returns a score based on psev weights, cohort edge correlations,
+        both, or none
 
     Parameters
     ----------
-    psev_context (str): disease/psev identifying context, 
-        e.g. 'DOID:9351'
-    nodes (list of models.Node): reasoner-standard nodes for which to 
-        retrieve psev weightings based on `psev_context`
+    nodes (list of models.Node): reasoner-standard Nodes that have 
+        a NodeAttribute for psev_weight. This is currently implemented
+        to only check the final element in the list of NodeAttributes 
+        for each Node
+    edges (list of models.Edge): reasoner-standard Edges that have 
+        an EdgeAttribute for cohort_correlation. This is currently 
+        implemented to only check the final element in the list of 
+        EdgeAttributes for each Edge
+    query_options (dict): str-> str mappings of optional query 
+        parameters
+    
+    Returns
+    -------
+    scores (dict): mapping of score (str) -> float and 
+        score name (str) -> str
+    
+
+    NOTE: currently for linear queries, all knowledge graphs are of the
+        length, but dividing the sum score by `n` may make sense in the 
+        future
     """
     scores = {}
-    spoke_psev_ids = [get_psev_id(node) for node in nodes]
-    # optional None filter if weight-getting fucntion can't handle None:
-    # spoke_psev_ids = list(filter(None, spoke_psev_ids))
-    ### PLACEHOLDER FOR KHARTHIK'S FUNCTION
-    ### psev_weights = get_psev_weights(disease_id, spoke_psev_ids) PLACEHOLDER FOR KHARTHIK'S FUNCTION
-    ### PLACEHOLDER FOR KHARTHIK'S FUNCTION
-    scores["score_name"] = "spoke_propagated_entry_vector"
-    # scores["score"] = sum(psev_weights)
+    if ("psev-context" in query_options) & ("evidentiary" in query_options):
+        scores["score"] = (
+            sum(
+                [
+                    node.node_attributes[-1].value
+                    for node in nodes
+                    if node.node_attributes[-1].type == "psev_weight"
+                ]
+            )
+            * 10000
+        )
+        scores["score"] += sum(
+            [
+                edge.edge_attributes[-1].value
+                for edge in edges
+                if edge.edge_attributes[-1].type == "cohort_correlation"
+            ]
+        )
+        scores["score_name"] = "evidara-combined-psev-cohort"
+    elif "psev-context" in query_options:
+        scores["score"] = (
+            sum(
+                [
+                    node.node_attributes[-1].value
+                    for node in nodes
+                    if node.node_attributes[-1].type == "psev_weight"
+                ]
+            )
+            * 10000
+        )
+        scores["score_name"] = "evidara-psev"
+    elif "evidentiary" in query_options:
+        scores["score"] = sum(
+            [
+                edge.edge_attributes[-1].value
+                for edge in edges
+                if edge.edge_attributes[-1].type == "cohort_correlation"
+            ]
+        )
+        scores["score_name"] = "evidara-cohort"
+    else:
+        scores["score"] = 0
+        scores["score_name"] = None
     return scores
 
 
@@ -307,7 +358,7 @@ def get_psev_id(node):
         return None
 
 
-def make_result_node(n4j_object):
+def make_result_node(n4j_object, query_options=None):
     """Instantiates a reasoner-standard Node to return as part of a 
     KnowledgeGraph result
 
@@ -315,6 +366,9 @@ def make_result_node(n4j_object):
     ----------
     n4j_object (neo4j.types.graph.Node): a `Node` object returned from a
         neo4j.bolt.driver.session Cypher query
+    query_options (dict): str -> str mappings of knowledge graph pruning
+        and ranking algoritms. Used here to configure retrieval of psev 
+        node weightings
 
     Returns
     -------
@@ -331,6 +385,12 @@ def make_result_node(n4j_object):
     result_node.node_attributes = [
         models.NodeAttribute(type=k, value=v) for k, v in n4j_object.items()
     ]
+    if "psev-context" in query_options:
+        result_node.node_attributes.append(
+            models.NodeAttribute(
+                type="psev_weight", value=get_psev_weights(n4j_object["identifier"])
+            )
+        )
     return result_node
 
 
@@ -351,6 +411,7 @@ def make_result_edge(n4j_object):
     result_edge = models.Edge(
         # TODO next two lines look up and include database per standards
         # TODO get reliable edge identifiers for `id` attribute
+        # TODO get correlations score
         source_id=n4j_object.start_node["identifier"],
         target_id=n4j_object.end_node["identifier"],
         type=n4j_object.type,
@@ -389,7 +450,9 @@ def process_query(query):
         return f"Bad Request with keyword {str(e).split()[-1]}", 400
     # now query SPOKE
     with get_db() as session:
-        res = linear_spoke_query(session, nodes, edges, query_message.n_results)
+        res = linear_spoke_query(
+            session, nodes, edges, query_message.query_options, query_message.n_results
+        )
         if isinstance(res, str):
             return res, 400
     return res
