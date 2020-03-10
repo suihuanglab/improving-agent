@@ -16,8 +16,6 @@ from evidara_api import models
 from evidara_api.spoke_constants import (
     BIOLINK_SPOKE_NODE_MAPPINGS,
     SPOKE_BIOLINK_NODE_MAPPINGS,
-    SPOKE_NODE_IDENTIFIERS,
-    PSEV_PREFERRED_IDS,
 )
 from evidara_api.psev import get_psev_weights
 
@@ -58,7 +56,6 @@ def get_n4j_str_repr(query_part, name):
     node_repr (str): string representation of a query part, 
         e.g. "(c:Compound {chembl_id: 'CHEMBL1234'})"
     """
-    # TODO figure out curie splitting for different identifiers, e.g. DOID:123 that need to remain together
     # not supporting specific edge types until mapped to biolink
     if isinstance(query_part, models.QEdge):
         return f"[{name}]"
@@ -66,30 +63,30 @@ def get_n4j_str_repr(query_part, name):
     # start constructing the string, then add optional features
     node_repr = f"({name}"
     # add a label if we can, then add parameters if possible
-    try:
-        spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[query_part.type]
-    except KeyError:  # these should have been validated, so it's okay
-        spoke_label = False
-    if spoke_label:
-        spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[query_part.type]
+    spoke_label_id_config = BIOLINK_SPOKE_NODE_MAPPINGS[query_part.type]
+    if spoke_label_id_config[0]:
+        spoke_label = spoke_label_id_config[0]
         node_repr += f":{spoke_label} "
         # add a parameter if we can
         if query_part.curie:
-            split_curie = query_part.curie.split(":")
-            if len(split_curie) > 2:
-                split_curie = [split_curie[0], ":".join(split_curie[1:])]
+            # handle different configs for different node identifiers
+            if spoke_label_id_config[1] == "split":
+                curie = query_part.curie.split(":")
+                if len(curie) > 2:
+                    curie = ":".join(curie[1:])
+                else:
+                    curie = curie[1]
+            else:
+                curie = query_part.curie
             try:
                 # TODO make sure this isn't a float
                 # currently none in spoke, but this could easily happen
-                split_curie[1] = int(split_curie[1])
+                curie = int(curie)
             except ValueError:
                 pass
             parameter_string = get_n4j_param_str(
-                {SPOKE_NODE_IDENTIFIERS[spoke_label]: split_curie[1]}
+                {"identifier": curie}
             )
-            # TODO: need to make better label dict to handle lists of
-            # possible identifiers, e.g. Compound's drugbank and
-            # chembl_ids
             node_repr += f"{parameter_string}"
     node_repr += ")"
     return node_repr
@@ -206,7 +203,7 @@ def make_node_dictionary(nodes):
     for node in nodes:
         if node.type:
             try:
-                node.spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[node.type]
+                node.spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[node.type][0]
             except KeyError:
                 errors.append(f"Node type {node.type} not (yet) supported by evidARA")
         node_d[node.node_id] = node

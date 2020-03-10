@@ -1,19 +1,19 @@
 BIOLINK_SPOKE_NODE_MAPPINGS = {
     # commented lines exist in SPOKE, but don't have exact equivalents in Biolink
-    "Gene": "Gene",
+    "Gene": ("Gene", "split"),
     #:"SideEffect",
-    "BiologicalProcess": "BiologicalProcess",
-    "MolecularActivity": "MolecularFunction",
-    "ChemicalSubstance": "Compound",
-    "CellularComponent": "CellularComponent",
+    "BiologicalProcess": ("BiologicalProcess", "no-split"),
+    "MolecularActivity": ("MolecularFunction", "no-split"),
+    "ChemicalSubstance": ("Compound", "no-split"),
+    "CellularComponent": ("CellularComponent", "no-split"),
     #:"PharmacologicClass",
-    "Pathway": "Pathway",
-    "Disease": "Disease",
+    "Pathway": ("Pathway", "no-split"),
+    "Disease": ("Disease", "no-split"),
     # "":"Symptom",
-    "GrossAnatomicalStructure": "Anatomy",
-    "Protein": "Protein",
+    "GrossAnatomicalStructure": ("Anatomy", "no-split"),
+    "Protein": ("Protein", "split"),
     # "": "Food"
-    "0": False,  # for "any node type"
+    "0": (False, "no-split"),  # for "any node type"
 }
 
 SPOKE_BIOLINK_NODE_MAPPINGS = {
@@ -32,29 +32,6 @@ SPOKE_BIOLINK_NODE_MAPPINGS = {
     "Food": "Thing",
 }
 
-SPOKE_NODE_IDENTIFIERS = {
-    "Compound": "identifier",  # should also include drugbank as list
-    "Protein": "identifier",
-    "Gene": "identifier",
-    "Anatomy": "identifier",
-    "Disease": "idnetifier",
-}
-
-PSEV_PREFERRED_IDS = {
-    "Gene": "",
-    "SideEffect": "",
-    "BiologicalProcess": "",
-    "MolecularFunction": "",
-    "Compound": "",
-    "CellularComponent": "",
-    "PharmacologicClass": "",
-    "Pathway": "",
-    "Disease": "",
-    "Symptom": "",
-    "Anatomy": "",
-    "Protein": "",
-    "Food": "",
-}
 # BIOLINK_SPOKE_EDGE_MAPPINGS = {
 # not worth it right now
 #     : "EXPRESSES_AeG",
