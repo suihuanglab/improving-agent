@@ -121,7 +121,7 @@
                 class="node-curie"
                 placeholder="e.g.ENTREZ:59272"
               />
-              <select id="start-node-type" class="node-type-selector">
+              <select id="start-node-type" class="node-type-selector" onchange="updateCuriePlaceholder(this);">
                 <option value="0" disabled selected hidden
                   >Select a node type</option
                 >
@@ -151,7 +151,7 @@
                 class="node-curie"
                 placeholder="e.g. ENTREZ:59272"
               />
-              <select id="end-node" class="node-type-selector">
+              <select id="end-node" class="node-type-selector" onchange="updateCuriePlaceholder(this);">
                 <option value="0" disabled selected hidden
                   >Select a node type</option
                 >

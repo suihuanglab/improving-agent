@@ -1,3 +1,16 @@
+const curieExamples = {
+  "Gene": "ENTREZ:59272",
+  "BiologicalProcess": "GO:0045833",
+  "MolecularActivity": "GO:0003884",
+  "ChemicalSubstance": "DB08991",
+  "CellularComponent": "GO:0005759",
+  "Pathway": "PC7_2621",
+  "Disease": "DOID:4606",
+  "GrossAnatomicalStructure": "UBERON:0002352",
+  "Protein": "UNIPROT:A0A023HHK9",
+  "0": "CURIEs ignored"
+}
+
 getNodes = function() {
   let nodes = [];
   let userInput = document.getElementsByClassName("card-body");
@@ -92,6 +105,10 @@ destroyCard = function(cardButton) {
   parentCard.remove();
 };
 
+updateCuriePlaceholder = function(selector) {
+  selector.previousElementSibling.setAttribute("placeholder", curieExamples[selector.value])
+}
+
 add_node_selector = function() {
   // body container
   let newCardBody = document.createElement("div");
@@ -128,6 +145,7 @@ add_node_selector = function() {
   // select menu
   let newSelect = document.createElement("select");
   newSelect.className = "node-type-selector";
+  newSelect.setAttribute("onchange", "updateCuriePlaceholder(this);")
   let firstChoice = document.createElement("option");
   firstChoice.setAttribute("value", 0);
   firstChoice.appendChild(document.createTextNode("Select a node type"));
