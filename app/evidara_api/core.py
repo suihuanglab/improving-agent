@@ -331,30 +331,6 @@ def get_result_score(nodes, edges, query_options):
     return scores
 
 
-def get_psev_id(node):
-    """Returns a node identifier to pass to psev weighting function 
-    
-    NOTE: Ideally this will actually happen when creating these 
-    nodes so we don't have to do multiple lookups/iterations through
-    NodeAttribute objects. 
-
-    Parameters
-    ----------
-    node (models.Node): a reasoner-standard Node object
-
-    Returns
-    -------
-    id (str) or None: identifier for SPOKE psev node lookup; returns
-        None if no psev id can be found
-    """
-    preferred_psev_id = BIOLINK_SPOKE_NODE_MAPPINGS[PSEV_PREFERRED_IDS[node.type]]
-    id = [na.value for na in node.node_attributes if na.type == preferred_psev_id]
-    if len(id):
-        return id[0]
-    else:
-        return None
-
-
 def make_result_node(n4j_object, query_options=None):
     """Instantiates a reasoner-standard Node to return as part of a 
     KnowledgeGraph result
@@ -383,11 +359,16 @@ def make_result_node(n4j_object, query_options=None):
         models.NodeAttribute(type=k, value=v) for k, v in n4j_object.items()
     ]
     if "psev-context" in query_options:
-        result_node.node_attributes.append(
-            models.NodeAttribute(
-                type="psev_weight", value=get_psev_weights(n4j_object["identifier"])
+        try:
+            result_node.node_attributes.append(
+                models.NodeAttribute(
+                    type="psev_weight", value=get_psev_weights(n4j_object["identifier"])
+                )
             )
-        )
+        except IndexError: # TODO decide if this should just not happen, i.e. is it really a 0?
+            result_node.node_attributes.append(
+                models.NodeAttribute(type="psev_weight", value=0)
+            )
     return result_node
 
 
