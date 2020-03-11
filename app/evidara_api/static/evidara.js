@@ -1,3 +1,6 @@
+//
+// Globals
+//
 const curieExamples = {
   Gene: "ENTREZ:59272",
   BiologicalProcess: "GO:0045833",
@@ -10,6 +13,12 @@ const curieExamples = {
   Protein: "UNIPROT:A0A023HHK9",
   "0": "CURIEs ignored"
 };
+
+var currentResults = Object(); //hold query results later
+
+//
+// Query Handlers
+//
 
 getNodes = function() {
   let nodes = [];
@@ -59,17 +68,22 @@ getAlgoritmParameters = function() {
   return extraParams;
 };
 
-getNodeTypes = function() {
-  // this could just be a post request to the api, which should presumably have a
-  // supported "get_valid_nodes" endpoint
-  let nodeTypes = [];
-  let startNodeSelector = document.getElementById("start-node-type");
-  for (x = 0; x < startNodeSelector.length; x++) {
-    if (startNodeSelector[x].value !== "0") {
-      nodeTypes.push(startNodeSelector[x].value);
-    }
-  }
-  return nodeTypes;
+getUniqueEdges = function(queryResults) {
+  const allEdges = queryResults["results"]
+    .map(x => x["result_graph"]["edges"])
+    .flat();
+  const uniqueEdges = {};
+  allEdges.forEach(edge => (uniqueEdges[edge.id] = edge));
+  return Object.values(uniqueEdges);
+};
+
+getUniqueNodes = function(queryResults) {
+  const allNodes = queryResults["results"]
+    .map(x => x["result_graph"]["nodes"])
+    .flat();
+  const uniqueNodes = {};
+  allNodes.forEach(node => (uniqueNodes[node.id] = node));
+  return Object.values(uniqueNodes);
 };
 
 query = function() {
@@ -84,7 +98,7 @@ query = function() {
       query_options: getAlgoritmParameters()
     }
   };
-  let response = fetch("api/v1/query", {
+  fetch("api/v1/query", {
     method: "POST",
     headers: {
       "Content-Type": "application/json"
@@ -94,6 +108,15 @@ query = function() {
     .then(response => response.json())
     .then(data => {
       console.log("Success:", data);
+      currentResults = data;
+    })
+    .catch(error => console.warn(error));
+};
+
+//
+// DOM Modifiers and Supporters
+//
+
 getNodeTypes = function() {
   // this could just be a post request to the api, which should presumably have a
   // supported "get_valid_nodes" endpoint
@@ -158,7 +181,7 @@ add_node_selector = function() {
   // select menu
   let newSelect = document.createElement("select");
   newSelect.className = "node-type-selector";
-  newSelect.setAttribute("onchange", "updateCuriePlaceholder(this);")
+  newSelect.setAttribute("onchange", "updateCuriePlaceholder(this);");
   let firstChoice = document.createElement("option");
   firstChoice.setAttribute("value", 0);
   firstChoice.appendChild(document.createTextNode("Select a node type"));
@@ -181,4 +204,16 @@ add_node_selector = function() {
   //shove it in
   let endNode = document.getElementById("node-adder");
   endNode.parentNode.insertBefore(newNode, endNode);
+};
+
+visSetup = function() {
+  let mc = document.getElementById("main-content");
+  let graphRow = document.createElement("div");
+  graphRow.className = "row justify-content-center";
+  graphRow.id = "graph-row";
+  let graphCol = document.createElement("div");
+  graphCol.className = "col-12";
+  graphCol.id = "graph-container";
+  graphRow.appendChild(graphCol);
+  mc.appendChild(graphRow);
 };
