@@ -1,15 +1,15 @@
 const curieExamples = {
-  "Gene": "ENTREZ:59272",
-  "BiologicalProcess": "GO:0045833",
-  "MolecularActivity": "GO:0003884",
-  "ChemicalSubstance": "DB08991",
-  "CellularComponent": "GO:0005759",
-  "Pathway": "PC7_2621",
-  "Disease": "DOID:4606",
-  "GrossAnatomicalStructure": "UBERON:0002352",
-  "Protein": "UNIPROT:A0A023HHK9",
+  Gene: "ENTREZ:59272",
+  BiologicalProcess: "GO:0045833",
+  MolecularActivity: "GO:0003884",
+  ChemicalSubstance: "DB08991",
+  CellularComponent: "GO:0005759",
+  Pathway: "PC7_2621",
+  Disease: "DOID:4606",
+  GrossAnatomicalStructure: "UBERON:0002352",
+  Protein: "UNIPROT:A0A023HHK9",
   "0": "CURIEs ignored"
-}
+};
 
 getNodes = function() {
   let nodes = [];
@@ -94,7 +94,17 @@ query = function() {
     .then(response => response.json())
     .then(data => {
       console.log("Success:", data);
-    });
+getNodeTypes = function() {
+  // this could just be a post request to the api, which should presumably have a
+  // supported "get_valid_nodes" endpoint
+  let nodeTypes = [];
+  let startNodeSelector = document.getElementById("start-node-type");
+  for (x = 0; x < startNodeSelector.length; x++) {
+    if (startNodeSelector[x].value !== "0") {
+      nodeTypes.push(startNodeSelector[x].value);
+    }
+  }
+  return nodeTypes;
 };
 
 destroyCard = function(cardButton) {
@@ -106,8 +116,11 @@ destroyCard = function(cardButton) {
 };
 
 updateCuriePlaceholder = function(selector) {
-  selector.previousElementSibling.setAttribute("placeholder", curieExamples[selector.value])
-}
+  selector.previousElementSibling.setAttribute(
+    "placeholder",
+    curieExamples[selector.value]
+  );
+};
 
 add_node_selector = function() {
   // body container
