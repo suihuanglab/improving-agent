@@ -84,9 +84,7 @@ def get_n4j_str_repr(query_part, name):
                 curie = int(curie)
             except ValueError:
                 pass
-            parameter_string = get_n4j_param_str(
-                {"identifier": curie}
-            )
+            parameter_string = get_n4j_param_str({"identifier": curie})
             node_repr += f"{parameter_string}"
     node_repr += ")"
     return node_repr
@@ -166,7 +164,7 @@ def linear_spoke_query(session, nodes, edges, query_options, n_results):
     query_string = "-".join(query_parts)
     # set max results b/c reasoner-standard default is None
     # possibly enforce a max on the query too
-    n_results = n_results if n_results else 30
+    n_results = n_results if n_results else 20
     r = session.run(f"match p = {query_string} " f"return * limit {n_results}")
 
     # create the results, then sort on score
@@ -365,7 +363,7 @@ def make_result_node(n4j_object, query_options=None):
                     type="psev_weight", value=get_psev_weights(n4j_object["identifier"])
                 )
             )
-        except IndexError: # TODO decide if this should just not happen, i.e. is it really a 0?
+        except IndexError:  # TODO decide if this should just not happen, i.e. is it really a 0?
             result_node.node_attributes.append(
                 models.NodeAttribute(type="psev_weight", value=0)
             )
@@ -390,6 +388,7 @@ def make_result_edge(n4j_object):
         # TODO next two lines look up and include database per standards
         # TODO get reliable edge identifiers for `id` attribute
         # TODO get correlations score
+        id=n4j_object.id,  # this is meaningless id, but we use for viz
         source_id=n4j_object.start_node["identifier"],
         target_id=n4j_object.end_node["identifier"],
         type=n4j_object.type,
