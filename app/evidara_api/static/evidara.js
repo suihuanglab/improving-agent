@@ -73,7 +73,12 @@ getUniqueEdges = function(queryResults) {
     .map(x => x["result_graph"]["edges"])
     .flat();
   const uniqueEdges = {};
-  allEdges.forEach(edge => (uniqueEdges[edge.id] = edge));
+  allEdges.forEach(function(edge) {
+    // update keys for d3 viz
+    edge["source"] = edge["source_id"],
+    edge["target"] = edge["target_id"]
+    uniqueEdges[edge.id] = edge;
+  });
   return Object.values(uniqueEdges);
 };
 
@@ -109,6 +114,14 @@ query = function() {
     .then(data => {
       console.log("Success:", data);
       currentResults = data;
+      if (!document.getElementById("graph-container")) {
+        visSetup();
+      }
+      let graphData = {
+        nodes: getUniqueNodes(currentResults),
+        edges: getUniqueEdges(currentResults)
+      };
+      render(graphData);
     })
     .catch(error => console.warn(error));
 };
@@ -216,4 +229,5 @@ visSetup = function() {
   graphCol.id = "graph-container";
   graphRow.appendChild(graphCol);
   mc.appendChild(graphRow);
+  setup(); // actual d3 params from evidara-graph.js
 };
