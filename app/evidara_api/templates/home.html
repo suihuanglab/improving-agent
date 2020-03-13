@@ -121,7 +121,11 @@
                 class="node-curie"
                 placeholder="e.g.ENTREZ:59272"
               />
-              <select id="start-node-type" class="node-type-selector" onchange="updateCuriePlaceholder(this);">
+              <select
+                id="start-node-type"
+                class="node-type-selector"
+                onchange="updateCuriePlaceholder(this);"
+              >
                 <option value="0" disabled selected hidden
                   >Select a node type</option
                 >
@@ -151,7 +155,11 @@
                 class="node-curie"
                 placeholder="e.g. ENTREZ:59272"
               />
-              <select id="end-node" class="node-type-selector" onchange="updateCuriePlaceholder(this);">
+              <select
+                id="end-node"
+                class="node-type-selector"
+                onchange="updateCuriePlaceholder(this);"
+              >
                 <option value="0" disabled selected hidden
                   >Select a node type</option
                 >
@@ -242,5 +250,8 @@
         </div>
       </div>
     </div>
+    <!-- d3-graph related js -->
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="../static/evidara-graph.js"></script>
   </body>
 </html>
