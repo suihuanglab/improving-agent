@@ -61,5 +61,30 @@
   font-family: sans-serif;
   font-size: 10px;
   color: #000;
-  fill:#000;
+  fill: #000;
+}
+
+/* table */
+.evidara-table td {
+  font-size: 80%;
+}
+.row-even {
+  background-color: #f6f6f6;
+}
+
+.row-odd {
+  background-color: white;
+}
+
+.cell-sub-head {
+    font-weight: bold;
+}
+
+.row-even-edge {
+    background-color: #efefef;
+}
+
+.row-odd-edge {
+    background-color: #fcfcfc;
+
 }
