@@ -5,8 +5,8 @@ const margin = {
   bottom: 10,
   left: 10
 };
-const width = 900 - margin.left - margin.right;
-const height = 900 - margin.top - margin.bottom;
+const width = 600 - margin.left - margin.right;
+const height = 500 - margin.top - margin.bottom;
 
 // set up canvas
 let svg, link, node, g; // empty vars to update when the .chart div appears
