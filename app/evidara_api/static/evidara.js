@@ -75,8 +75,7 @@ getUniqueEdges = function(queryResults) {
   const uniqueEdges = {};
   allEdges.forEach(function(edge) {
     // update keys for d3 viz
-    edge["source"] = edge["source_id"],
-    edge["target"] = edge["target_id"]
+    (edge["source"] = edge["source_id"]), (edge["target"] = edge["target_id"]);
     uniqueEdges[edge.id] = edge;
   });
   return Object.values(uniqueEdges);

@@ -1,12 +1,12 @@
 // set margins and canvas size
 const margin = {
   top: 10,
-  right: 20,
-  bottom: 30,
-  left: 20
+  right: 10,
+  bottom: 10,
+  left: 10
 };
-const width = 800 - margin.left - margin.right;
-const height = 600 - margin.top - margin.bottom;
+const width = 900 - margin.left - margin.right;
+const height = 900 - margin.top - margin.bottom;
 
 // set up canvas
 let svg, link, node, g; // empty vars to update when the .chart div appears
@@ -114,7 +114,13 @@ function render(graph) {
 
   node
     .append("circle")
-    .attr("r", 17)
+    .attr("r", 17)//function(d){
+        // if ("psev-weight" in d["node_attributes"]){
+        //     return 30 * (10000 * d["node_attributes"]["psev_weight"])
+        //     // maybe make this simply the index in the array.. which should map to higher
+        //     // scores
+        // } else {return 12}
+    //})
     .attr("fill", function(d) {
       return spokeColors[d.type];
     })
