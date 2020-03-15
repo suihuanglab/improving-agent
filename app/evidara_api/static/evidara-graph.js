@@ -86,7 +86,7 @@ var simulation = d3
       .id(function(d) {
         return d.id;
       })
-      .distance(120)
+      .distance(120).iterations(3)
   )
   .force(
     "charge",
@@ -94,12 +94,12 @@ var simulation = d3
       .forceManyBody()
       .strength(-60)
       .distanceMin(50)
-      .distanceMax(150)
+      .distanceMax(110)
   )
   .force(
     "collide",
     d3.forceCollide().radius(function(d) {
-      return d.r;
+      return d.r * 1.5;
     })
   )
   .force("center", d3.forceCenter(width / 2, height / 2));
