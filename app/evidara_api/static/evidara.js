@@ -309,7 +309,12 @@ resultsToTable = function(results) {
   const rank = document.createElement("th");
   rank.appendChild(document.createTextNode("Result Rank"));
   const score = document.createElement("th");
-  score.appendChild(document.createTextNode(results[0].score_name));
+  if (results[0].score_name) {
+    score.appendChild(document.createTextNode(results[0].score_name));
+  } else {
+    score.appendChild(document.createTextNode("Score"));
+  }
+
   headerRow.appendChild(rank);
   headerRow.appendChild(score);
 
@@ -393,16 +398,16 @@ resultsToTable = function(results) {
             createRowCell(
               attribute_row,
               element.result_graph.edges[j].edge_attributes[i].type,
-              {"class":row_class+"-edge"}
+              { class: row_class + "-edge" }
             );
             createRowCell(
               attribute_row,
               element.result_graph.edges[j].edge_attributes[i].value,
-              {"class":row_class+"-edge"}
+              { class: row_class + "-edge" }
             );
           } else {
-            createRowCell(attribute_row, "", {"class":row_class+"-edge"});
-            createRowCell(attribute_row, "", {"class":row_class+"-edge"});
+            createRowCell(attribute_row, "", { class: row_class + "-edge" });
+            createRowCell(attribute_row, "", { class: row_class + "-edge" });
           }
         }
       }
@@ -413,5 +418,7 @@ resultsToTable = function(results) {
 const createRowCell = function(row, textValue, attributes = {}) {
   let rowCell = row.insertCell();
   rowCell.appendChild(document.createTextNode(textValue));
-  Object.keys(attributes).forEach(attr => rowCell.setAttribute(attr, attributes[attr]));
+  Object.keys(attributes).forEach(attr =>
+    rowCell.setAttribute(attr, attributes[attr])
+  );
 };
