@@ -113,9 +113,7 @@ query = function() {
     .then(data => {
       console.log("Success:", data);
       currentResults = data;
-      if (!document.getElementById("graph-container")) {
-        visSetup();
-      }
+      visSetup();
       let graphData = {
         nodes: getUniqueNodes(currentResults),
         edges: getUniqueEdges(currentResults)
@@ -221,20 +219,28 @@ add_node_selector = function() {
 
 visSetup = function() {
   let mc = document.getElementById("main-content");
-  let graphRow = document.createElement("div");
-  graphRow.className = "row justify-content-center";
-  graphRow.id = "graph-row";
-  let graphCol = document.createElement("div");
-  graphCol.className = "col-12 text-center";
-  graphCol.id = "graph-container";
-  // make a horizontal divider
-  const horizontalLineContainer = document.createElement("div");
-  horizontalLineContainer.setAttribute("class", "col-12");
-  const horizontalLine = document.createElement("hr");
-  horizontalLineContainer.appendChild(horizontalLine);
-  graphRow.appendChild(horizontalLineContainer);
-  graphRow.appendChild(graphCol);
-  mc.appendChild(graphRow);
+  if (!document.getElementById("graph-container")) {
+    let graphRow = document.createElement("div");
+    graphRow.className = "row justify-content-center";
+    graphRow.id = "graph-row";
+    let graphCol = document.createElement("div");
+    graphCol.className = "col-12 text-center";
+    graphCol.id = "graph-container";
+    // make a horizontal divider
+    const horizontalLineContainer = document.createElement("div");
+    horizontalLineContainer.setAttribute("class", "col-12");
+    const horizontalLine = document.createElement("hr");
+    horizontalLineContainer.appendChild(horizontalLine);
+    graphRow.appendChild(horizontalLineContainer);
+    graphRow.appendChild(graphCol);
+    mc.appendChild(graphRow);
+  } else {
+    const graphContainer = document.getElementById("graph-container");
+    while (graphContainer.firstChild) {
+      graphContainer.firstChild.remove();
+    }
+  }
+
   setup(); // actual d3 params from evidara-graph.js
 };
 

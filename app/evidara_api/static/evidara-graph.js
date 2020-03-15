@@ -9,7 +9,7 @@ const width = 600 - margin.left - margin.right;
 const height = 500 - margin.top - margin.bottom;
 
 // set up canvas
-let svg, link, node, g; // empty vars to update when the .chart div appears
+let svg, link, node, edgepaths, edgelabels, g; // empty vars to update when the .chart div appears
 
 setup = function() {
   svg = d3
@@ -33,6 +33,31 @@ setup = function() {
     .attr("class", "nodes")
     .selectAll("circle");
 
+  edgepaths = g
+    .append("g")
+    .attr("class", "edgepath")
+    .selectAll(".edgepath");
+
+  edgelabels = g
+    .append("g")
+    .attr("class", "edgelabel")
+    .selectAll(".edgepath");
+
+  svg
+    .append("defs")
+    .append("marker")
+    .attr("id", "arrowhead")
+    .attr("viewBox", "-0 -5 10 10")
+    .attr("refX", 29)
+    .attr("refY", 0)
+    .attr("orient", "auto")
+    .attr("markerWidth", 3)
+    .attr("markerHeight", 3)
+    .attr("xoverflow", "visible")
+    .append("svg:path")
+    .attr("d", "M 0,-5 L 10 ,0 L 0,5")
+    .attr("fill", "#999")
+    .style("stroke", "none");
   //add zoom capabilities
   var zoom_handler = d3.zoom().on("zoom", zoom_actions);
   zoom_handler(svg);
@@ -61,7 +86,7 @@ var simulation = d3
       .id(function(d) {
         return d.id;
       })
-      .distance(100)
+      .distance(120)
   )
   .force(
     "charge",
@@ -103,23 +128,23 @@ function render(graph) {
     .append("g")
     .attr("class", "circle")
     .call(
-        d3
-          .drag()
-          .on("start", dragstarted)
-          .on("drag", dragged)
-        //   .on("end", dragended)
-      );
+      d3
+        .drag()
+        .on("start", dragstarted)
+        .on("drag", dragged)
+      //   .on("end", dragended)
+    );
 
   node = node.merge(node);
 
   node
     .append("circle")
-    .attr("r", 17)//function(d){
-        // if ("psev-weight" in d["node_attributes"]){
-        //     return 30 * (10000 * d["node_attributes"]["psev_weight"])
-        //     // maybe make this simply the index in the array.. which should map to higher
-        //     // scores
-        // } else {return 12}
+    .attr("r", 17) //function(d){
+    // if ("psev-weight" in d["node_attributes"]){
+    //     return 30 * (10000 * d["node_attributes"]["psev_weight"])
+    //     // maybe make this simply the index in the array.. which should map to higher
+    //     // scores
+    // } else {return 12}
     //})
     .attr("fill", function(d) {
       return spokeColors[d.type];
@@ -144,6 +169,7 @@ function render(graph) {
     })
     .style("text-anchor", "middle")
     .attr("class", "labelText");
+
   //now the edges
   link = link.data(graph.edges, function(d) {
     return d.source.id + "-" + d.target.id;
@@ -185,11 +211,51 @@ function render(graph) {
       link
         .transition()
         .duration(1500)
-        .attr("stroke-width", 3); //function(d) {
+        .attr("stroke-width", 3)
+        .attr("marker-end", "url(#arrowhead)"); //function(d) {
       //return d.value;
       //}); this was a function to set stroke width on some value.. consider doing so with correlation score
     })
     .merge(link);
+
+  edgepaths = edgepaths
+    // had problem with general update on edgepath and edgelabel; could
+    // probably do it if we defined the edgepaths as a function of the
+    // data as node and link
+    .data(graph.edges)
+    .enter()
+    .append("path")
+    .attr("class", "edgepath")
+    .attr("fill-opacity", 0)
+    .attr("stroke-opacity", 0)
+    .attr("id", function(d, i) {
+      return "edgepath" + i;
+    })
+    .style("pointer-events", "none");
+
+  edgelabels = edgelabels
+    .data(graph.edges)
+    .enter()
+    .append("text")
+    .style("pointer-events", "none")
+    .attr("class", "edgelabel")
+    .attr("id", function(d, i) {
+      return "edgelabel" + i;
+    })
+    .attr("font-size", 8)
+    .attr("fill", "#000");
+
+  edgelabels
+    .append("textPath")
+    .attr("xlink:href", function(d, i) {
+      return "#edgepath" + i;
+    })
+    .style("text-anchor", "middle")
+    .style("pointer-events", "none")
+    .attr("startOffset", "50%")
+    .text(function(d) {
+      return d.type;
+    });
 
   // add nodes and links to the siumlation
   simulation.nodes(graph.nodes).on("tick", ticked);
@@ -214,6 +280,31 @@ function render(graph) {
 
     node.attr("transform", function(d) {
       return `translate(${d.x},${d.y})`;
+    });
+
+    edgepaths.attr("d", function(d) {
+      return (
+        "M " +
+        d.source.x +
+        " " +
+        d.source.y +
+        " L " +
+        d.target.x +
+        " " +
+        d.target.y
+      );
+    });
+
+    edgelabels.attr("transform", function(d) {
+      if (d.target.x < d.source.x) {
+        var bbox = this.getBBox();
+
+        rx = bbox.x + bbox.width / 2;
+        ry = bbox.y + bbox.height / 2;
+        return "rotate(180 " + rx + " " + ry + ")";
+      } else {
+        return "rotate(0)";
+      }
     });
   }
 }
