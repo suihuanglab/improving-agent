@@ -298,7 +298,7 @@ def get_result_score(nodes, edges, query_options):
             [
                 edge.edge_attributes[-1].value
                 for edge in edges
-                if edge.edge_attributes[-1].type == "cohort_correlation"
+                if edge.edge_attributes[-1].type == "spearman_correlation"
             ]
         )
         scores["score_name"] = "evidara-combined-psev-cohort"
@@ -319,7 +319,7 @@ def get_result_score(nodes, edges, query_options):
             [
                 edge.edge_attributes[-1].value
                 for edge in edges
-                if edge.edge_attributes[-1].type == "cohort_correlation"
+                if edge.edge_attributes[-1].type == "spearman_correlation"
             ]
         )
         scores["score_name"] = "evidara-cohort"
@@ -360,7 +360,11 @@ def make_result_node(n4j_object, query_options=None):
         try:
             result_node.node_attributes.append(
                 models.NodeAttribute(
-                    type="psev_weight", value=get_psev_weights(n4j_object["identifier"])
+                    type="psev_weight",
+                    value=get_psev_weights(
+                        node_identifier=n4j_object["identifier"],
+                        disease_identifier=query_options["psev-context"],
+                    ),
                 )
             )
         except IndexError:  # TODO decide if this should just not happen, i.e. is it really a 0?
