@@ -353,11 +353,11 @@ resultsToTable = function(results) {
     topRow.setAttribute("class", row_class);
     let rankCell = topRow.insertCell();
     rankCell.appendChild(document.createTextNode(index + 1));
-    rankCell.setAttribute("rowspan", maxAttributeCount + 1);
+    rankCell.setAttribute("rowspan", maxAttributeCount + 3);
     rankCell.setAttribute("class", "cell-sub-head");
     let scoreCell = topRow.insertCell();
     scoreCell.appendChild(document.createTextNode(element.score));
-    scoreCell.setAttribute("rowspan", maxAttributeCount + 1);
+    scoreCell.setAttribute("rowspan", maxAttributeCount + 3);
     scoreCell.setAttribute("class", "cell-sub-head");
     // now we put the actual ids
     for (i = 0; i < queryLength; i++) {
@@ -379,6 +379,9 @@ resultsToTable = function(results) {
       }
     }
     // now start making attribute rows
+    // make the a header row first
+    createAttributeHeaderRows(existingTable, queryLength, row_class, element);
+    // now the attributes
 
     for (i = 0; i < maxAttributeCount; i++) {
       let attribute_row = existingTable.insertRow();
@@ -417,6 +420,42 @@ resultsToTable = function(results) {
           }
         }
       }
+    }
+  }
+};
+
+const createAttributeHeaderRows = function(
+  table,
+  queryLength,
+  row_class,
+  element
+) {
+  const attributeHeaderRow = table.insertRow();
+  attributeHeaderRow.setAttribute("class", row_class);
+  for (i = 1; i <= queryLength + 1; i++) {
+    let cellClass;
+    if (i % 2 == 0) {
+      // insert an edge column if even
+      cellClass = { class: row_class + "-edge" + " cell-sub-head" };
+    } else {
+      cellClass = { class: "cell-sub-head" };
+    }
+    createRowCell(attributeHeaderRow, "Attribute Name", cellClass);
+    createRowCell(attributeHeaderRow, "Attribute Value", cellClass);
+  }
+  const elementTypesRow = table.insertRow();
+  elementTypesRow.setAttribute("class", row_class);
+  let cellClass, cellText;
+  for (i = 0; i < queryLength ; i++) {
+    cellClass = {};
+    cellText = element.result_graph.nodes[i].type[0];
+    createRowCell(elementTypesRow, "Type", cellClass);
+    createRowCell(elementTypesRow, cellText, cellClass);
+    if (i !== (queryLength - 1)) {
+      cellClass = { class: row_class + "-edge" };
+      cellText = element.result_graph.edges[i].type;
+      createRowCell(elementTypesRow, "Type", cellClass);
+      createRowCell(elementTypesRow, cellText, cellClass);
     }
   }
 };
