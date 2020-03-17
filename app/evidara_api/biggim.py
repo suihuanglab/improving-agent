@@ -159,7 +159,11 @@ class BigGimRequester:
 
         Returns
         -------
-        <unnamed> (list of nodes and edges to search in BigGIM): 
+        gene_nodes_to_search (list of models.QNode): QNodes whose
+            corresponding KnowledgeGraph Nodes can be searched in
+            BigGIM
+        gene_gene_edges (list of models.QEdge): QEdges whose 
+            corresponding KnowledgeGraph Edges can be annotated
         """
         gene_nodes_to_search = []
         gene_gene_edges = []
@@ -179,11 +183,23 @@ class BigGimRequester:
         
         Parameters
         ----------
-        
+        session (neo4j.GraphDatabase.driver.session): neo4j cursor to 
+            query SPOKE
+        query_order (list of models.QNode/QEdge): the ordered 
+            query_graph sent to evidARA for evaluation; here used to
+            check if consecutive nodes are genes
+        results (list of models.Result): results to be updated with 
+            BigGIM coexpression data, if available
+        disease (str): DOID for which to search SPOKE and BigGIM for 
+            related tissue types 
+        anatomy (str): UBERON identifier for which to search BigGIM for
+            related tissue types 
+
         Returns
         -------
         results (list of models.Result): results with edges annotated
-        with BigGIM results"""
+            with BigGIM results
+        """
         # require either disease or anatomy, return if both are missing
         if disease is None and anatomy is None:
             return results
