@@ -18,6 +18,10 @@ from evidara_api.spoke_constants import (
     SPOKE_BIOLINK_NODE_MAPPINGS,
 )
 from evidara_api.psev import get_psev_weights
+from evidara_api.biggim import BigGimRequester
+
+# global BigGIM handler for caching
+big_gim_requester = BigGimRequester()
 
 
 def get_n4j_param_str(parameters):
@@ -175,6 +179,11 @@ def linear_spoke_query(session, nodes, edges, query_options, n_results):
         ],
         key=lambda x: x.score,
         reverse=True,
+    )
+    # check BigGIM, currently here, but a better `process_results`
+    # function should be created in the future
+    results = big_gim_requester.annotate_edges_with_biggim(
+        session, query_order, results, query_options.get("psev-context")
     )
     return {"results": results}
 
