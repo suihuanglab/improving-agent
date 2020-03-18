@@ -86,7 +86,7 @@ var simulation = d3
       .id(function(d) {
         return d.id;
       })
-      .distance(120).iterations(3)
+      .distance(130).iterations(3)
   )
   .force(
     "charge",
