@@ -10,6 +10,9 @@ from fuzzywuzzy.process import extractOne
 from werkzeug.utils import cached_property
 
 from evidara_api.models.edge_attribute import EdgeAttribute
+from evidara_api.util import get_evidara_logger
+
+logger = get_evidara_logger(__name__)
 
 
 class BigGimRequester:
@@ -70,7 +73,7 @@ class BigGimRequester:
             columns.extend(self.get_available_tissue_studies(tissue))
         # set up search strings
         search_columns = ",".join(set(columns))
-        search_genes = ",".join([str(gene) for gene in genes])
+        search_genes = ",".join(set([str(gene) for gene in genes]))
         r = requests.post(
             "http://biggim.ncats.io/api/biggim/query",
             json={

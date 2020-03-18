@@ -9,3 +9,6 @@ NEO4J_PASS = os.getenv("NEO4J_SPOKE_PASSWORD")
 PSEV_MATRIX = "./data/psev"
 PSEV_NODE_MAP = "./data/psev_node_map"
 PSEV_DISEASE_MAP = "./data/psev_ncats_disease_map"
+
+# logging
+LOG_LOCATION = "./logs/evidara_log.log"

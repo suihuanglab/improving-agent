@@ -1,7 +1,9 @@
 import numpy
 
 from evidara_api import config
+from evidara_api.util import get_evidara_logger
 
+logger = get_evidara_logger(__name__)
 # PSEV = propagated spoke entry vector
 
 # open resources; note that future versions might not load the entire

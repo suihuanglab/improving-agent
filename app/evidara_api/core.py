@@ -19,6 +19,9 @@ from evidara_api.spoke_constants import (
 )
 from evidara_api.psev import get_psev_weights
 from evidara_api.biggim import BigGimRequester
+from evidara_api.util import get_evidara_logger
+
+logger = get_evidara_logger(__name__)
 
 # global BigGIM handler for caching
 big_gim_requester = BigGimRequester()
@@ -429,6 +432,7 @@ def process_query(query):
     # manually unpack query, checking for model compliance along the way
     # raise and return 400 on failure to instantiate
     try:
+        logger.info("Got query...")
         # hopefully these recursively unpack in the future upon creation
         # of the Query object, but if not, we can also consider the
         # .from_dict() method on these objects instead of ** syntax

@@ -9,11 +9,11 @@ from flask import g, render_template
 from evidara_api import config
 from evidara_api import encoder
 from evidara_api.spoke_constants import BIOLINK_SPOKE_NODE_MAPPINGS
-
+from evidara_api.util import get_evidara_logger
 driver = neo4j.GraphDatabase.driver(
     config.NEO4J_URI, auth=(config.NEO4J_USER, config.NEO4J_PASS)
 )
-
+logger = get_evidara_logger(__name__)
 
 def get_db():
     """Returns a neo4j driver.session object connected to the SPOKE
@@ -58,6 +58,7 @@ def close_db(error):
 
 
 def main():
+    logger.info("starting evidara!")
     app.run(port=8080, debug=True)
 
 

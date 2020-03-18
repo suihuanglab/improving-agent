@@ -1,9 +1,11 @@
 import datetime
+import os
+import logging
 
 import six
 import typing
 from evidara_api import typing_utils
-
+from evidara_api.config import LOG_LOCATION
 
 def _deserialize(data, klass):
     """Deserializes dict, list, str into an object.
@@ -142,3 +144,28 @@ def _deserialize_dict(data, boxed_type):
     :rtype: dict
     """
     return {k: _deserialize(v, boxed_type) for k, v in six.iteritems(data)}
+
+formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+
+def get_evidara_logger(mod_name, log_path=LOG_LOCATION):
+    """Returns a logging.Logger object configured except for a 
+    FileHandler"""
+    logger = logging.getLogger(mod_name)
+    logger.setLevel(logging.INFO)
+    stream_handler = logging.StreamHandler()
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+    if log_path:
+        logger.addHandler(create_file_handler(log_path))
+    return logger
+
+def create_file_handler(log_path):
+    """Returns a logging.FileHandler object where the log file will be
+    written"""
+    if not os.path.isdir(os.path.dirname(log_path)):
+        raise NotADirectoryError(f"Log file directory {log_path} does not exist.")
+    if not os.access(os.path.dirname(log_path), os.W_OK):
+        raise PermissionError(f"Log file directory {log_path} is not writeable.")
+    file_handler = logging.FileHandler(filename=log_path, mode="a")
+    file_handler.setFormatter(formatter)
+    return file_handler
