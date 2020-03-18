@@ -171,9 +171,9 @@ def linear_spoke_query(session, nodes, edges, query_options, n_results):
     query_string = "-".join(query_parts)
     # set max results b/c reasoner-standard default is None
     # possibly enforce a max on the query too
-    n_results = n_results if n_results else 20
+    n_results = n_results if n_results else 200
     r = session.run(f"match p = {query_string} " f"return * limit {n_results}")
-
+    
     # create the results, then sort on score
     results = sorted(
         [
@@ -182,7 +182,7 @@ def linear_spoke_query(session, nodes, edges, query_options, n_results):
         ],
         key=lambda x: x.score,
         reverse=True,
-    )
+    )[:20]
     # check BigGIM, currently here, but a better `process_results`
     # function should be created in the future
     results = big_gim_requester.annotate_edges_with_biggim(
@@ -311,8 +311,8 @@ def get_result_score(nodes, edges, query_options):
                 edge.edge_attributes[-1].value
                 for edge in edges
                 if edge.edge_attributes[-1].type == "spearman_correlation"
-            ]
-        )
+            ] 
+        ) / 20
         scores["score_name"] = "evidara-combined-psev-cohort"
     elif "psev-context" in query_options:
         scores["score"] = (
@@ -332,8 +332,8 @@ def get_result_score(nodes, edges, query_options):
                 edge.edge_attributes[-1].value
                 for edge in edges
                 if edge.edge_attributes[-1].type == "spearman_correlation"
-            ]
-        )
+            ] 
+        ) / 20
         scores["score_name"] = "evidara-cohort"
     else:
         scores["score"] = 0

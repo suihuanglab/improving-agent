@@ -46,9 +46,13 @@ def get_psev_weights(
     # if isinstance(node_identifier, list):
     #    node_array = numpy.array([str(i) for i in node_identifier])
     #    return psev_matrix[numpy.where(node_array.reshape(-1,1)==id_map)[1]]
-    return float(
+    try:
+        return float(
         psev_matrix[
             numpy.where(str(disease_identifier) == disease_map),
             numpy.where(str(node_identifier) == id_map),
         ][0]
     )
+    except:
+        logger.error(f"Couldn't find {disease_identifier}, {node_identifier} in psev")
+        return float(0)
