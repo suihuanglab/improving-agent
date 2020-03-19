@@ -60,7 +60,7 @@ def close_db(error):
 
 def main():
     logger.info("starting evidara!")
-    app.run(port=8080, debug=True)
+    app.run(port=8080)
 
 
 if __name__ == "__main__":
