@@ -11,8 +11,9 @@ from evidara_api import encoder
 from evidara_api.spoke_constants import BIOLINK_SPOKE_NODE_MAPPINGS
 from evidara_api.util import get_evidara_logger
 driver = neo4j.GraphDatabase.driver(
-    config.NEO4J_URI, auth=(config.NEO4J_USER, config.NEO4J_PASS)
-)
+    config.NEO4J_URI, auth=(config.NEO4J_USER, config.NEO4J_PASS),
+    max_connection_lifetime=200
+    )
 logger = get_evidara_logger(__name__)
 
 def get_db():
