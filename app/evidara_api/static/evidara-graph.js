@@ -159,14 +159,20 @@ function render(graph) {
 
   // give all nodes a title with their id for hover identification
   node.append("title").text(function(d) {
-    return d.name;
-  });
+    for (let attribute of d.node_attributes) {
+      if (attribute.type === "pref_name") {
+        return attribute.value
+      }
+  } {return d.name}});
 
   node
     .append("text")
     .text(function(d) {
-      return d.name;
-    })
+      for (let attribute of d.node_attributes) {
+        if (attribute.type === "pref_name") {
+          return attribute.value
+        }
+    } {return d.name}})
     .style("text-anchor", "middle")
     .attr("class", "labelText");
 
