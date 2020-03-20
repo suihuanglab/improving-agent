@@ -2,15 +2,15 @@
 // Globals
 //
 const curieExamples = {
-  Gene: "ENTREZ:59272",
-  BiologicalProcess: "GO:0045833",
-  MolecularActivity: "GO:0003884",
-  ChemicalSubstance: "DB08991",
-  CellularComponent: "GO:0005759",
-  Pathway: "PC7_2621",
-  Disease: "DOID:4606",
-  GrossAnatomicalStructure: "UBERON:0002352",
-  Protein: "UNIPROT:A0A023HHK9",
+  Gene: "e.g. ENTREZ:59272",
+  BiologicalProcess: "e.g. GO:0045833",
+  MolecularActivity: "e.g. GO:0003884",
+  ChemicalSubstance: "e.g. DB08991",
+  CellularComponent: "e.g. GO:0005759",
+  Pathway: "e.g. PC7_2621",
+  Disease: "e.g. DOID:4606",
+  GrossAnatomicalStructure: "e.g. UBERON:0002352",
+  Protein: "e.g. UNIPROT:A0A023HHK9",
   "0": "CURIEs ignored"
 };
 
@@ -90,6 +90,40 @@ getUniqueNodes = function(queryResults) {
   return Object.values(uniqueNodes);
 };
 
+spinnerHandler = function(action) {
+  if (action === "create") {
+    console.log("disabling button; adding spinner");
+
+    const queryButton = document.getElementById("queryButton");
+    queryButton.setAttribute("disabled", true);
+
+    const spinner = document.createElement("span");
+    spinner.className = "spinner-border spinner-border-sm ml-2";
+    spinner.setAttribute("role", "status");
+    spinner.setAttribute("aria-hidden", "true");
+    spinner.id = "querySpinner";
+
+    queryButton.textContent = "Searching..";
+    queryButton.appendChild(spinner);
+  } else if (action === "destroy") {
+    const queryButton = document.getElementById("queryButton");
+    queryButton.textContent = "Submit Query";
+    queryButton.removeAttribute("disabled");
+  }
+};
+
+resultsTextHandler = function(results) {
+  const resultsDiv = document.getElementById("text-results");
+  resultsDiv.innerHTML = "";
+  const textResults = document.createElement("p");
+  textResults.appendChild(
+    document.createTextNode(
+      "Query finished!  " + results["results"].length + " results"
+    )
+  );
+  resultsDiv.append(textResults);
+};
+
 query = function() {
   let nodesArray = getNodes();
   let edgesArray = getEdges(nodesArray);
@@ -102,6 +136,7 @@ query = function() {
       query_options: getAlgoritmParameters()
     }
   };
+  spinnerHandler("create");
   fetch("api/v1/query", {
     method: "POST",
     headers: {
@@ -111,8 +146,8 @@ query = function() {
   })
     .then(response => response.json())
     .then(data => {
-      console.log("Success:", data);
       currentResults = data;
+      resultsTextHandler(currentResults);
       visSetup();
       let graphData = {
         nodes: getUniqueNodes(currentResults),
@@ -120,8 +155,17 @@ query = function() {
       };
       render(graphData);
       resultsToTable(data.results);
+      spinnerHandler("destroy");
     })
-    .catch(error => console.warn(error));
+    .catch(error => {
+      console.warn(error);
+      const resultsDiv = document.getElementById("text-results");
+      resultsDiv.innerHTML = ""
+      const resultsText = document.createElement("p")
+      resultsText.appendChild(document.createTextNode("query error!"))
+      resultsDiv.appendChild(resultsText)
+      spinnerHandler("destroy");
+    });
 };
 
 //
@@ -195,7 +239,7 @@ add_node_selector = function() {
   newSelect.setAttribute("onchange", "updateCuriePlaceholder(this);");
   let firstChoice = document.createElement("option");
   firstChoice.setAttribute("value", 0);
-  firstChoice.appendChild(document.createTextNode("Select a node type"));
+  firstChoice.appendChild(document.createTextNode("Any"));
   newSelect.appendChild(firstChoice);
   newCardBody.appendChild(newSelect);
   //now get the other select menu and iterate through its node types
@@ -446,12 +490,12 @@ const createAttributeHeaderRows = function(
   const elementTypesRow = table.insertRow();
   elementTypesRow.setAttribute("class", row_class);
   let cellClass, cellText;
-  for (i = 0; i < queryLength ; i++) {
+  for (i = 0; i < queryLength; i++) {
     cellClass = {};
     cellText = element.result_graph.nodes[i].type[0];
     createRowCell(elementTypesRow, "Type", cellClass);
     createRowCell(elementTypesRow, cellText, cellClass);
-    if (i !== (queryLength - 1)) {
+    if (i !== queryLength - 1) {
       cellClass = { class: row_class + "-edge" };
       cellText = element.result_graph.edges[i].type;
       createRowCell(elementTypesRow, "Type", cellClass);
