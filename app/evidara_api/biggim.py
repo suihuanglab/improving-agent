@@ -6,7 +6,7 @@ import time
 from contextlib import closing
 
 import requests
-from fuzzywuzzy.process import extractOne
+from rapidfuzz.process import extractOne
 from werkzeug.utils import cached_property
 
 from evidara_api.models.edge_attribute import EdgeAttribute

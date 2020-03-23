@@ -2,11 +2,10 @@ connexion >= 2.5.0; python_version>="3.6"
 connexion >= 2.3.0; python_version=="3.5"
 connexion >= 2.3.0; python_version=="3.4"
 connexion == 2.4.0; python_version<="2.7"
-fuzzywuzzy == 0.18
+rapidfuzz == 0.2.1
 neo4j == 1.7.0
 numpy == 1.18.1
 python_dateutil >= 2.6.0
-python-Levenshtein == 0.12
 requests == 2.23.0
 setuptools >= 21.0.0
 swagger-ui-bundle >= 0.0.2

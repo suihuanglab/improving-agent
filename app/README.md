@@ -9,7 +9,7 @@ This API uses the Python [Connexion](https://github.com/zalando/connexion) libra
 Python 3.7+
 neo4j 1.7.0+
 numpy 1.18+
-fuzzywuzzy 0.18+
+rapidfuzz 0.2.1+
 requests 2.23+
 
 ## Data Requirements
