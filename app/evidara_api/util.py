@@ -7,6 +7,7 @@ import typing
 from evidara_api import typing_utils
 from evidara_api.config import LOG_LOCATION
 
+
 def _deserialize(data, klass):
     """Deserializes dict, list, str into an object.
 
@@ -145,7 +146,9 @@ def _deserialize_dict(data, boxed_type):
     """
     return {k: _deserialize(v, boxed_type) for k, v in six.iteritems(data)}
 
+
 formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
+
 
 def get_evidara_logger(mod_name, log_path=LOG_LOCATION):
     """Returns a logging.Logger object configured except for a 
@@ -158,6 +161,7 @@ def get_evidara_logger(mod_name, log_path=LOG_LOCATION):
     if log_path:
         logger.addHandler(create_file_handler(log_path))
     return logger
+
 
 def create_file_handler(log_path):
     """Returns a logging.FileHandler object where the log file will be
