@@ -476,9 +476,9 @@ const createAttributeHeaderRows = function(
 ) {
   const attributeHeaderRow = table.insertRow();
   attributeHeaderRow.setAttribute("class", row_class);
-  for (i = 1; i <= queryLength + 1; i++) {
+  for (i = 0; i <= queryLength + 1; i++) {
     let cellClass;
-    if (i % 2 == 0) {
+    if (i % 2 == 1) {
       // insert an edge column if even
       cellClass = { class: row_class + "-edge" + " cell-sub-head" };
     } else {
