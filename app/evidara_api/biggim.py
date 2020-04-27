@@ -231,11 +231,10 @@ class BigGimRequester:
                         elif f"{edge.target_id}-{edge.source_id}" in bg_results:
                             key = f"{edge.target_id}-{edge.source_id}"
                         else:
-                            continue                        
+                            continue
                         for k, v in bg_results[key].items():
                             if k not in uninteresting_keys:
-                                edge.edge_attributes.append(EdgeAttribute(
-                                        type=k, value=v
-                                    )
+                                edge.edge_attributes.append(
+                                    EdgeAttribute(type=k, value=v)
                                 )
         return results
