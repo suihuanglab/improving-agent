@@ -1,7 +1,7 @@
-"""This module provides resources to query the RENCI node-normalization 
+"""This module provides resources to query the RENCI node-normalization
 API to retrieve equivalent identifiers (CURIEs) for nodes encountered
 in ARS queries and KP responses"""
-from typing import List, Dict
+from typing import List
 
 import requests
 
@@ -23,7 +23,7 @@ class NodeNormalization():
         pass
 
     def get_normalized_nodes(self, nodes: List[str]):
-        """Returns 'normalized' nodes from the node-normalization 
+        """Returns 'normalized' nodes from the node-normalization
         endpoint for every node in `nodes`
         """
         payload = [(NODE_NORMALIZATION_CURIE_IDENTIFER, node) for node in nodes]
@@ -37,10 +37,10 @@ class NodeNormalization():
                 f"Node normalization query failed with {response.status_code}"
                 f" and {response.text}"
             )
-            return # make this an exception going forward
-        
+            return  # make this an exception going forward
+
         normalized_nodes = response.json()
         failed_nodes = [key for key, value in normalized_nodes.items() if value is None]
         logger.warning(f"Failed to retrieve normalized nodes for {failed_nodes}")
 
-        return normalized_nodes 
+        return normalized_nodes
