@@ -37,10 +37,10 @@ class BigGimRequester:
         if tissue not in self.available_tissue_studies:
             r = requests.get(f"http://biggim.ncats.io/api/metadata/tissue/{tissue}")
             self.available_tissue_studies[tissue] = r.json()["substudies"]
+        
         # unpack potential tissues, returning those from GIANT and GTEx
         return [
-            column["name"]
-            for column in [
+            column["name"] for column in [
                 col
                 for study in self.available_tissue_studies[tissue]
                 for col in study["columns"]
@@ -65,12 +65,16 @@ class BigGimRequester:
         -------
         """
         if len(genes) < 2:
-            # log error that we choose not to handle single gene queries
-            # because we don't want to deal with that many results
+            # we don't want to deal with that many results
+            logger.warning("Too few genes to query BigGIM, exiting without annotation")
             return []
+        
+        logger.info(f"Querying BigGIM for {len(genes)} genes and {len(tissues)} tissues.")
+        
         columns = []
         for tissue in tissues:
             columns.extend(self.get_available_tissue_studies(tissue))
+        
         # set up search strings
         search_columns = ",".join(set(columns))
         search_genes = ",".join(set([str(gene) for gene in genes]))
@@ -83,9 +87,11 @@ class BigGimRequester:
                 "columns": search_columns,
             },
         )
+
         if r.status_code != 200:
-            # log something bad
+            logger.warning(f"Querying BigGIM failed with {r.status_code} and {r.text}")
             return []
+        
         request_id = r.json()["request_id"]
         results_ready = False
         while not results_ready:
@@ -96,17 +102,21 @@ class BigGimRequester:
             if results_r.json()["status"] == "complete":
                 results_ready = True
             elif results_r.json()["status"] == "error":
-                # log something bad
+                logger.warning(f"BigGIM failed with {r.text}")
                 return []
         # the below should be refactored into its own function.. could
         # be useful to serialize remote csvs easily
-        # set up a dict result holder
+
+        # set up dict for results and fetch csv from BigGIM
         biggim_results = {}
         result_url = results_r.json()["request_uri"][0]
+
+        # get the header row
         with closing(requests.get(result_url, stream=True)) as r:
             reader = csv.reader(codecs.iterdecode(r.iter_lines(), "utf-8"))
             header_row = next(reader)
-        # now open a dict reader for free dict construction
+        
+        # iterate through the results
         with closing(requests.get(result_url, stream=True)) as r:
             reader = csv.DictReader(
                 codecs.iterdecode(r.iter_lines(), "utf-8"), fieldnames=header_row
@@ -208,16 +218,24 @@ class BigGimRequester:
             return results
         bg_nodes, bg_edges = self.check_query_graph(query_order)
         if len(bg_nodes) and disease:
+            logger.info("Query graph appropriate for BigGIM annotation")
+            
             # iterate through results to extract gene ids
             genes_to_search = [
                 result.knowledge_map["nodes"][qnode.node_id]
                 for qnode in bg_nodes
                 for result in results
             ]
+            
+            # query BigGIM
             bg_results = self.search_biggim_disease(session, genes_to_search, disease)
             if not len(bg_results):
+                logger.info("No results returned from BigGIM")
                 return results
-            # iterate one last time through results to update
+            
+            # TODO: put this in its own function
+            # annotate results
+            logger.info(f"Found {len(results)} BigGIM results; annotating edges.")
             uninteresting_keys = set(["GPID", "Gene1", "Gene2"])
             for result in results:
                 edges_to_update = [
