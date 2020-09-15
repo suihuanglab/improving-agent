@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+  <meta charset="utf-8" />
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1, shrink-to-fit=no"
+  />
+  <meta name="description" content="" />
+  <meta name="author" content="" />
+  <head>
+    <!-- bootstrap -->
+    <link
+      rel="stylesheet"
+      href="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/css/bootstrap.min.css"
+      integrity="sha384-Vkoo8x4CGsO3+Hhxv8T/Q5PaXtkKtu6ug5TOeNV6gBiFeWPGFN9MuhOf23Q9Ifjh"
+      crossorigin="anonymous"
+    />
+    <!-- evidara -->
+    <link rel="stylesheet" href="../static/evidara.css" />
+    <script src="../static/evidara.js"></script>
+  </head>
+  <body>
+    <div
+      class="modal fade"
+      id="instructions"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="Instructions"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="exampleModalLabel">
+              imProving Agent instructions
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="container-fluid">
+              <div class="row">
+                <div class="col-7">
+                  <p>
+                    Use the boxes below to configure your query to imProving Agent. For
+                    each node you'd like to search, choose a Biolink node type
+                    from the drop down menu. If you'd like, you can then specify
+                    a CURIE to search for a specific entity. The suggested CURIE
+                    format is populated in the search box once you choose a node
+                    type. If you input a CURIE, you must choose the correct
+                    corresponding node type. If you leave the CURIE box blank,
+                    then imProving Agent will only search for the given node type with
+                    no further restriction. To search for any type of node,
+                    select "Any" from the dropdown menu. Use the "+" box to add
+                    more nodes to your query.
+                  </p>
+                  <p>
+                    To utilize the improving algorithms, choose from the
+                    checkboxes to configure your query accordingly. PSEV Context
+                    term will give an EHR-derived weight to every node in the
+                    graph that has at least one edge. Cohort for observational
+                    evidence will favor edges that have been demonstrated in
+                    actual multi-omic cohort studies.
+                  </p>
+                </div>
+                <div class="col-5 text-center">
+                  <img
+                    src="../static/query-box.png"
+                    class="align-self-center"
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div
+      class="modal fade"
+      id="curieInstructions"
+      tabindex="-1"
+      role="dialog"
+      aria-labelledby="curieInstructions"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="curieInstructionsTitle">
+              imProving Agent suggested CURIEs
+            </h5>
+            <button
+              type="button"
+              class="close"
+              data-dismiss="modal"
+              aria-label="Close"
+            >
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="container-fluid">
+              <div class="row">
+                <div class="col-12">
+                  <p>Suggested CURIE formats are as follows:</p>
+                  <table
+                    id="suggestedCuries"
+                    class="table table-bordered table-sm"
+                  >
+                    <tr>
+                      <th>Node Type</th>
+                      <th>Suggested CURIE Format</th>
+                    </tr>
+                    <tr>
+                      <td>Gene</td>
+                      <td>ENTREZ:59272</td>
+                    </tr>
+                    <tr>
+                      <td>BiologicalProcess</td>
+                      <td>GO:0045833</td>
+                    </tr>
+                    <tr>
+                      <td>MolecularActivity</td>
+                      <td>GO:0003884</td>
+                    </tr>
+                    <tr>
+                      <td>ChemicalSubstance</td>
+                      <td>DB08991 or CHEMBL113</td>
+                    </tr>
+                    <tr>
+                      <td>CellularComponent</td>
+                      <td>GO:0005759</td>
+                    </tr>
+                    <tr>
+                      <td>Pathway</td>
+                      <td>PC7_2621</td>
+                    </tr>
+                    <tr>
+                      <td>Disease</td>
+                      <td>DOID:4606</td>
+                    </tr>
+                    <tr>
+                      <td>GrossAnatomicalStructure</td>
+                      <td>UBERON:0002352</td>
+                    </tr>
+                    <tr>
+                      <td>Protein</td>
+                      <td>UNIPROT:A0A023HHK9</td>
+                    </tr>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button
+              type="button"
+              class="btn btn-secondary"
+              data-dismiss="modal"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+      <div class="container">
+        <a class="navbar-brand" href="#">imProving Agent</a>
+        <button
+          class="navbar-toggler"
+          type="button"
+          data-toggle="collapse"
+          data-target="#navbarResponsive"
+          aria-controls="navbarResponsive"
+          aria-expanded="false"
+          aria-label="Toggle navigation"
+        >
+          <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="navbarResponsive">
+          <ul class="navbar-nav ml-auto">
+            <li class="nav-item active">
+              <a class="nav-link" href="#"
+                >Home
+                <span class="sr-only">(current)</span>
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="./api/v1/ui">API Definition</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="https://github.com/suihuanglab/improving-agent"
+                >GitHub</a
+              >
+            </li>
+          </ul>
+        </div>
+      </div>
+    </nav>
+    <div class="container py-4" id="main-content">
+      <header class="evidara-welcome col-12 mt-5 mb-3">
+        <div class="container">
+          <div class="row justify-content-center">
+            <div class="col-lg-8 col-md-8" id="evidara-intro">
+              <div>
+                <h3>Welcome to imProving Agent</h3>
+                <p>
+                  imProving Agent is the (im)proving Autonomous Relay Agent that uses
+                  node weightings in the
+                  <a href="https://spoke.ucsf.edu/"
+                    >Scalable Precision Medicine Knowledge Engine</a
+                  >
+                  that were derived from EHR disease cohorts and edges derived
+                  from multi-omic empirical studies to rank and prune knowledge
+                  graphs from Translator Knowledge Providers.
+                </p>
+              </div>
+            </div>
+            <div
+              class="col-lg-3 col-md-3 justify-content-center"
+              id="right-header-col"
+            >
+              <img src="../static/evidara.png" class="logo" />
+            </div>
+          </div>
+        </div>
+      </header>
+      <div class="row row-centered justify-content-center mb-4">
+        <div class="col-12">
+          <hr />
+        </div>
+        <div class="col-12 justify-content-center text-center">
+          <button
+            type="button"
+            class="btn btn-primary px-4 mx-4"
+            data-toggle="modal"
+            data-target="#instructions"
+          >
+            Click for Instructions
+          </button>
+          <button
+            type="button"
+            class="btn btn-primary px-4 mx-4"
+            data-toggle="modal"
+            data-target="#curieInstructions"
+          >
+            Suggested CURIE Formats
+          </button>
+        </div>
+      </div>
+      <!-- query parameterization -->
+      <div class="row justify-content-center" id="query-parameters">
+        <div
+          class="query-parameter-card col-lg-3 col-md-12 col-sm-12"
+          id="query-start"
+        >
+          <div class="card h-100">
+            <a href="#"></a>
+            <div class="card-body">
+              <h5 class="card-title text-center">
+                <a>Query <span class="red-emphasis">start</span></a>
+              </h5>
+              <h6>Search CURIE</h6>
+              <input
+                id="start-node-curie"
+                class="node-curie"
+                placeholder="e.g.ENTREZ:59272"
+              />
+              <select
+                id="start-node-type"
+                class="node-type-selector"
+                onchange="updateCuriePlaceholder(this);"
+              >
+                <option value="0" disabled selected hidden
+                  >Select a node type</option
+                >
+                {% for node_type in node_types %}
+                <option value="{{ node_type }}">{{ node_type }}</option>
+                {% endfor %}
+                <option value="0">Any</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="add-card col-lg-1 col-md-12 col-sm-12 mx-3" id="node-adder">
+          <div class="add-card-button">
+            <button
+              class="btn btn-outline-secondary"
+              onclick="add_node_selector()"
+            >
+              +
+            </button>
+          </div>
+        </div>
+        <div class="query-parameter-card col-lg-3 col-md-12 col-sm-12">
+          <div class="card h-100">
+            <a href="#"></a>
+            <div class="card-body">
+              <h5 class="card-title text-center">
+                <a>Query <span class="red-emphasis">end</span></a>
+              </h5>
+              <h6>Search CURIE</h6>
+              <input
+                id="end-node-curie"
+                class="node-curie"
+                placeholder="e.g. ENTREZ:59272"
+              />
+              <select
+                id="end-node"
+                class="node-type-selector"
+                onchange="updateCuriePlaceholder(this);"
+              >
+                <option value="0" disabled selected hidden
+                  >Select a node type</option
+                >
+                {% for node_type in node_types %}
+                <option value="{{ node_type }}">{{ node_type }}</option>
+                {% endfor %}
+                <option value="0">Any</option>
+              </select>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row mt-4">
+        <div class="col-lg-6 offset-lg-2 col-md-8">
+          <h5>Knowledge graph (im)proving algorithm</h5>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6 offset-lg-2 col-md-8">
+          <div class="row improving-parameters my-2 py-2">
+            <div class="col-lg-5 col-md-5 col-sm-6">
+              <label for="psev">
+                <input type="checkbox" id="psev" name="algo1" value="psev" />
+                PSEV Context Term</label
+              >
+            </div>
+            <div class="col-lg-5 col-md-5 col-sm-6">
+              <select id="psev-term">
+                <option value="DOID:9351">Diabetes mellitus</option>
+                <option value="DOID:9970">Obesity</option>
+                <option value="DOID:10763">Hypertension</option>
+                <option value="DOID:14330">Parkinson's Disease</option>
+                <option value="DOID:3393">Coronary Artery Disease</option>
+                <option value="DOID:2377">Multiple sclerosis</option>
+                <option value="DOID:7148">Rheumatoid arthritis</option>
+                <option value="DOID:3083"
+                  >Chronic Obstructive Pulmonary Disease (COPD)</option
+                >
+                <option value="DOID:0060224">Atrial Fibrillation</option>
+                <option value="DOID:2800">Idiopathic Pulmonary Disease</option>
+                <option value="DOID:9617">Albuminuria</option>
+              </select>
+            </div>
+          </div>
+          <div class="row improving-parameters my-2 py-2">
+            <div class="col-lg-5 col-md-6 col-sm-12 col-xs-12">
+              <label for="evidentiary" class="long-label"
+                ><input
+                  type="checkbox"
+                  id="evidentiary"
+                  name="algo2"
+                  value="evidentiary"
+                  class="long-input"
+                /><span>
+                  Cohort for Observational Association Evidence
+                </span></label
+              >
+            </div>
+            <div class="col-lg-7 col-md-4 col-sm-12 algo-selector">
+              <div class="row">
+                <div class="col">
+                  <label for="auto-find" class="long-label"
+                    ><input
+                      id="auto-find"
+                      name="evidence-algorithm"
+                      type="radio"
+                      value="auto-find"
+                    />
+                    Add in automatically
+                  </label>
+                </div>
+              </div>
+
+              <div class="row">
+                <div class="col-7">
+                  <label for="cohort-find" class="long-label"
+                    ><input
+                      id="cohort-find"
+                      name="evidence-algorithm"
+                      type="radio"
+                      value="select-cohort"
+                    />
+                    Find in cohort:
+                  </label>
+                </div>
+                <div class="col-4">
+                  <select id="cohort">
+                    <option value="p100">P100</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div
+          class="col-lg-2 improving-parameters justify-content-center align-items-end py-3"
+          style="display: flex"
+        >
+          <button id="queryButton" class="btn btn-primary" onclick="query()">
+            Submit Query
+          </button>
+        </div>
+      </div>
+      <div class="row justify-content-center text-center">
+        <div class="col-lg-3 offset-lg-6" id="text-results"></div>
+      </div>
+    </div>
+    <!-- bootstrap dependencies-->
+    <script
+      src="https://code.jquery.com/jquery-3.4.1.slim.min.js"
+      integrity="sha384-J6qa4849blE2+poT4WnyKhv5vZF5SrPo0iEjwBvKU7imGFAV0wwj1yYfoRSJoZ+n"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js"
+      integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo"
+      crossorigin="anonymous"
+    ></script>
+    <script
+      src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.min.js"
+      integrity="sha384-wfSDF2E50Y2D1uUdj0O3uMBJnjuUD4Ih7YwaYd1iqfktj0Uod8GCExl3Og8ifwB6"
+      crossorigin="anonymous"
+    ></script>
+
+    <!-- d3-graph related js -->
+    <script src="https://d3js.org/d3.v4.min.js"></script>
+    <script src="../static/evidara-graph.js"></script>
+  </body>
+</html>

@@ -1,7 +1,9 @@
 *.code-workspace
 *.vscode*
 *.bak
+.env
 .DS_Store*
+app/data
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
