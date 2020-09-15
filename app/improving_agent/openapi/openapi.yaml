@@ -10,6 +10,9 @@ info:
     url: "http://www.apache.org/licenses/LICENSE-2.0.html"
   termsOfService:
     https://github.com/suihuanglab/improving-agent
+servers:
+  - url: https://evidara.healthdatascience.com/api/v1
+    description: imProving Agent
 externalDocs:
   description: >-
     Documentation for the NCATS Biomedical Translator Reasoners web services
