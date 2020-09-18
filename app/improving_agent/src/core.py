@@ -5,7 +5,7 @@
 # locals
 from improving_agent.__main__ import get_db
 from improving_agent.src.basic_query import BasicQuery
-from improving_agent.src.biggim import BigGimRequester
+from improving_agent.src.kps.biggim import BigGimRequester
 from improving_agent import models
 from improving_agent.util import get_evidara_logger
 
