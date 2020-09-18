@@ -64,17 +64,17 @@ setup = function() {
 };
 
 const spokeColors = {
-  Gene: "#80B1D3",
-  BiologicalProcess: "#FDB462",
-  MolecularActivity: "#FFEE6F",
-  ChemicalSubstance: "#BC80BD",
-  CellularComponent: "#FFFFB3",
-  Pathway: "#BEBADA",
-  Disease: "#FB8072",
-  Symptom: "#FCCDE5",
-  GrossAnatomicalStructure: "#B3DE69",
-  Protein: "#8DD3C7",
-  Thing: "#C7B78F"
+  "biolink:Gene": "#80B1D3",
+  "biolink:BiologicalProcess": "#FDB462",
+  "biolink:MolecularActivity": "#FFEE6F",
+  "biolink:ChemicalSubstance": "#BC80BD",
+  "biolink:CellularComponent": "#FFFFB3",
+  "biolink:Pathway": "#BEBADA",
+  "biolink:Disease": "#FB8072",
+  "biolink:PhenotypicFeature": "#FCCDE5",
+  "biolink:GrossAnatomicalStructure": "#B3DE69",
+  "biolink:Protein": "#8DD3C7",
+  "biolink:NamedThing": "#C7B78F"
 };
 
 var simulation = d3

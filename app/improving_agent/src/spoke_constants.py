@@ -1,35 +1,35 @@
 BIOLINK_SPOKE_NODE_MAPPINGS = {
     # commented lines exist in SPOKE, but don't have exact equivalents in Biolink
-    "Gene": ("Gene", "split"),
+    "biolink:Gene": ("Gene", "split"),
     #:"SideEffect",
-    "BiologicalProcess": ("BiologicalProcess", "no-split"),
-    "MolecularActivity": ("MolecularFunction", "no-split"),
-    "ChemicalSubstance": ("Compound", "no-split"),
-    "CellularComponent": ("CellularComponent", "no-split"),
+    "biolink:BiologicalProcess": ("BiologicalProcess", "no-split"),
+    "biolink:MolecularActivity": ("MolecularFunction", "no-split"),
+    "biolink:ChemicalSubstance": ("Compound", "no-split"),
+    "biolink:CellularComponent": ("CellularComponent", "no-split"),
     #:"PharmacologicClass",
-    "Pathway": ("Pathway", "no-split"),
-    "Disease": ("Disease", "no-split"),
+    "biolink:Pathway": ("Pathway", "no-split"),
+    "biolink:Disease": ("Disease", "no-split"),
     # "":"Symptom",
-    "GrossAnatomicalStructure": ("Anatomy", "no-split"),
-    "Protein": ("Protein", "split"),
+    "biolink:GrossAnatomicalStructure": ("Anatomy", "no-split"),
+    "biolink:Protein": ("Protein", "split"),
     # "": "Food"
     "0": (False, "no-split"),  # for "any node type"
 }
 
 SPOKE_BIOLINK_NODE_MAPPINGS = {
-    "Gene": "Gene",
-    "SideEffect": "Thing",
-    "BiologicalProcess": "BiologicalProcess",
-    "MolecularFunction": "MolecularActivity",
-    "Compound": "ChemicalSubstance",
-    "CellularComponent": "CellularComponent",
-    "PharmacologicClass": "Thing",
-    "Pathway": "Pathway",
-    "Disease": "Disease",
-    "Symptom": "Thing",
-    "Anatomy": "GrossAnatomicalStructure",
-    "Protein": "Protein",
-    "Food": "Thing",
+    "Gene": "biolink:Gene",
+    "SideEffect": "biolink:NamedThing",
+    "BiologicalProcess": "biolink:BiologicalProcess",
+    "MolecularFunction": "biolink:MolecularActivity",
+    "Compound": "biolink:ChemicalSubstance",
+    "CellularComponent": "biolink:CellularComponent",
+    "PharmacologicClass": "biolink:NamedThing",
+    "Pathway": "biolink:Pathway",
+    "Disease": "biolink:Disease",
+    "Symptom": "biolink:PhenotypicFeature",
+    "Anatomy": "biolink:GrossAnatomicalStructure",
+    "Protein": "biolink:Protein",
+    "Food": "biolink:NamedThing",
 }
 
 # BIOLINK_SPOKE_EDGE_MAPPINGS = {

@@ -183,7 +183,7 @@ class BigGimRequester:
         first = iter(query_order)
         second = iter(query_order[2::2])
         for triplet in zip(first, first, second):
-            if triplet[0].type == "Gene" and triplet[2].type == "Gene":
+            if triplet[0].type == "biolink:Gene" and triplet[2].type == "biolink:Gene":
                 gene_nodes_to_search.append(triplet[0])
                 gene_nodes_to_search.append(triplet[2])
                 gene_gene_edges.append(triplet[1])

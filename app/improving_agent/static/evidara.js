@@ -2,15 +2,15 @@
 // Globals
 //
 const curieExamples = {
-  Gene: "e.g. ENTREZ:59272",
-  BiologicalProcess: "e.g. GO:0045833",
-  MolecularActivity: "e.g. GO:0003884",
-  ChemicalSubstance: "e.g. DB08991",
-  CellularComponent: "e.g. GO:0005759",
-  Pathway: "e.g. PC7_2621",
-  Disease: "e.g. DOID:4606",
-  GrossAnatomicalStructure: "e.g. UBERON:0002352",
-  Protein: "e.g. UNIPROT:A0A023HHK9",
+  "biolink:Gene": "e.g. ENTREZ:59272",
+  "biolink:BiologicalProcess": "e.g. GO:0045833",
+  "biolink:MolecularActivity": "e.g. GO:0003884",
+  "biolink:ChemicalSubstance": "e.g. DB08991",
+  "biolink:CellularComponent": "e.g. GO:0005759",
+  "biolink:Pathway": "e.g. PC7_2621",
+  "biolink:Disease": "e.g. DOID:4606",
+  "biolink:GrossAnatomicalStructure": "e.g. UBERON:0002352",
+  "biolink:Protein": "e.g. UNIPROT:A0A023HHK9",
   "0": "CURIEs ignored"
 };
 
