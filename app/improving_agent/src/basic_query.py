@@ -1,6 +1,5 @@
 # std library
-
-from collections import Counter
+from collections import Counter, namedtuple
 
 # third party
 import neo4j
@@ -8,6 +7,8 @@ import neo4j
 # locals
 from improving_agent import models
 from improving_agent.src.exceptions import MissingComponentError
+from improving_agent.src.kps.biggim import BigGimClient
+from improving_agent.src.kps.cohd import CohdClient
 from improving_agent.src.psev import get_psev_weights
 from improving_agent.src.spoke_constants import (
     BIOLINK_SPOKE_NODE_MAPPINGS,
@@ -18,19 +19,48 @@ from improving_agent.src.spoke_constants import (
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)
+ExtractedResult = namedtuple('ExtractedResult', ['nodes', 'edges', 'knowledge_map'])
+
+IMPROVING_AGENT_SCORING_FUCNTIONS = {}
+
+
+def register_scoring_function(attribute_name):
+    def wrapper(f):
+        IMPROVING_AGENT_SCORING_FUCNTIONS[attribute_name] = f
+        return f
+    return wrapper
+
+
+@register_scoring_function('cohd_paired_concept_freq_concept_frequency')
+def get_cohd_edge_score(edge_attribute):
+    return edge_attribute.value * 1000
+
+
+@register_scoring_function('has_feature_importance')
+def get_multiomics_model_score(edge_attribute):
+    return edge_attribute.value
+
+
+@register_scoring_function('psev_weight')
+def get_psev_score(node_attribute):
+    return node_attribute.value * 10000
+
+
+@register_scoring_function('spearman_correlation')
+def get_evidential_score(edge_attribute):
+    return edge_attribute.value
 
 
 class BasicQuery:
     """A class for making basic queries to the SPOKE neo4j database"""
 
-    def __init__(self, nodes, edges, query_options, n_results, caches=None):
+    def __init__(self, nodes, edges, query_options, n_results):
         """Instantiates a new BasicQuery object"""
         self.nodes = nodes
         self.edges = edges
-        self.query_options = query_options
+        self.query_options = query_options if query_options else {}
         self.n_results = n_results if n_results else 200
         self.result_nodes = {}
-        self.caches = caches
 
         # check for query_options and replace saves lots of `if`ing later
         if not query_options:
@@ -191,9 +221,7 @@ class BasicQuery:
                 else:
                     raise MissingComponentError(f"Missing one of {next_node}")
 
-    def make_evidara_result(
-        self, n4j_result, record_number, query_names, query_mapping
-    ):
+    def extract_results(self, n4j_result, query_names, query_mapping):
         """Constructs a reasoner-standard result from the result of a neo4j
         query
 
@@ -227,17 +255,9 @@ class BasicQuery:
                 knowledge_map["edges"][query_mapping["edges"][name]] = result_edges[
                     -1
                 ].id
-        # score result, instiate result objects and return
-        scores = self.get_result_score(result_nodes, result_edges)
-        result_knowledge_graph = models.KnowledgeGraph(result_nodes, result_edges)
-        return models.Result(
-            id=record_number,
-            result_graph=result_knowledge_graph,
-            knowledge_map=knowledge_map,
-            **scores,
-        )
+        return ExtractedResult(result_nodes, result_edges, knowledge_map)
 
-    def get_result_score(self, nodes, edges):
+    def score_result(self, nodes, edges):
         """Returns a score based on psev weights, cohort edge correlations,
             both, or none
 
@@ -262,59 +282,32 @@ class BasicQuery:
             length, but dividing the sum score by `n` may make sense in the
             future
         """
-        scores = {}
-        if ("psev-context" in self.query_options) & (
-            "evidentiary" in self.query_options
-        ):
-            scores["score"] = (
-                sum(
-                    [
-                        node.node_attributes[-1].value
-                        for node in nodes
-                        if node.node_attributes[-1].type == "psev_weight"
-                    ]
-                )
-                * 10000
-            )
-            scores["score"] += (
-                sum(
-                    [
-                        edge.edge_attributes[-1].value
-                        for edge in edges
-                        if edge.edge_attributes[-1].type == "spearman_correlation"
-                    ]
-                )
-                / 20
-            )
-            scores["score_name"] = "evidara-combined-psev-cohort"
-        elif "psev-context" in self.query_options:
-            scores["score"] = (
-                sum(
-                    [
-                        node.node_attributes[-1].value
-                        for node in nodes
-                        if node.node_attributes[-1].type == "psev_weight"
-                    ]
-                )
-                * 10000
-            )
-            scores["score_name"] = "evidara-psev"
-        elif "evidentiary" in self.query_options:
-            scores["score"] = (
-                sum(
-                    [
-                        edge.edge_attributes[-1].value
-                        for edge in edges
-                        if edge.edge_attributes[-1].type == "spearman_correlation"
-                    ]
-                )
-                / 20
-            )
-            scores["score_name"] = "evidara-cohort"
-        else:
-            scores["score"] = 0
-            scores["score_name"] = None
+        score = 0
+        for node in nodes:
+            for node_attribute in node.node_attributes:
+                score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(node_attribute.type)
+                if score_func:
+                    score += score_func(node_attribute)
+
+        for edge in edges:
+            for edge_attribute in edge.edge_attributes:
+                score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(edge_attribute.type)
+                if score_func:
+                    score += score_func(edge_attribute)
+
+        scores = {'score': score, 'score_name': 'improving agent score'}
         return scores
+
+    def get_scored_result(self, record_number, result):
+        # score result, instantiate result objects and return
+        scores = self.score_result(result.nodes, result.edges)
+        result_knowledge_graph = models.KnowledgeGraph(result.nodes, result.edges)
+        return models.Result(
+            id=record_number,
+            result_graph=result_knowledge_graph,
+            knowledge_map=result.knowledge_map,
+            **scores,
+        )
 
     def make_result_node(self, n4j_object):
         """Instantiates a reasoner-standard Node to return as part of a
@@ -379,6 +372,7 @@ class BasicQuery:
             # TODO next two lines look up and include database per standards
             # TODO get reliable edge identifiers for `id` attribute
             # TODO get correlations score
+            id=n4j_object.id,
             source_id=n4j_object.start_node["identifier"],
             target_id=n4j_object.end_node["identifier"],
             type=n4j_object.type,
@@ -421,23 +415,32 @@ class BasicQuery:
         # possibly enforce a max on the query too
         r = session.run(f"match p = {query_string} " f"return * limit {self.n_results}")
 
-        # create the results, then sort on score
-        results = sorted(
-            [
-                self.make_evidara_result(record, i, query_names, query_mapping)
-                for i, record in enumerate(r.records())
-            ],
+        # create the results
+        results = [
+            self.extract_results(record, query_names, query_mapping)
+            for record in r.records()
+        ]
+
+        if 'query_kps' in self.query_options:
+            # check COHD for annotations
+            cohd = CohdClient()
+            results = cohd.query_for_associations_in_cohd(self.query_order, results)
+
+        sorted_scored_results = sorted(
+            [self.get_scored_result(i, result) for i, result in enumerate(results)],
             key=lambda x: x.score,
             reverse=True,
-        )[:20]
+        )
 
-        # check BigGIM, currently here, but a better `process_results`
-        # function should be created in the future
-        if "big_gim" in self.caches:
-            results = self.caches["big_gim"].annotate_edges_with_biggim(
+        if 'query_kps' in self.query_options:
+            # check BigGIM, currently here, but a better `process_results`
+            # function should be created in the future
+            big_gim = BigGimClient()
+            results = big_gim.annotate_edges_with_biggim(
                 session,
                 self.query_order,
-                results,
+                sorted_scored_results,
                 self.query_options.get("psev-context"),
             )
-        return {"results": results}
+
+        return {"results": sorted_scored_results}

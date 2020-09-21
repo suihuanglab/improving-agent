@@ -1,39 +1,42 @@
 BIOLINK_SPOKE_NODE_MAPPINGS = {
     # commented lines exist in SPOKE, but don't have exact equivalents in Biolink
     "biolink:Gene": ("Gene", "split"),
-    #:"SideEffect",
+    # : "SideEffect",
+    "biolink:Cell": "CellType",
     "biolink:BiologicalProcess": ("BiologicalProcess", "no-split"),
     "biolink:MolecularActivity": ("MolecularFunction", "no-split"),
     "biolink:ChemicalSubstance": ("Compound", "no-split"),
     "biolink:CellularComponent": ("CellularComponent", "no-split"),
-    #:"PharmacologicClass",
+    # :"PharmacologicClass",
     "biolink:Pathway": ("Pathway", "no-split"),
     "biolink:Disease": ("Disease", "no-split"),
-    # "":"Symptom",
+    "biolink:PhenotypicFeature": ("Symptom", "split"),
     "biolink:GrossAnatomicalStructure": ("Anatomy", "no-split"),
     "biolink:Protein": ("Protein", "split"),
-    # "": "Food"
+    # : "Food"
     "0": (False, "no-split"),  # for "any node type"
 }
 
 SPOKE_BIOLINK_NODE_MAPPINGS = {
-    "Gene": "biolink:Gene",
-    "SideEffect": "biolink:NamedThing",
-    "BiologicalProcess": "biolink:BiologicalProcess",
-    "MolecularFunction": "biolink:MolecularActivity",
-    "Compound": "biolink:ChemicalSubstance",
-    "CellularComponent": "biolink:CellularComponent",
-    "PharmacologicClass": "biolink:NamedThing",
-    "Pathway": "biolink:Pathway",
-    "Disease": "biolink:Disease",
-    "Symptom": "biolink:PhenotypicFeature",
     "Anatomy": "biolink:GrossAnatomicalStructure",
-    "Protein": "biolink:Protein",
+    "AnatomyCellType": "biolink:NamedThing",
+    "BiologicalProcess": "biolink:BiologicalProcess",
+    "CellType": "biolink:Cell",
+    "CellularComponent": "biolink:CellularComponent",
+    "Compound": "biolink:ChemicalSubstance",
+    "Disease": "biolink:Disease",
     "Food": "biolink:NamedThing",
+    "Gene": "biolink:Gene",
+    "MolecularFunction": "biolink:MolecularActivity",
+    "Nutrient": "biolink:NamedThing",
+    "Pathway": "biolink:Pathway",
+    "PharmacologicClass": "biolink:NamedThing",
+    "Protein": "biolink:Protein",
+    "SideEffect": "biolink:NamedThing",
+    "Symptom": "biolink:PhenotypicFeature",
 }
 
-# BIOLINK_SPOKE_EDGE_MAPPINGS = {
-# not worth it right now
+# TODO: BIOLINK_SPOKE_EDGE_MAPPINGS = {
 #     : "EXPRESSES_AeG",
 #     : "PARTICIPATES_GpMF",
 #     : "INTERACTS_GiG",

@@ -7,28 +7,23 @@ from contextlib import closing
 
 import requests
 from fuzzywuzzy.process import extractOne
-from werkzeug.utils import cached_property
 
 from improving_agent.models.edge_attribute import EdgeAttribute
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)
 
+BIG_GIM_TISSUES = requests.get("http://biggim.ncats.io/api/metadata/tissue").json()["tissues"]
 
-class BigGimRequester:
+
+class BigGimClient:
     """A class for querying NCATS Translator BigGIM. This is held in a
     class for the ability to cache the result of tissues and potentially
     other metadata"""
 
     def __init__(self):
-        """Instantiates a BigGimRequester object"""
+        """Instantiates a BigGimClient object"""
         self.available_tissue_studies = {}
-
-    @cached_property
-    def available_tissues(self):
-        """Returns tissues currently available in biggim"""
-        r = requests.get("http://biggim.ncats.io/api/metadata/tissue")
-        return r.json()["tissues"]
 
     def get_available_tissue_studies(self, tissue):
         """Returns columns related to tissue that can be searched in
@@ -157,7 +152,7 @@ class BigGimRequester:
             record["a"].get("name") for record in tissue_results.records()
         ]
         search_tissues = [
-            extractOne(tissue, self.available_tissues)[0]
+            extractOne(tissue, BIG_GIM_TISSUES)[0]
             for tissue in top_spoke_tissues
         ]
         return self.search_biggim_tissues(genes, search_tissues)

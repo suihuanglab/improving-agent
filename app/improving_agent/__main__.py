@@ -61,7 +61,7 @@ def close_db(error):
 
 
 def main():
-    logger.info("starting evidara!")
+    logger.info("starting improving agent!")
     app.run(port=8080)
 
 

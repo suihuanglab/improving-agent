@@ -5,16 +5,10 @@
 # locals
 from improving_agent.__main__ import get_db
 from improving_agent.src.basic_query import BasicQuery
-from improving_agent.src.kps.biggim import BigGimRequester
 from improving_agent import models
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)
-
-# set up globabl caches for knowledge providers
-# depending on the future of translator, this might be better handled
-# by an explicit caching system like `requests-cache`
-kp_caches = {"big_gim": BigGimRequester()}
 
 
 def process_query(query):
@@ -47,7 +41,7 @@ def process_query(query):
 
     # TODO: logic for different query types
     querier = BasicQuery(
-        nodes, edges, query_message.query_options, query_message.n_results, kp_caches
+        nodes, edges, query_message.query_options, query_message.n_results
     )
     # now query SPOKE
     with get_db() as session:
