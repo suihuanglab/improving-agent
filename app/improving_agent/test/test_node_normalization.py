@@ -1,11 +1,11 @@
-"""This module provides tests for the NodeNormalization client"""
+"""This module provides tests for the SriNodeNormalizer client"""
 import logging
 from unittest.mock import Mock, patch
 
 import pytest
 from requests.exceptions import HTTPError
 
-from improving_agent.node_normalization import NodeNormalization
+from improving_agent.src.node_normalization.sri_node_normalizer import SriNodeNormalizer
 from improving_agent.test.test_config import RUN_REAL_API
 from improving_agent.test.client_test_data.node_normalization_data import (
     CHEMICAL_SUBSTANCE_CURIE_PREFIXES,
@@ -15,10 +15,10 @@ from improving_agent.test.client_test_data.node_normalization_data import (
 )
 
 
-class TestNodeNormalization():
+class TestSriNodeNormalizer():
     @classmethod
     def setup_class(cls):
-        cls.mock_requests_get_patch = patch('improving_agent.node_normalization.requests.get')
+        cls.mock_requests_get_patch = patch('improving_agent.src.node_normalization.sri_node_normalizer.requests.get')
         cls.mock_get = cls.mock_requests_get_patch.start()
 
     @classmethod
@@ -43,21 +43,21 @@ class TestNodeNormalization():
         self._setup_mock_response(json_data=NORMALIZED_WATER_NODE)
 
         # instantiate class and query
-        nn = NodeNormalization()
+        nn = SriNodeNormalizer()
         water_curie = "MESH:D014867"
         response = nn.get_normalized_nodes([water_curie])
 
         assert water_curie == list(response.keys())[0]
 
-    def test_get_normalized_nodes_404(self, caplog):
+    def test_get_normalized_nodes_bad_request(self, caplog):
         caplog.set_level(logging.INFO)
 
         self._setup_mock_response(
             status_code=404, text="Bad request, good test", raise_for_status=HTTPError("Curie not found")
         )
 
-        nn = NodeNormalization()
-        bad_curie = "MESH:D00000"
+        nn = SriNodeNormalizer()
+        bad_curie = "[MESH:D00000"
         with pytest.raises(HTTPError):
             nn.get_normalized_nodes([bad_curie])
 
@@ -70,7 +70,7 @@ class TestNodeNormalization():
         self._setup_mock_response(json_data=mock_json_data)
 
         two_curies = set(["MESH:D014867", "NCIT:C00000"])
-        nn = NodeNormalization()
+        nn = SriNodeNormalizer()
         response = nn.get_normalized_nodes(two_curies)
 
         assert two_curies == set(response.keys())
@@ -81,7 +81,7 @@ class TestNodeNormalization():
     def test_get_curie_prefixes(self):
         self._setup_mock_response(json_data=CHEMICAL_SUBSTANCE_CURIE_PREFIXES)
 
-        nn = NodeNormalization()
+        nn = SriNodeNormalizer()
         response = nn.get_curie_prefixes(["chemical_substance"])
 
         assert list(response.keys())[0] == "chemical_substance"
@@ -91,7 +91,7 @@ class TestNodeNormalization():
         mock_json_data = {**CHEMICAL_SUBSTANCE_CURIE_PREFIXES, **GENE_CURIE_PREFIXES}
         self._setup_mock_response(json_data=mock_json_data)
 
-        nn = NodeNormalization()
+        nn = SriNodeNormalizer()
         response = nn.get_curie_prefixes(["chemical_substance", "gene"])
         assert set(response.keys()) == set(["chemical_substance", "gene"])
 
@@ -101,7 +101,7 @@ class TestNodeNormalization():
             status_code=404, text=f"No curies discovered for {bad_semantic_type}", raise_for_status=HTTPError()
         )
         with pytest.raises(HTTPError):
-            nn = NodeNormalization()
+            nn = SriNodeNormalizer()
             nn.get_curie_prefixes([bad_semantic_type])
 
         assert "Failed to get curie prefixes with 404" in caplog.text
@@ -115,7 +115,7 @@ class TestNodeNormalization():
         )
 
         with pytest.raises(HTTPError):
-            nn = NodeNormalization()
+            nn = SriNodeNormalizer()
             nn.get_curie_prefixes(semantic_types)
 
         assert "Failed to get curie prefixes with 404" in caplog.text
@@ -124,7 +124,7 @@ class TestNodeNormalization():
     def test_get_semantic_types(self):
         self._setup_mock_response(json_data=SEMANTIC_TYPES)
 
-        nn = NodeNormalization()
+        nn = SriNodeNormalizer()
         response = nn.semantic_types
         # not a great test, just checking that we're still returning a
         # list of str
@@ -135,7 +135,7 @@ class TestNodeNormalization():
         self._setup_mock_response(
             status_code=404, text="Failed to get semantic types", raise_for_status=HTTPError()
         )
-        nn = NodeNormalization()
+        nn = SriNodeNormalizer()
         with pytest.raises(HTTPError):
             response = nn.semantic_types() # NOQA
 
@@ -143,23 +143,23 @@ class TestNodeNormalization():
 
 
 @pytest.mark.skipif(not RUN_REAL_API, reason="Not testing against real API")
-class TestNodeNormalizationReal():
+class TestSriNodeNormalizerReal():
     """Tests against the real API - check that the expected structure of
     the real API response has not changed"""
 
     def test_get_normalized_nodes_real(self):
-        nn = NodeNormalization()
+        nn = SriNodeNormalizer()
         response = nn.get_normalized_nodes(["MESH:D014867"])
         assert set(response["MESH:D014867"].keys()) == set(["id", "equivalent_identifiers", "type"])
 
     def test_get_curie_prefixes(self):
-        nn = NodeNormalization()
+        nn = SriNodeNormalizer()
         response = nn.get_curie_prefixes(["chemical_substance"])
         assert set(response.keys()) == set(["chemical_substance"])
         assert set(response["chemical_substance"].keys()) == set(["curie_prefix"])
 
     def test_semantic_types(self):
-        nn = NodeNormalization()
+        nn = SriNodeNormalizer()
         response = nn.semantic_types
         # unpacking happens inside the function, so the call should fail
         # if the structure of the data changes

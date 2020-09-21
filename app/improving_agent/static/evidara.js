@@ -65,6 +65,9 @@ getAlgoritmParameters = function() {
       }
     });
   }
+  if (document.getElementById("query_kps").checked) {
+    extraParams["query_kps"] = document.getElementById("query_kps").value;
+  }
   return extraParams;
 };
 
@@ -92,8 +95,6 @@ getUniqueNodes = function(queryResults) {
 
 spinnerHandler = function(action) {
   if (action === "create") {
-    console.log("disabling button; adding spinner");
-
     const queryButton = document.getElementById("queryButton");
     queryButton.setAttribute("disabled", true);
 
@@ -148,12 +149,12 @@ query = function() {
     .then(data => {
       currentResults = data;
       resultsTextHandler(currentResults);
-      visSetup();
-      let graphData = {
-        nodes: getUniqueNodes(currentResults),
-        edges: getUniqueEdges(currentResults)
-      };
-      render(graphData);
+      // visSetup();
+      // let graphData = {
+      //   nodes: getUniqueNodes(currentResults),
+      //   edges: getUniqueEdges(currentResults)
+      // };
+      // render(graphData);
       resultsToTable(data.results);
       spinnerHandler("destroy");
     })
