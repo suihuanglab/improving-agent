@@ -9,6 +9,7 @@ from improving_agent import models
 from improving_agent.src.exceptions import MissingComponentError
 from improving_agent.src.kps.biggim import BigGimClient
 from improving_agent.src.kps.cohd import CohdClient
+from improving_agent.src.kps.text_miner import TextMinerClient
 from improving_agent.src.psev import get_psev_weights
 from improving_agent.src.spoke_constants import (
     BIOLINK_SPOKE_NODE_MAPPINGS,
@@ -48,6 +49,11 @@ def get_psev_score(node_attribute):
 
 @register_scoring_function('spearman_correlation')
 def get_evidential_score(edge_attribute):
+    return edge_attribute.value
+
+
+@register_scoring_function('text_miner_max_ngd_for_sub_obj')
+def get_text_miner_score(edge_attribute):
     return edge_attribute.value
 
 
@@ -424,7 +430,9 @@ class BasicQuery:
         if 'query_kps' in self.query_options:
             # check COHD for annotations
             cohd = CohdClient()
+            tm = TextMinerClient()
             results = cohd.query_for_associations_in_cohd(self.query_order, results)
+            results = tm.query_for_associations_in_text_miner(self.query_order, results)
 
         sorted_scored_results = sorted(
             [self.get_scored_result(i, result) for i, result in enumerate(results)],

@@ -10,5 +10,8 @@ PSEV_MATRIX = "./data/psev"
 PSEV_NODE_MAP = "./data/psev_node_map"
 PSEV_DISEASE_MAP = "./data/psev_ncats_disease_map"
 
+# text miner cached node map
+TEXT_MINER_NODE_MAP = "./data/text_miner_node_map"
+
 # logging
 LOG_LOCATION = "./logs/improving_agent.log"
