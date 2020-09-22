@@ -68,6 +68,8 @@ class BasicQuery:
         self.n_results = n_results if n_results else 200
         self.result_nodes = {}
 
+        self.n_results = self.n_results if self.n_results < 200 else 200
+
         # check for query_options and replace saves lots of `if`ing later
         if not query_options:
             self.query_options = {}
