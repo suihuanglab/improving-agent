@@ -112,13 +112,14 @@ class CohdClient():
             return
 
         if concept is None:
+            normalized_curie = curie
             if not re.match(COHD_ACCEPTABLE_CURIE_PREFIXES_REGEX, curie):
-                curie = self._query_sri_for_acceptable_curie(curie)
-                if not curie:
+                normalized_curie = self._query_sri_for_acceptable_curie(normalized_curie)
+                if not normalized_curie:
                     return
 
-            logger.info(f"Querying COHD for recommended OMOP id for {curie}")
-            result = self._query_xref_to_omop(curie, recommend=True)
+            logger.info(f"Querying COHD for recommended OMOP id for {normalized_curie}")
+            result = self._query_xref_to_omop(normalized_curie, recommend=True)
 
             concept = result.get('omop_standard_concept_id', 'no xref')
             self.cache['curie_omop_map'][curie] = concept
@@ -273,6 +274,9 @@ class CohdClient():
 
         annotated_results = []
         for result in results:
-            annotated_results.append(self._make_result_with_cohd_annotation(result, triplets_to_search))
+            try:
+                annotated_results.append(self._make_result_with_cohd_annotation(result, triplets_to_search))
+            except requests.exceptions.HTTPError as e:
+                logger.warning(f"Failed to get results from COHD with {e}")
 
         return annotated_results
