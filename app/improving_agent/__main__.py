@@ -50,7 +50,6 @@ app.add_api(
 def index():
     """returns welcome home page"""
     node_types = list(BIOLINK_SPOKE_NODE_MAPPINGS.keys())
-    node_types.remove("0")
     return render_template("home.html", node_types=node_types)
 
 

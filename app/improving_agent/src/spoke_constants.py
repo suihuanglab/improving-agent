@@ -1,20 +1,24 @@
 BIOLINK_SPOKE_NODE_MAPPINGS = {
-    # commented lines exist in SPOKE, but don't have exact equivalents in Biolink
-    "biolink:Gene": ("Gene", "split"),
-    # : "SideEffect",
-    "biolink:Cell": "CellType",
+    # biolink type: (spoke node type, curie handling op)
     "biolink:BiologicalProcess": ("BiologicalProcess", "no-split"),
-    "biolink:MolecularActivity": ("MolecularFunction", "no-split"),
-    "biolink:ChemicalSubstance": ("Compound", "no-split"),
+    "biolink:Cell": ("CellType", "no-split"),
     "biolink:CellularComponent": ("CellularComponent", "no-split"),
-    # :"PharmacologicClass",
-    "biolink:Pathway": ("Pathway", "no-split"),
+    "biolink:ChemicalSubstance": ("Compound", "no-split"),
     "biolink:Disease": ("Disease", "no-split"),
-    "biolink:PhenotypicFeature": ("Symptom", "split"),
+    "biolink:Gene": ("Gene", "split"),
     "biolink:GrossAnatomicalStructure": ("Anatomy", "no-split"),
+    "biolink:MolecularActivity": ("MolecularFunction", "no-split"),
+    "biolink:Pathway": ("Pathway", "no-split"),
+    "biolink:PhenotypicFeature": ("Symptom", "split"),
     "biolink:Protein": ("Protein", "split"),
+
+    # for "any node type"
+    "biolink:NamedThing": (False, "no-split"),
+
+    # missing
+    # : "PharmacologicClass",
+    # : "SideEffect",
     # : "Food"
-    "0": (False, "no-split"),  # for "any node type"
 }
 
 SPOKE_BIOLINK_NODE_MAPPINGS = {
