@@ -2,16 +2,18 @@
 // Globals
 //
 const curieExamples = {
-  "biolink:Gene": "e.g. ENTREZ:59272",
   "biolink:BiologicalProcess": "e.g. GO:0045833",
-  "biolink:MolecularActivity": "e.g. GO:0003884",
-  "biolink:ChemicalSubstance": "e.g. DB08991",
+  "biolink:Cell":"e.g. CL:1001033",
   "biolink:CellularComponent": "e.g. GO:0005759",
-  "biolink:Pathway": "e.g. PC7_2621",
+  "biolink:ChemicalSubstance": "e.g. DB08991",
   "biolink:Disease": "e.g. DOID:4606",
+  "biolink:Gene": "e.g. NCBIGene:59272",
   "biolink:GrossAnatomicalStructure": "e.g. UBERON:0002352",
+  "biolink:MolecularActivity": "e.g. GO:0003884",
+  "biolink:Pathway": "e.g. PC7_2621",
+  "biolink:PhenotypicFeature": "e.g D000078064",
   "biolink:Protein": "e.g. UNIPROT:A0A023HHK9",
-  "0": "CURIEs ignored"
+  "biolink:NamedThing": "CURIEs ignored"
 };
 
 var currentResults = Object(); //hold query results later
@@ -179,7 +181,7 @@ getNodeTypes = function() {
   let nodeTypes = [];
   let startNodeSelector = document.getElementById("start-node-type");
   for (x = 0; x < startNodeSelector.length; x++) {
-    if (startNodeSelector[x].value !== "0") {
+    if (startNodeSelector[x].innerHTML !== "Select a node type") {
       nodeTypes.push(startNodeSelector[x].value);
     }
   }
@@ -232,16 +234,12 @@ add_node_selector = function() {
     .appendChild(document.createTextNode("Search CURIE"));
   let newInput = document.createElement("input");
   newInput.className = "node-curie";
-  newInput.setAttribute("placeholder", "e.g. ENTREZ:59272");
+  newInput.setAttribute("placeholder", "e.g. GO:0045833");
   newCardBody.appendChild(newInput);
   // select menu
   let newSelect = document.createElement("select");
   newSelect.className = "node-type-selector";
   newSelect.setAttribute("onchange", "updateCuriePlaceholder(this);");
-  let firstChoice = document.createElement("option");
-  firstChoice.setAttribute("value", 0);
-  firstChoice.appendChild(document.createTextNode("Any"));
-  newSelect.appendChild(firstChoice);
   newCardBody.appendChild(newSelect);
   //now get the other select menu and iterate through its node types
   getNodeTypes().forEach(nodeType => {

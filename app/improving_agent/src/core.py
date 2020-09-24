@@ -2,6 +2,8 @@
 # These functions should contain the core logic of evidARA-SPOKE
 # interactions
 
+from werkzeug.exceptions import BadRequest
+
 # locals
 from improving_agent.__main__ import get_db
 from improving_agent.src.basic_query import BasicQuery
@@ -45,7 +47,11 @@ def process_query(query):
     )
     # now query SPOKE
     with get_db() as session:
-        res = querier.linear_spoke_query(session)
-        if isinstance(res, str):
-            return res, 400
+        try:
+            res = querier.linear_spoke_query(session)
+            if isinstance(res, str):
+                return res, 400
+        except BadRequest as e:
+            return str(e), 400
+
     return res

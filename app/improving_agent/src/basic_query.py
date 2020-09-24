@@ -1,5 +1,6 @@
 # std library
 from collections import Counter, namedtuple
+from werkzeug.exceptions import BadRequest
 
 # third party
 import neo4j
@@ -79,7 +80,7 @@ class BasicQuery:
         # get nodes as dict for later lookup by identifier
         self.query_nodes_map = self.make_node_dictionary(self.nodes)
         if isinstance(self.query_nodes_map, str):
-            raise NotImplementedError(f"{self.query_nodes_map}")
+            raise BadRequest(f"{self.query_nodes_map}")
         self.make_query_order()
 
     def get_n4j_param_str(self, parameters):
@@ -124,15 +125,21 @@ class BasicQuery:
 
         # start constructing the string, then add optional features
         node_repr = f"({name}"
+
         # add a label if we can, then add parameters if possible
-        spoke_label_id_config = BIOLINK_SPOKE_NODE_MAPPINGS[query_part.type]
-        if spoke_label_id_config[0]:
-            spoke_label = spoke_label_id_config[0]
+        spoke_mapping = BIOLINK_SPOKE_NODE_MAPPINGS.get(query_part.type)
+        if spoke_mapping is None:
+            if query_part.type:
+                raise BadRequest(f"Bad Request: {query_part.type} not supported")
+            spoke_mapping = (False, "no split")
+
+        if spoke_mapping[0]:
+            spoke_label = spoke_mapping[0]
             node_repr += f":{spoke_label} "
             # add a parameter if we can
             if query_part.curie:
                 # handle different configs for different node identifiers
-                if spoke_label_id_config[1] == "split":
+                if spoke_mapping[1] == "split":
                     curie = query_part.curie.split(":")
                     if len(curie) > 2:
                         curie = ":".join(curie[1:])
@@ -176,7 +183,7 @@ class BasicQuery:
                     node.spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[node.type][0]
                 except KeyError:
                     errors.append(
-                        f"Node type {node.type} not (yet) supported by evidARA"
+                        f"Node type {node.type} not (yet) supported by imProving Agent"
                     )
             node_d[node.node_id] = node
         if len(errors):
@@ -429,8 +436,9 @@ class BasicQuery:
             for record in r.records()
         ]
 
-        if 'query_kps' in self.query_options:
-            # check COHD for annotations
+        query_kps = self.query_options.get('query_kps')
+        if query_kps == 'true':
+            # check KPs for annotations
             cohd = CohdClient()
             tm = TextMinerClient()
             results = cohd.query_for_associations_in_cohd(self.query_order, results)
@@ -442,9 +450,8 @@ class BasicQuery:
             reverse=True,
         )
 
-        if 'query_kps' in self.query_options:
-            # check BigGIM, currently here, but a better `process_results`
-            # function should be created in the future
+        if query_kps == 'true':
+            # check BigGIM
             big_gim = BigGimClient()
             results = big_gim.annotate_edges_with_biggim(
                 session,
