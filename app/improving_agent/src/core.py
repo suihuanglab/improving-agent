@@ -4,10 +4,9 @@
 
 from werkzeug.exceptions import BadRequest
 
-# locals
 from improving_agent.__main__ import get_db
+from improving_agent.models import Message, QueryGraph, QEdge, QNode, Response
 from improving_agent.src.basic_query import BasicQuery
-from improving_agent import models
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)
@@ -34,24 +33,36 @@ def process_query(query):
         # hopefully these recursively unpack in the future upon creation
         # of the Query object, but if not, we can also consider the
         # .from_dict() method on these objects instead of ** syntax
-        query_message = models.Message(**query.query_message)
-        query_graph = models.QueryGraph(**query_message.query_graph)
-        nodes = [models.QNode(**node) for node in query_graph.nodes]
-        edges = [models.QEdge(**edge) for edge in query_graph.edges]
+        query_message = Message(**query.message)
+        query_graph = QueryGraph(**query_message.query_graph)
+        # TODO: lookup compatible CURIEs here to fail early?
+        qnodes = {}
+        for qnode_id, qnode in query_graph.nodes.items():
+            qnode = QNode(**qnode)
+            setattr(qnode, 'qnode_id', qnode_id)
+            qnodes[qnode_id] = qnode
+
+        qedges = {}
+        for qedge_id, qedge in query_graph.edges.items():
+            qedge = QEdge(**qedge)
+            setattr(qedge, 'qedge_id', qedge_id)
+            qedges[qedge_id] = qedge
+
     except TypeError as e:
         return f"Bad Request with keyword {str(e).split()[-1]}", 400
 
     # TODO: logic for different query types
     querier = BasicQuery(
-        nodes, edges, query_message.query_options, query_message.n_results
+        qnodes, qedges  # query_message.query_options, query_message.n_results TODO: add these back
     )
     # now query SPOKE
     with get_db() as session:
         try:
-            res = querier.linear_spoke_query(session)
-            if isinstance(res, str):
-                return res, 400
+            results, knowledge_graph = querier.linear_spoke_query(session)
+            if isinstance(results, str):
+                return results, 400
         except BadRequest as e:
             return str(e), 400
-
-    return res
+        response_message = Message(results, query_graph, knowledge_graph)
+        response = Response(response_message, 'Success')
+    return response

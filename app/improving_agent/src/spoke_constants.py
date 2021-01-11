@@ -40,7 +40,7 @@ SPOKE_BIOLINK_NODE_MAPPINGS = {
     "Symptom": "biolink:PhenotypicFeature",
 }
 
-# TODO: BIOLINK_SPOKE_EDGE_MAPPINGS = {
+SPOKE_BIOLINK_EDGE_MAPPINGS = {}
 #     : "EXPRESSES_AeG",
 #     : "PARTICIPATES_GpMF",
 #     : "INTERACTS_GiG",
@@ -77,3 +77,5 @@ SPOKE_BIOLINK_NODE_MAPPINGS = {
 #     : "CONTAINS_FcCM",
 #     : "INTERACTS_PiP"
 # }
+
+BIOLINK_SPOKE_EDGE_MAPPINGS = {}
