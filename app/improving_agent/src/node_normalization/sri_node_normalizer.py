@@ -1,7 +1,6 @@
 """This module provides resources to query the RENCI node-normalization
 API to retrieve equivalent identifiers (CURIEs) for nodes encountered
 in ARS queries and KP responses"""
-import re
 from typing import Any, Dict, Iterable, List
 
 import requests
@@ -13,40 +12,15 @@ NODE_NORMALIZATION_BASE_URL = "https://nodenormalization-sri.renci.org"
 NODE_NORMALIZATION_CURIE_IDENTIFER = "curie"
 NODE_NORMALIZATION_CURIE_PREFIXES_ENDPOINT = "get_curie_prefixes"
 NODE_NORMALIZATION_NORMALIZED_NODES_ENDPOINT = "get_normalized_nodes"
+NODE_NORMALIZATION_RESPONSE_VALUE_ID = 'id'
+NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER = 'identifier'
 NODE_NORMALIZATION_SEMANTIC_TYPES_ENDPOINT = "get_semantic_types"
 NODE_NORMALIZATION_SEMANTIC_TYPE_IDENTIFIER = "semantictype"
-
-NODE_NORMALIZATION_CURIE_QUERY_FORMATTERS = {}
 
 logger = get_evidara_logger(__name__)
 
 
-def register_curie_formatter(regex):
-    def wrapper(f):
-        NODE_NORMALIZATION_CURIE_QUERY_FORMATTERS[regex] = f
-        return f
-    return wrapper
-
-
-@register_curie_formatter('^CHEMBL[0-9]+')
-def _format_chembl(curie):
-    return f"CHEMBL.COMPOUND:{curie}"
-
-
-@register_curie_formatter('^DB[0-9]+')
-def _format_drugbank(curie):
-    return f"DRUGBANK:{curie}"
-
-
-def reformat_curie(curie):
-    for k, v in NODE_NORMALIZATION_CURIE_QUERY_FORMATTERS.items():
-        if re.match(k, curie):
-            return v(curie)
-
-    return curie
-
-
-class SriNodeNormalizer():
+class SriNodeNormalizer:
     """Query functionality for RENCI's node-normalization service"""
 
     def __init__(self) -> None:
@@ -54,14 +28,14 @@ class SriNodeNormalizer():
 
     def _check_cache_and_reformat_curies(self, curies):
         cached = {}
-        subset = {}
+        subset = set()
 
         for curie in curies:
             if curie in self.normalized_node_cache:
                 if self.normalized_node_cache[curie] is not None:
                     cached[curie] = self.normalized_node_cache[curie]
                 continue
-            subset[reformat_curie(curie)] = curie
+            subset.add(curie)
 
         return cached, subset
 
@@ -90,8 +64,8 @@ class SriNodeNormalizer():
             f"{NODE_NORMALIZATION_BASE_URL}/{NODE_NORMALIZATION_NORMALIZED_NODES_ENDPOINT}", params=payload
         )
         if response.status_code == 404:
-            logger.warning(f"No results for {list(subset.values())} in SRI node normalizer")
-            for curie in subset.values():
+            logger.warning(f"No results for {list(subset)} in SRI node normalizer")
+            for curie in subset:
                 self.normalized_node_cache[curie] = None
             return cached
 
@@ -100,21 +74,17 @@ class SriNodeNormalizer():
             response.raise_for_status()
 
         normalized_nodes = response.json()
-
-        successful_nodes = {}
         failed_curies = []
 
-        for k, v in normalized_nodes.items():
-            self.normalized_node_cache[subset[k]] = v
-            if v is None:
-                failed_curies.append(subset[k])
-            else:
-                successful_nodes[subset[k]] = v
+        for search_curie, normalized_node in normalized_nodes.items():
+            self.normalized_node_cache[search_curie] = normalized_node
+            if normalized_node is None:
+                failed_curies.append(search_curie)
 
         if failed_curies:
             logger.warning(f"Failed to retrieve normalized nodes for {failed_curies}")
 
-        return {**cached, **successful_nodes}
+        return {**cached, **normalized_nodes}
 
     def get_curie_prefixes(self, semantic_types: Iterable[str]) -> Dict[str, Dict[str, List[Dict[str, int]]]]:
         """Returns mappings of `semantic_types` to counts of CURIE

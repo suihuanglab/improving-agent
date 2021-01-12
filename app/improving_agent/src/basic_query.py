@@ -1,3 +1,12 @@
+# BIG TODOS:
+# Handle inconming identifiers
+# - get identifiers recognizable by SPOKE
+# -- come up with an acceptable list of identifiers for all SPOKE nodes
+# - fail on unrecognized - return 501
+# Other
+# - array properties should be string.. join together?
+# - update yamls with docs/proper servers
+
 from collections import Counter, namedtuple
 
 import neo4j
@@ -9,11 +18,16 @@ from improving_agent.src.improving_agent_constants import ATTRIBUTE_TYPE_PSEV_WE
 from improving_agent.src.kps.biggim import BigGimClient
 from improving_agent.src.kps.cohd import CohdClient
 from improving_agent.src.kps.text_miner import TextMinerClient
+from improving_agent.src.node_normalization import SearchNode
+from improving_agent.src.node_normalization.node_normalization import normalize_spoke_nodes_for_translator
 from improving_agent.src.psev import get_psev_weights
-from improving_agent.src.spoke_constants import (
+from improving_agent.src.spoke_biolink_constants import (
+    BIOLINK_ASSOCIATION_TYPE,
+    BIOLINK_ASSOCIATION_RELATED_TO,
     BIOLINK_SPOKE_NODE_MAPPINGS,
+    RELATIONSHIP_ONTOLOGY_CURIE,
     SPOKE_BIOLINK_NODE_MAPPINGS,
-    SPOKE_BIOLINK_EDGE_MAPPINGS
+    SPOKE_BIOLINK_EDGE_MAPPINGS,
 )
 from improving_agent.util import get_evidara_logger
 
@@ -65,10 +79,12 @@ class BasicQuery:
         self.query_options = query_options
         self.n_results = n_results
 
-        self.knowledge_map = {"edges": {}, "nodes": {}}
-        self.node_identifier_to_knowledge_map = {}
+        self.knowledge_graph = {"edges": {}, "nodes": {}}
         self.knowledge_node_counter = 0
         self.knowledge_edge_counter = 0
+
+        self.nodes_to_normalize = set()
+        self.results = []
 
         self.n_results = self.n_results if self.n_results < 200 else 200
         # TODO: write a message in the response that the max results is 200
@@ -258,14 +274,14 @@ class BasicQuery:
         score = 0
 
         for knode in result.node_bindings.values():
-            node = self.knowledge_map['nodes'][knode.id]
+            node = self.knowledge_graph['nodes'][knode.id]
             for attribute in node.attributes:
                 score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(attribute.type)
                 if score_func:
                     score += score_func(attribute)
 
         for kedge in result.edge_bindings.values():
-            edge = self.knowledge_map['edges'][kedge.id]
+            edge = self.knowledge_graph['edges'][kedge.id]
             for attribute in edge.attributes:
                 score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(attribute.type)
                 if score_func:
@@ -338,12 +354,20 @@ class BasicQuery:
         result_edge (models.Edge): reasoner-standard Edge object for
             inclusion as a part of a KnowledgeGraph result
         """
+        biolink_map_info = SPOKE_BIOLINK_EDGE_MAPPINGS.get(n4j_object.type)
+        if not biolink_map_info:
+            biolink_edge_data = {'predicate': BIOLINK_ASSOCIATION_RELATED_TO}
+        else:
+            biolink_edge_data = {
+                'predicate': biolink_map_info[BIOLINK_ASSOCIATION_TYPE],
+                'relation': biolink_map_info[RELATIONSHIP_ONTOLOGY_CURIE]
+            }
+
         result_edge = models.Edge(
             # TODO get correlations score for P100/cohort data
-            predicate=SPOKE_BIOLINK_EDGE_MAPPINGS.get(n4j_object.type, 'biolink:Association'),
-            relation=n4j_object.type,  # TODO: get the RO CURIE here
-            subject=n4j_object.start_node["identifier"],  # TODO: get the proper CURIE here
+            subject=n4j_object.start_node["identifier"],
             object=n4j_object.end_node["identifier"],
+            **biolink_edge_data
         )
         result_edge.attributes = [
             models.Attribute(type=k, value=v) for k, v in n4j_object.items()
@@ -384,23 +408,39 @@ class BasicQuery:
                 # TODO: spoke_curie needs to be normalized -- do this now or later?
                 # TODO: figure out the best way to do this for querying efficiency
                 spoke_curie = n4j_result[name]['identifier']
-                knode_id = self.node_identifier_to_knowledge_map.get(spoke_curie)
-                if not knode_id:
-                    knode_id = f'kn{self.knowledge_node_counter}'
-                    self.knowledge_node_counter += 1
-                    self.node_identifier_to_knowledge_map[spoke_curie] = knode_id
-
                 result_node = self.make_result_node(n4j_result[name])
-                self.knowledge_map['nodes'][knode_id] = result_node
-                node_bindings[query_mapping['nodes'][name]] = models.NodeBinding(knode_id)
+                self.knowledge_graph['nodes'][spoke_curie] = result_node
+                node_bindings[query_mapping['nodes'][name]] = models.NodeBinding(spoke_curie)
+                search_node = SearchNode(result_node.category[0], spoke_curie)
+                self.nodes_to_normalize.add(search_node)
 
             else:
                 spoke_edge_id = n4j_result[name].id  # TODO: is there a way to make this consistent?
                 edge_bindings[query_mapping['edges'][name]] = models.EdgeBinding(spoke_edge_id)
                 result_edge = self.make_result_edge(n4j_result[name])
-                self.knowledge_map['edges'][spoke_edge_id] = result_edge
+                self.knowledge_graph['edges'][spoke_edge_id] = result_edge
 
         return models.Result(node_bindings, edge_bindings)
+
+    # normalization
+    def normalize(self):
+        # search the node normalizer for nodes collected in result creation
+        node_search_results = normalize_spoke_nodes_for_translator(list(self.nodes_to_normalize))
+        for spoke_curie, normalized_curie in node_search_results.items():
+            self.knowledge_graph['nodes'][normalized_curie] = self.knowledge_graph['nodes'].pop(spoke_curie)
+
+        for edge in self.knowledge_graph['edges'].values():
+            setattr(edge, 'object', node_search_results[edge.object])
+            setattr(edge, 'subject', node_search_results[edge.subject])
+
+        new_results = []
+        for result in self.results:
+            new_node_bindings = {}
+            for qnode, node in result.node_bindings.items():
+                new_node_bindings[qnode] = models.NodeBinding(node_search_results[node.id])
+
+        new_results.append(models.Result(new_node_bindings, result.edge_bindings))
+        self.results = new_results
 
     # Query
     def linear_spoke_query(self, session):
@@ -416,7 +456,7 @@ class BasicQuery:
             fetched from SPOKE and scored
 
         knowledge_graph (KnowledgeGraph): TRAPI KnowledgeGraph object
-            containing all identified nodes and edges in the response        
+            containing all identified nodes and edges in the response
         """
         try:
             self.query_setup()
@@ -440,30 +480,33 @@ class BasicQuery:
         r = session.run(f"match p = {query_string} " f"return * limit {self.n_results}")
 
         # create the results
-        results = [
+        self.results = [
             self.extract_result(record, query_names, query_mapping)
             for record in r.records()
         ]
+
+        # normalize the knowledge_graph and results
+        self.normalize()
 
         query_kps = self.query_options.get('query_kps')
         if query_kps == 'true':
             # check KPs for annotations
             cohd = CohdClient()
             tm = TextMinerClient()
-            results = cohd.query_for_associations_in_cohd(self.query_order, results)
-            results = tm.query_for_associations_in_text_miner(self.query_order, results)
+            self.results = cohd.query_for_associations_in_cohd(self.query_order, self.results)
+            self.results = tm.query_for_associations_in_text_miner(self.query_order, self.results)
 
-        scored_results = self.score_results(results)
+        scored_results = self.score_results(self.results)
         sorted_scored_results = sorted(scored_results, key=lambda x: x.improving_agent_score, reverse=True)
 
         if query_kps == 'true':
             # check BigGIM
             big_gim = BigGimClient()
-            results = big_gim.annotate_edges_with_biggim(
+            self.results = big_gim.annotate_edges_with_biggim(
                 session,
                 self.query_order,
                 sorted_scored_results,
                 self.query_options.get("psev-context"),
             )
 
-        return sorted_scored_results, self.knowledge_map
+        return sorted_scored_results, self.knowledge_graph
