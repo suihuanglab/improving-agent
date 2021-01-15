@@ -12,6 +12,7 @@ NODE_NORMALIZATION_BASE_URL = "https://nodenormalization-sri.renci.org"
 NODE_NORMALIZATION_CURIE_IDENTIFER = "curie"
 NODE_NORMALIZATION_CURIE_PREFIXES_ENDPOINT = "get_curie_prefixes"
 NODE_NORMALIZATION_NORMALIZED_NODES_ENDPOINT = "get_normalized_nodes"
+NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS = 'equivalent_identifiers'
 NODE_NORMALIZATION_RESPONSE_VALUE_ID = 'id'
 NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER = 'identifier'
 NODE_NORMALIZATION_SEMANTIC_TYPES_ENDPOINT = "get_semantic_types"
@@ -67,7 +68,8 @@ class SriNodeNormalizer:
             logger.warning(f"No results for {list(subset)} in SRI node normalizer")
             for curie in subset:
                 self.normalized_node_cache[curie] = None
-            return cached
+            empty_results = {curie: None for curie in subset}
+            return {**empty_results, **cached}
 
         if response.status_code != 200:
             logger.warning(f"Node normalization query failed with {response.status_code} and {response.text}")
@@ -133,3 +135,6 @@ class SriNodeNormalizer:
             response.raise_for_status()
 
         return response.json()["semantic_types"]["types"]
+
+
+SRI_NODE_NORMALIZER = SriNodeNormalizer()
