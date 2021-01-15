@@ -382,8 +382,8 @@ class BasicQuery:
         for result in self.results:
             for qnode, node in result.node_bindings.items():
                 new_node_bindings[qnode] = models.NodeBinding(node_search_results[node.id])
+            new_results.append(models.Result(new_node_bindings, result.edge_bindings))
 
-        new_results.append(models.Result(new_node_bindings, result.edge_bindings))
         self.results = new_results
 
     # Query
@@ -409,10 +409,7 @@ class BasicQuery:
         # query
         logger.info(f'Querying SPOKE with {query_string}')
         r = session.run(f"match p = {query_string} " f"return * limit {self.n_results}")
-        # TODO: check that a record exists
-        # create the results
         self.results = [self.extract_result(record) for record in r.records()]
-
         if not self.results:
             return self.results, self.knowledge_graph
 
