@@ -119,12 +119,15 @@ class BasicQuery:
 
         Returns
         -------
-        node_repr (str): string representation of a query part,
-            e.g. "(c:Compound {chembl_id: 'CHEMBL1234'})"
+        A Cypher string representative of a node or edge
         """
         # not supporting specific edge types until mapped to biolink
         if isinstance(query_part, models.QEdge):
-            return f"[{name}]"
+            edge_repr = f'[{name}'
+            if query_part.spoke_edge_types:
+                edge_repr = f'{edge_repr}:{"|".join(query_part.spoke_edge_types)}'
+            edge_repr += ']'
+            return edge_repr
 
         # start constructing the string, then add optional features
         node_repr = f"({name}"
