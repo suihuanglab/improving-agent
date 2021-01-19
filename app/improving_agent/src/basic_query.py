@@ -119,12 +119,15 @@ class BasicQuery:
 
         Returns
         -------
-        node_repr (str): string representation of a query part,
-            e.g. "(c:Compound {chembl_id: 'CHEMBL1234'})"
+        A Cypher string representative of a node or edge
         """
         # not supporting specific edge types until mapped to biolink
         if isinstance(query_part, models.QEdge):
-            return f"[{name}]"
+            edge_repr = f'[{name}'
+            if query_part.spoke_edge_types:
+                edge_repr = f'{edge_repr}:{"|".join(query_part.spoke_edge_types)}'
+            edge_repr += ']'
+            return edge_repr
 
         # start constructing the string, then add optional features
         node_repr = f"({name}"
@@ -382,8 +385,8 @@ class BasicQuery:
         for result in self.results:
             for qnode, node in result.node_bindings.items():
                 new_node_bindings[qnode] = models.NodeBinding(node_search_results[node.id])
+            new_results.append(models.Result(new_node_bindings, result.edge_bindings))
 
-        new_results.append(models.Result(new_node_bindings, result.edge_bindings))
         self.results = new_results
 
     # Query
@@ -409,10 +412,7 @@ class BasicQuery:
         # query
         logger.info(f'Querying SPOKE with {query_string}')
         r = session.run(f"match p = {query_string} " f"return * limit {self.n_results}")
-        # TODO: check that a record exists
-        # create the results
         self.results = [self.extract_result(record) for record in r.records()]
-
         if not self.results:
             return self.results, self.knowledge_graph
 
