@@ -1,19 +1,19 @@
 openapi: 3.0.1
 info:
   contact:
-    email: edeutsch@systemsbiology.org
-  description: OpenAPI for NCATS Biomedical Translator Reasoners
+    email: brett.smith@isbscience.org
+  description: imProving Agent OpenAPI TRAPI Specification
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
-  termsOfService: INSERT-URL-HERE
-  title: OpenAPI for NCATS Biomedical Translator Reasoners
+  termsOfService: https://spoke.rbvi.ucsf.edu/license.html
+  title: imProving Agent
   version: 1.0.0-beta
 externalDocs:
   description: Documentation for the NCATS Biomedical Translator Reasoners web services
-  url: https://github.com/NCATS-Tangerine/NCATS-ReasonerStdAPI
+  url: https://github.com/NCATSTranslator/ReasonerAPI/
 servers:
-- url: http://0.0.0.0:8080/api/v1/
+- url: https://evidara.healthdatascience.cloud/api/v1/
 tags:
 - description: Get supported relationships by source and target
   externalDocs:
