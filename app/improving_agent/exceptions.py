@@ -1,7 +1,20 @@
+class AmbiguousPredicateMappingError(Exception):
+    """Raise when a specific predicate has been requested, but no
+    specific SPOKE equivalent can be found because the subject or 
+    object `category` is not specified
+
+    This should raise a 400
+    """
+    pass
+
+
 class MissingComponentError(Exception):
     """Raise when a query graph includes a subject-predicate-object 
     relationship that can't be completed given the edges and nodes
-    included in the posted data"""
+    included in the posted data
+
+    This should result in a 400 to the consumer
+    """
 
     pass
 
