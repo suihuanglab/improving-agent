@@ -19,4 +19,4 @@ def query(request_body):  # noqa: E501
     """
     if connexion.request.is_json:
         body = Query(**connexion.request.get_json())  # noqa: E501
-    return core.process_query(body)
+    return core.try_query(body)

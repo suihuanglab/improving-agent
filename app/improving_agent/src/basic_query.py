@@ -10,21 +10,18 @@
 from collections import Counter, namedtuple
 
 import neo4j
-from werkzeug.exceptions import BadRequest
-
 from improving_agent import models  # TODO: replace with direct imports after fixing definitions
-from improving_agent.src.exceptions import MissingComponentError
+from improving_agent.exceptions import MissingComponentError
 from improving_agent.src.improving_agent_constants import ATTRIBUTE_TYPE_PSEV_WEIGHT
 from improving_agent.src.kps.biggim import BigGimClient
 from improving_agent.src.kps.cohd import CohdClient
 from improving_agent.src.kps.text_miner import TextMinerClient
-from improving_agent.src.node_normalization import SearchNode
-from improving_agent.src.node_normalization.node_normalization import normalize_spoke_nodes_for_translator
+from improving_agent.src.normalization import SearchNode
+from improving_agent.src.normalization.node_normalization import normalize_spoke_nodes_for_translator
 from improving_agent.src.psev import get_psev_weights
 from improving_agent.src.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_TYPE,
     BIOLINK_ASSOCIATION_RELATED_TO,
-    BIOLINK_SPOKE_NODE_MAPPINGS,
     RELATIONSHIP_ONTOLOGY_CURIE,
     SPOKE_BIOLINK_NODE_MAPPINGS,
     SPOKE_BIOLINK_EDGE_MAPPINGS,
@@ -122,82 +119,28 @@ class BasicQuery:
 
         Returns
         -------
-        node_repr (str): string representation of a query part,
-            e.g. "(c:Compound {chembl_id: 'CHEMBL1234'})"
+        A Cypher string representative of a node or edge
         """
         # not supporting specific edge types until mapped to biolink
         if isinstance(query_part, models.QEdge):
-            return f"[{name}]"
+            edge_repr = f'[{name}'
+            if query_part.spoke_edge_types:
+                edge_repr = f'{edge_repr}:{"|".join(query_part.spoke_edge_types)}'
+            edge_repr += ']'
+            return edge_repr
 
         # start constructing the string, then add optional features
         node_repr = f"({name}"
-
+        # TODO: refactor below to make where clauses
         # add a label if we can, then add parameters if possible
-        spoke_mapping = BIOLINK_SPOKE_NODE_MAPPINGS.get(query_part.category[0])  # TODO: Allow multiple labels
-        if spoke_mapping is None:
-            if query_part.category:  # allow climbing of hierarchy?
-                raise BadRequest(f"Bad Request: {query_part.category} not supported")
-            spoke_mapping = ("", "no split")
-
-        if spoke_mapping[0]:
-            spoke_label = spoke_mapping[0]
-            node_repr += f":{spoke_label} "
+        if query_part.spoke_label:
+            node_repr += f":{query_part.spoke_label} "
             # add a parameter if we can
-            if query_part.id:
-                # handle different configs for different node identifiers
-                # TODO: better CURIE handling and lookup
-                if spoke_mapping[1] == "split":
-                    curie = query_part.id.split(":")
-                    if len(curie) > 2:
-                        curie = ":".join(curie[1:])
-                    else:
-                        curie = curie[1]
-                else:
-                    curie = query_part.id
-                try:
-                    # TODO make sure no CURIES are floats
-                    # currently none in spoke, but this could easily happen
-                    curie = int(curie)
-                except ValueError:
-                    pass
-                parameter_string = self.get_n4j_param_str({"identifier": curie})
+            if query_part.spoke_identifier:
+                parameter_string = self.get_n4j_param_str({"identifier": query_part.spoke_identifier})
                 node_repr += f"{parameter_string}"
         node_repr += ")"
         return node_repr
-
-    # query construction
-    def validate_qnodes(self):
-        """Validates that SPOKE contains requested node types
-
-        Parameters
-        ----------
-        nodes (list of QNode): array of nodes from a QueryGraph
-
-        Returns
-        -------
-        node_map (dict of str): dictionary of str -> QNode
-        """
-        # here we just validate that we can actually look up nodes of a
-        # requested type
-        node_map = {}  # TODO: don't rebuild dict, just return it
-        errors = []
-        for qnode_id, qnode in self.qnodes.items():
-            setattr(qnode, 'qnode_id', qnode_id)
-            if qnode.category:
-                try:
-                    qnode.spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[qnode.category[0]]
-                except KeyError:
-                    errors.append(
-                        f"Node type {qnode.category} not (yet) supported by imProving Agent"
-                    )
-            # TODO: determine strategy for incoming node CURIE lookup here
-            node_map[qnode_id] = qnode  # TODO: don't rebuild dict, just return it
-
-        if len(errors):
-            error_string = ", ".join(errors)
-            raise BadRequest(error_string)
-
-        return node_map
 
     def make_query_order(self):
         """Constructs a list of QNodes and QEdges in the order in which
@@ -213,10 +156,10 @@ class BasicQuery:
             terminal_nodes = [node for node in node_count if node_count[node] == 1]
 
         else:  # one-hop query
-            terminal_nodes = list(self.query_nodes_map.keys())
+            terminal_nodes = list(self.qnodes.keys())
 
         # start query order with either of the terminal nodes
-        self.query_order = [self.query_nodes_map[terminal_nodes[0]]]
+        self.query_order = [self.qnodes[terminal_nodes[0]]]
         target_query_length = len(self.qnodes) + len(self.qedges)
 
         # create copy of edges that can be destroyed
@@ -243,14 +186,24 @@ class BasicQuery:
                 ]
                 next_node.remove(self.query_order[-2].qnode_id)
                 if len(next_node) == 1:
-                    self.query_order.append(self.query_nodes_map[next_node[0]])
+                    self.query_order.append(self.qnodes[next_node[0]])
                 else:
                     raise MissingComponentError(f"Missing one of {next_node}")
 
-    def query_setup(self):
-        # get nodes as dict for later lookup by identifier
-        self.query_nodes_map = self.validate_qnodes()
-        self.make_query_order()
+    def make_cypher_query_string(self):
+        # spoke diameter is <7 but consider enforcing max query length anyway
+        # TODO: get rid of this naming and use the now-available `qedge_id` or `qnode_id` attr
+        self.query_names = "abcdefghijklmn"[: len(self.query_order)]
+        query_parts = []
+        self.query_mapping = {"edges": {}, "nodes": {}}
+        for query_part, name in zip(self.query_order, self.query_names):
+            query_parts.append(self.get_n4j_str_repr(query_part, name))
+            if isinstance(query_part, models.QNode):
+                self.query_mapping["nodes"][name] = query_part.qnode_id
+            else:
+                self.query_mapping["edges"][name] = query_part.qedge_id
+        query_string = "-".join(query_parts)
+        return query_string
 
     # Result handling
     def score_result(self, result):
@@ -374,7 +327,7 @@ class BasicQuery:
         ]
         return result_edge
 
-    def extract_result(self, n4j_result, query_names, query_mapping):
+    def extract_result(self, n4j_result):
         """Constructs a reasoner-standard result from the result of a neo4j
         query
 
@@ -383,10 +336,6 @@ class BasicQuery:
         n4j_result (neo4j.BoltStatementResult): result of a SPOKE Cypher
             query
         record_number (int): record index
-        query_names (str): string of letters corresponding to aliases in
-            `n4j_result`
-        query_mapping (dict): str -> str mappings of QNode/QEdge ids to
-            query names
 
         Returns
         -------
@@ -403,20 +352,18 @@ class BasicQuery:
         # are now Result.node_bindings and Result.edge_bindings and they
         # are now simply lists of Node and EdgeBindings to the single
         # KnowledgeGraph for the entire set of results
-        for name in query_names:
+        for name in self.query_names:
             if isinstance(n4j_result[name], neo4j.types.graph.Node):
-                # TODO: spoke_curie needs to be normalized -- do this now or later?
-                # TODO: figure out the best way to do this for querying efficiency
                 spoke_curie = n4j_result[name]['identifier']
                 result_node = self.make_result_node(n4j_result[name])
                 self.knowledge_graph['nodes'][spoke_curie] = result_node
-                node_bindings[query_mapping['nodes'][name]] = models.NodeBinding(spoke_curie)
+                node_bindings[self.query_mapping['nodes'][name]] = models.NodeBinding(spoke_curie)
                 search_node = SearchNode(result_node.category[0], spoke_curie)
                 self.nodes_to_normalize.add(search_node)
 
             else:
                 spoke_edge_id = n4j_result[name].id  # TODO: is there a way to make this consistent?
-                edge_bindings[query_mapping['edges'][name]] = models.EdgeBinding(spoke_edge_id)
+                edge_bindings[self.query_mapping['edges'][name]] = models.EdgeBinding(spoke_edge_id)
                 result_edge = self.make_result_edge(n4j_result[name])
                 self.knowledge_graph['edges'][spoke_edge_id] = result_edge
 
@@ -434,12 +381,12 @@ class BasicQuery:
             setattr(edge, 'subject', node_search_results[edge.subject])
 
         new_results = []
+        new_node_bindings = {}
         for result in self.results:
-            new_node_bindings = {}
             for qnode, node in result.node_bindings.items():
                 new_node_bindings[qnode] = models.NodeBinding(node_search_results[node.id])
+            new_results.append(models.Result(new_node_bindings, result.edge_bindings))
 
-        new_results.append(models.Result(new_node_bindings, result.edge_bindings))
         self.results = new_results
 
     # Query
@@ -458,36 +405,21 @@ class BasicQuery:
         knowledge_graph (KnowledgeGraph): TRAPI KnowledgeGraph object
             containing all identified nodes and edges in the response
         """
-        try:
-            self.query_setup()
-        except (NotImplementedError, MissingComponentError) as e:  # TODO: just raise these and handle outside
-            return e
+        # query setup
+        self.make_query_order()
+        query_string = self.make_cypher_query_string()
 
-        # spoke diameter is <7 but consider enforcing max query length anyway
-        # TODO: get rid of this naming and use the now-available `qedge_id` or `qnode_id` attr
-        query_names = "abcdefghijklmn"[: len(self.query_order)]
-        query_parts = []
-        query_mapping = {"edges": {}, "nodes": {}}
-        for query_part, name in zip(self.query_order, query_names):
-            query_parts.append(self.get_n4j_str_repr(query_part, name))
-            if isinstance(query_part, models.QNode):
-                query_mapping["nodes"][name] = query_part.qnode_id
-            else:
-                query_mapping["edges"][name] = query_part.qedge_id
-        query_string = "-".join(query_parts)
-        # set max results b/c reasoner-standard default is None
-        # possibly enforce a max on the query too
+        # query
+        logger.info(f'Querying SPOKE with {query_string}')
         r = session.run(f"match p = {query_string} " f"return * limit {self.n_results}")
-
-        # create the results
-        self.results = [
-            self.extract_result(record, query_names, query_mapping)
-            for record in r.records()
-        ]
+        self.results = [self.extract_result(record) for record in r.records()]
+        if not self.results:
+            return self.results, self.knowledge_graph
 
         # normalize the knowledge_graph and results
         self.normalize()
 
+        # query kps
         query_kps = self.query_options.get('query_kps')
         if query_kps == 'true':
             # check KPs for annotations

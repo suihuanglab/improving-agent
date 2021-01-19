@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional
 import requests
 
 from improving_agent.models.edge_attribute import EdgeAttribute
-from improving_agent.src.node_normalization.sri_node_normalizer import SriNodeNormalizer
+from improving_agent.src.normalization.sri_node_normalizer import SriNodeNormalizer
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)
