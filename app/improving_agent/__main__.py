@@ -7,7 +7,7 @@ from flask import g, render_template
 
 from improving_agent import encoder
 from improving_agent.src import config
-from improving_agent.src.spoke_constants import BIOLINK_SPOKE_NODE_MAPPINGS
+from improving_agent.src.spoke_biolink_constants import BIOLINK_SPOKE_NODE_MAPPINGS
 from improving_agent.util import get_evidara_logger
 
 driver = neo4j.GraphDatabase.driver(
