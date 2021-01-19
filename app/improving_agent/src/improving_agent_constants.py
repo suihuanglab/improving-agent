@@ -1,0 +1,1 @@
+ATTRIBUTE_TYPE_PSEV_WEIGHT = 'psev_weight'

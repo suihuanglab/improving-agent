@@ -1,27 +1,35 @@
-# std library
+# BIG TODOS:
+# Handle inconming identifiers
+# - get identifiers recognizable by SPOKE
+# -- come up with an acceptable list of identifiers for all SPOKE nodes
+# - fail on unrecognized - return 501
+# Other
+# - array properties should be string.. join together?
+# - update yamls with docs/proper servers
+
 from collections import Counter, namedtuple
-from werkzeug.exceptions import BadRequest
 
-# third party
 import neo4j
-
-# locals
-from improving_agent import models
-from improving_agent.src.exceptions import MissingComponentError
+from improving_agent import models  # TODO: replace with direct imports after fixing definitions
+from improving_agent.exceptions import MissingComponentError
+from improving_agent.src.improving_agent_constants import ATTRIBUTE_TYPE_PSEV_WEIGHT
 from improving_agent.src.kps.biggim import BigGimClient
 from improving_agent.src.kps.cohd import CohdClient
 from improving_agent.src.kps.text_miner import TextMinerClient
+from improving_agent.src.normalization import SearchNode
+from improving_agent.src.normalization.node_normalization import normalize_spoke_nodes_for_translator
 from improving_agent.src.psev import get_psev_weights
-from improving_agent.src.spoke_constants import (
-    BIOLINK_SPOKE_NODE_MAPPINGS,
+from improving_agent.src.spoke_biolink_constants import (
+    BIOLINK_ASSOCIATION_TYPE,
+    BIOLINK_ASSOCIATION_RELATED_TO,
+    RELATIONSHIP_ONTOLOGY_CURIE,
     SPOKE_BIOLINK_NODE_MAPPINGS,
+    SPOKE_BIOLINK_EDGE_MAPPINGS,
 )
-
-# logger
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)
-ExtractedResult = namedtuple('ExtractedResult', ['nodes', 'edges', 'knowledge_map'])
+ExtractedResult = namedtuple('ExtractedResult', ['nodes', 'edges'])
 
 IMPROVING_AGENT_SCORING_FUCNTIONS = {}
 
@@ -43,7 +51,7 @@ def get_multiomics_model_score(edge_attribute):
     return edge_attribute.value
 
 
-@register_scoring_function('psev_weight')
+@register_scoring_function(ATTRIBUTE_TYPE_PSEV_WEIGHT)
 def get_psev_score(node_attribute):
     return node_attribute.value * 10000
 
@@ -61,28 +69,24 @@ def get_text_miner_score(edge_attribute):
 class BasicQuery:
     """A class for making basic queries to the SPOKE neo4j database"""
 
-    def __init__(self, nodes, edges, query_options, n_results):
+    def __init__(self, qnodes, qedges, query_options={}, n_results=200):
         """Instantiates a new BasicQuery object"""
-        self.nodes = nodes
-        self.edges = edges
-        self.query_options = query_options if query_options else {}
-        self.n_results = n_results if n_results else 200
-        self.result_nodes = {}
+        self.qnodes = qnodes
+        self.qedges = qedges
+        self.query_options = query_options
+        self.n_results = n_results
+
+        self.knowledge_graph = {"edges": {}, "nodes": {}}
+        self.knowledge_node_counter = 0
+        self.knowledge_edge_counter = 0
+
+        self.nodes_to_normalize = set()
+        self.results = []
 
         self.n_results = self.n_results if self.n_results < 200 else 200
+        # TODO: write a message in the response that the max results is 200
 
-        # check for query_options and replace saves lots of `if`ing later
-        if not query_options:
-            self.query_options = {}
-
-    def query_setup(self):
-        """"""
-        # get nodes as dict for later lookup by identifier
-        self.query_nodes_map = self.make_node_dictionary(self.nodes)
-        if isinstance(self.query_nodes_map, str):
-            raise BadRequest(f"{self.query_nodes_map}")
-        self.make_query_order()
-
+    # neo4j
     def get_n4j_param_str(self, parameters):
         """Returns a string properly formatted for neo4j parameter-based
         searching
@@ -110,219 +114,141 @@ class BasicQuery:
 
         Parameters
         ----------
-        query_part (models.QNode or models.QEdge): a node or edge from a
-            QueryGraph
+        query_part (QNode or QEdge): a node or edge from a QueryGraph
         name (str): alias for Cypher
 
         Returns
         -------
-        node_repr (str): string representation of a query part,
-            e.g. "(c:Compound {chembl_id: 'CHEMBL1234'})"
+        A Cypher string representative of a node or edge
         """
         # not supporting specific edge types until mapped to biolink
         if isinstance(query_part, models.QEdge):
-            return f"[{name}]"
+            edge_repr = f'[{name}'
+            if query_part.spoke_edge_types:
+                edge_repr = f'{edge_repr}:{"|".join(query_part.spoke_edge_types)}'
+            edge_repr += ']'
+            return edge_repr
 
         # start constructing the string, then add optional features
         node_repr = f"({name}"
-
+        # TODO: refactor below to make where clauses
         # add a label if we can, then add parameters if possible
-        spoke_mapping = BIOLINK_SPOKE_NODE_MAPPINGS.get(query_part.type)
-        if spoke_mapping is None:
-            if query_part.type:
-                raise BadRequest(f"Bad Request: {query_part.type} not supported")
-            spoke_mapping = (False, "no split")
-
-        if spoke_mapping[0]:
-            spoke_label = spoke_mapping[0]
-            node_repr += f":{spoke_label} "
+        if query_part.spoke_label:
+            node_repr += f":{query_part.spoke_label} "
             # add a parameter if we can
-            if query_part.curie:
-                # handle different configs for different node identifiers
-                if spoke_mapping[1] == "split":
-                    curie = query_part.curie.split(":")
-                    if len(curie) > 2:
-                        curie = ":".join(curie[1:])
-                    else:
-                        curie = curie[1]
-                else:
-                    curie = query_part.curie
-                try:
-                    # TODO make sure this isn't a float
-                    # currently none in spoke, but this could easily happen
-                    curie = int(curie)
-                except ValueError:
-                    pass
-                parameter_string = self.get_n4j_param_str({"identifier": curie})
+            if query_part.spoke_identifier:
+                parameter_string = self.get_n4j_param_str({"identifier": query_part.spoke_identifier})
                 node_repr += f"{parameter_string}"
         node_repr += ")"
         return node_repr
-
-    def make_node_dictionary(self, nodes):
-        """Validates that SPOKE contains requested node type and creates a
-        dictionary from a list of evidara.models.nodes
-
-        Parameters
-        ----------
-        nodes (list of evidara.models.QNode): array of nodes from a
-            user/ARS QueryGraph
-
-        Returns
-        -------
-        node_d (dict or str) OR errors(str): dictionary of
-            str -> evidara.models.QNode on success; string of incompatible
-            node types on failure
-        """
-        # here we just validate that we can actually look up nodes of a
-        # requested type
-        node_d = {}
-        errors = []
-        for node in nodes:
-            if node.type:
-                try:
-                    node.spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS[node.type][0]
-                except KeyError:
-                    errors.append(
-                        f"Node type {node.type} not (yet) supported by imProving Agent"
-                    )
-            node_d[node.node_id] = node
-        if len(errors):
-            return ", ".join(errors)
-        return node_d
 
     def make_query_order(self):
         """Constructs a list of QNodes and QEdges in the order in which
         they should be sent to neo4j for querying
         """
         # process edges to find terminal nodes so the query can be ordered
-        if len(self.edges) > 1:
+        if len(self.qedges) > 1:
             node_appearances = []
-            _ = [
-                node_appearances.extend([e.source_id, e.target_id]) for e in self.edges
-            ]
+            for qedge in self.qedges.values():
+                node_appearances.extend([qedge.subject, qedge.object])
+
             node_count = Counter(node_appearances)
             terminal_nodes = [node for node in node_count if node_count[node] == 1]
-        else:
-            terminal_nodes = list(self.query_nodes_map.keys())
+
+        else:  # one-hop query
+            terminal_nodes = list(self.qnodes.keys())
 
         # start query order with either of the terminal nodes
-        self.query_order = [self.query_nodes_map[terminal_nodes[0]]]
-        target_query_length = len(self.nodes) + len(self.edges)
+        self.query_order = [self.qnodes[terminal_nodes[0]]]
+        target_query_length = len(self.qnodes) + len(self.qedges)
 
         # create copy of edges that can be destroyed
-        edges_copy = self.edges.copy()
+        qedges_copy = self.qedges.copy()
         while len(self.query_order) < target_query_length:
-            found_flag = False
             if isinstance(self.query_order[-1], models.QNode):
-                for i, edge in enumerate(edges_copy):
-                    if self.query_order[-1].node_id in (edge.source_id, edge.target_id):
+                found_flag = False
+                for qedge_id, qedge in qedges_copy.items():
+                    if self.query_order[-1].qnode_id in (qedge.subject, qedge.object):
                         found_flag = True
                         break
                 if found_flag:
-                    self.query_order.append(edges_copy.pop(i))
+                    self.query_order.append(qedges_copy.pop(qedge_id))  # qedge
                 else:
                     raise MissingComponentError(
                         "Couldn't find edge corresponding to "
-                        f"{self.query_order[-1].node_id}"
+                        f"{self.query_order[-1].qnode_id}"
                     )
+
             else:
                 next_node = [
-                    self.query_order[-1].source_id,
-                    self.query_order[-1].target_id,
+                    self.query_order[-1].subject,
+                    self.query_order[-1].object,
                 ]
-                next_node.remove(self.query_order[-2].node_id)
+                next_node.remove(self.query_order[-2].qnode_id)
                 if len(next_node) == 1:
-                    self.query_order.append(self.query_nodes_map[next_node[0]])
+                    self.query_order.append(self.qnodes[next_node[0]])
                 else:
                     raise MissingComponentError(f"Missing one of {next_node}")
 
-    def extract_results(self, n4j_result, query_names, query_mapping):
-        """Constructs a reasoner-standard result from the result of a neo4j
-        query
-
-        Parameters
-        ----------
-        n4j_result (neo4j.BoltStatementResult): result of a SPOKE Cypher
-            query
-        record_number (int): record index
-        query_names (str): string of letters corresponding to aliases in
-            `n4j_result`
-        query_mapping (dict): str -> str mappings of QNode/QEdge ids to
-            query names
-
-        Returns
-        -------
-        <unnamed> (models.Result): reasoner-standard result that can be
-            returned to the user/ARS
-        """
-        # set up objects to collect results and query mappings
-        result_nodes, result_edges = [], []
-        knowledge_map = {"edges": {}, "nodes": {}}
-        # iterate through results and add to result objects
-        for name in query_names:
-            if isinstance(n4j_result[name], neo4j.types.graph.Node):
-                result_nodes.append(self.make_result_node(n4j_result[name]))
-                knowledge_map["nodes"][query_mapping["nodes"][name]] = result_nodes[
-                    -1
-                ].id
+    def make_cypher_query_string(self):
+        # spoke diameter is <7 but consider enforcing max query length anyway
+        # TODO: get rid of this naming and use the now-available `qedge_id` or `qnode_id` attr
+        self.query_names = "abcdefghijklmn"[: len(self.query_order)]
+        query_parts = []
+        self.query_mapping = {"edges": {}, "nodes": {}}
+        for query_part, name in zip(self.query_order, self.query_names):
+            query_parts.append(self.get_n4j_str_repr(query_part, name))
+            if isinstance(query_part, models.QNode):
+                self.query_mapping["nodes"][name] = query_part.qnode_id
             else:
-                result_edges.append(self.make_result_edge(n4j_result[name]))
-                knowledge_map["edges"][query_mapping["edges"][name]] = result_edges[
-                    -1
-                ].id
-        return ExtractedResult(result_nodes, result_edges, knowledge_map)
+                self.query_mapping["edges"][name] = query_part.qedge_id
+        query_string = "-".join(query_parts)
+        return query_string
 
-    def score_result(self, nodes, edges):
+    # Result handling
+    def score_result(self, result):
         """Returns a score based on psev weights, cohort edge correlations,
             both, or none
 
         Parameters
         ----------
-        nodes (list of models.Node): reasoner-standard Nodes that have
-            a NodeAttribute for psev_weight. This is currently implemented
-            to only check the final element in the list of NodeAttributes
-            for each Node
-        edges (list of models.Edge): reasoner-standard Edges that have
-            an EdgeAttribute for cohort_correlation. This is currently
-            implemented to only check the final element in the list of
-            EdgeAttributes for each Edge
+        result (Result): TRAPI Result object containing node_bindings
+            and edge_bindings
 
         Returns
         -------
         scores (dict): mapping of score (str) -> float and
             score name (str) -> str
 
-
         NOTE: currently for linear queries, all knowledge graphs are of the
             length, but dividing the sum score by `n` may make sense in the
             future
         """
         score = 0
-        for node in nodes:
-            for node_attribute in node.node_attributes:
-                score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(node_attribute.type)
+
+        for knode in result.node_bindings.values():
+            node = self.knowledge_graph['nodes'][knode.id]
+            for attribute in node.attributes:
+                score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(attribute.type)
                 if score_func:
-                    score += score_func(node_attribute)
+                    score += score_func(attribute)
 
-        for edge in edges:
-            for edge_attribute in edge.edge_attributes:
-                score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(edge_attribute.type)
+        for kedge in result.edge_bindings.values():
+            edge = self.knowledge_graph['edges'][kedge.id]
+            for attribute in edge.attributes:
+                score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(attribute.type)
                 if score_func:
-                    score += score_func(edge_attribute)
+                    score += score_func(attribute)
 
-        scores = {'score': score, 'score_name': 'improving agent score'}
-        return scores
+        return score
 
-    def get_scored_result(self, record_number, result):
-        # score result, instantiate result objects and return
-        scores = self.score_result(result.nodes, result.edges)
-        result_knowledge_graph = models.KnowledgeGraph(result.nodes, result.edges)
-        return models.Result(
-            id=record_number,
-            result_graph=result_knowledge_graph,
-            knowledge_map=result.knowledge_map,
-            **scores,
-        )
+    def score_results(self, results):
+        scored_results = []
+        for result in results:
+            score = self.score_result(result)
+            setattr(result, 'improving_agent_score', score)
+            scored_results.append(result)
+        return scored_results
 
     def make_result_node(self, n4j_object):
         """Instantiates a reasoner-standard Node to return as part of a
@@ -335,28 +261,26 @@ class BasicQuery:
 
         Returns
         -------
-        result_node (models.Edge): a reasoner-standard `Edge` object for
+        result_node (models.Node): a reasoner-standard `Edge` object for
             inclusion as part of a KnowledgeGraph result
-
         """
+        name = n4j_object.get("pref_name")
+        if not name:
+            name = n4j_object.get("name")
+
         result_node = models.Node(
-            id=n4j_object[
-                "identifier"
-            ],  # TODO look up and include database for standards
-            name=n4j_object.get("name"),
-            type=[
-                SPOKE_BIOLINK_NODE_MAPPINGS[label] for label in list(n4j_object.labels)
-            ],
-            description=n4j_object.get("description"),
+            name=name,
+            category=[SPOKE_BIOLINK_NODE_MAPPINGS[label] for label in list(n4j_object.labels)],
         )
-        result_node.node_attributes = [
-            models.NodeAttribute(type=k, value=v) for k, v in n4j_object.items()
+        result_node.attributes = [
+            # TODO: filter these to something reasonable
+            models.Attribute(type=k, value=v) for k, v in n4j_object.items()
         ]
         if "psev-context" in self.query_options:
             try:
-                result_node.node_attributes.append(
-                    models.NodeAttribute(
-                        type="psev_weight",
+                result_node.attributes.append(
+                    models.Attribute(
+                        type=ATTRIBUTE_TYPE_PSEV_WEIGHT,
                         value=get_psev_weights(
                             node_identifier=n4j_object["identifier"],
                             disease_identifier=self.query_options["psev-context"],
@@ -364,8 +288,8 @@ class BasicQuery:
                     )
                 )
             except IndexError:  # TODO is this really a 0?
-                result_node.node_attributes.append(
-                    models.NodeAttribute(type="psev_weight", value=0)
+                result_node.attributes.append(
+                    models.Attribute(type=ATTRIBUTE_TYPE_PSEV_WEIGHT, value=0)
                 )
         return result_node
 
@@ -383,20 +307,89 @@ class BasicQuery:
         result_edge (models.Edge): reasoner-standard Edge object for
             inclusion as a part of a KnowledgeGraph result
         """
+        biolink_map_info = SPOKE_BIOLINK_EDGE_MAPPINGS.get(n4j_object.type)
+        if not biolink_map_info:
+            biolink_edge_data = {'predicate': BIOLINK_ASSOCIATION_RELATED_TO}
+        else:
+            biolink_edge_data = {
+                'predicate': biolink_map_info[BIOLINK_ASSOCIATION_TYPE],
+                'relation': biolink_map_info[RELATIONSHIP_ONTOLOGY_CURIE]
+            }
+
         result_edge = models.Edge(
-            # TODO next two lines look up and include database per standards
-            # TODO get reliable edge identifiers for `id` attribute
-            # TODO get correlations score
-            id=n4j_object.id,
-            source_id=n4j_object.start_node["identifier"],
-            target_id=n4j_object.end_node["identifier"],
-            type=n4j_object.type,
+            # TODO get correlations score for P100/cohort data
+            subject=n4j_object.start_node["identifier"],
+            object=n4j_object.end_node["identifier"],
+            **biolink_edge_data
         )
-        result_edge.edge_attributes = [
-            models.EdgeAttribute(type=k, value=v) for k, v in n4j_object.items()
+        result_edge.attributes = [
+            models.Attribute(type=k, value=v) for k, v in n4j_object.items()
         ]
         return result_edge
 
+    def extract_result(self, n4j_result):
+        """Constructs a reasoner-standard result from the result of a neo4j
+        query
+
+        Parameters
+        ----------
+        n4j_result (neo4j.BoltStatementResult): result of a SPOKE Cypher
+            query
+        record_number (int): record index
+
+        Returns
+        -------
+        <unnamed> (models.Result): TRAPI Result that can be
+            returned to the user/ARS
+        """
+        # set up objects to collect results and query mappings
+        edge_bindings, node_bindings = {}, {}
+
+        # iterate through results and add to result objects
+        #
+        #
+        # This has fundamentally changed. Result.nodes and Result.edges
+        # are now Result.node_bindings and Result.edge_bindings and they
+        # are now simply lists of Node and EdgeBindings to the single
+        # KnowledgeGraph for the entire set of results
+        for name in self.query_names:
+            if isinstance(n4j_result[name], neo4j.types.graph.Node):
+                spoke_curie = n4j_result[name]['identifier']
+                result_node = self.make_result_node(n4j_result[name])
+                self.knowledge_graph['nodes'][spoke_curie] = result_node
+                node_bindings[self.query_mapping['nodes'][name]] = models.NodeBinding(spoke_curie)
+                search_node = SearchNode(result_node.category[0], spoke_curie)
+                self.nodes_to_normalize.add(search_node)
+
+            else:
+                spoke_edge_id = n4j_result[name].id  # TODO: is there a way to make this consistent?
+                edge_bindings[self.query_mapping['edges'][name]] = models.EdgeBinding(spoke_edge_id)
+                result_edge = self.make_result_edge(n4j_result[name])
+                self.knowledge_graph['edges'][spoke_edge_id] = result_edge
+
+        return models.Result(node_bindings, edge_bindings)
+
+    # normalization
+    def normalize(self):
+        # search the node normalizer for nodes collected in result creation
+        node_search_results = normalize_spoke_nodes_for_translator(list(self.nodes_to_normalize))
+        for spoke_curie, normalized_curie in node_search_results.items():
+            self.knowledge_graph['nodes'][normalized_curie] = self.knowledge_graph['nodes'].pop(spoke_curie)
+
+        for edge in self.knowledge_graph['edges'].values():
+            setattr(edge, 'object', node_search_results[edge.object])
+            setattr(edge, 'subject', node_search_results[edge.subject])
+
+        new_results = []
+        new_node_bindings = {}
+        for result in self.results:
+            for qnode, node in result.node_bindings.items():
+                new_node_bindings[qnode] = models.NodeBinding(node_search_results[node.id])
+            new_results.append(models.Result(new_node_bindings, result.edge_bindings))
+
+        self.results = new_results
+
+    # Query
     def linear_spoke_query(self, session):
         """Returns the SPOKE node label equivalent to `node_type`
 
@@ -406,58 +399,46 @@ class BasicQuery:
 
         Returns
         -------
-        results (dict or str): one key (`results`) mapped to a list of
-            reasoner-standard evidara.models.Result objects; alternatively
-            returns str message on error
+        sorted_scored_results (list of Result): TRAPI Result objects that have been
+            fetched from SPOKE and scored
+
+        knowledge_graph (KnowledgeGraph): TRAPI KnowledgeGraph object
+            containing all identified nodes and edges in the response
         """
-        try:
-            self.query_setup()
-        except (NotImplementedError, MissingComponentError) as e:
-            return e
+        # query setup
+        self.make_query_order()
+        query_string = self.make_cypher_query_string()
 
-        # spoke diameter is <7 but consider enforcing max query length anyway
-        query_names = "abcdefghijklmn"[: len(self.query_order)]
-        query_parts = []
-        query_mapping = {"edges": {}, "nodes": {}}
-        for query_part, name in zip(self.query_order, query_names):
-            query_parts.append(self.get_n4j_str_repr(query_part, name))
-            if isinstance(query_part, models.QNode):
-                query_mapping["nodes"][name] = query_part.node_id
-            else:
-                query_mapping["edges"][name] = query_part.edge_id
-        query_string = "-".join(query_parts)
-        # set max results b/c reasoner-standard default is None
-        # possibly enforce a max on the query too
+        # query
+        logger.info(f'Querying SPOKE with {query_string}')
         r = session.run(f"match p = {query_string} " f"return * limit {self.n_results}")
+        self.results = [self.extract_result(record) for record in r.records()]
+        if not self.results:
+            return self.results, self.knowledge_graph
 
-        # create the results
-        results = [
-            self.extract_results(record, query_names, query_mapping)
-            for record in r.records()
-        ]
+        # normalize the knowledge_graph and results
+        self.normalize()
 
+        # query kps
         query_kps = self.query_options.get('query_kps')
         if query_kps == 'true':
             # check KPs for annotations
             cohd = CohdClient()
             tm = TextMinerClient()
-            results = cohd.query_for_associations_in_cohd(self.query_order, results)
-            results = tm.query_for_associations_in_text_miner(self.query_order, results)
+            self.results = cohd.query_for_associations_in_cohd(self.query_order, self.results)
+            self.results = tm.query_for_associations_in_text_miner(self.query_order, self.results)
 
-        sorted_scored_results = sorted(
-            [self.get_scored_result(i, result) for i, result in enumerate(results)],
-            key=lambda x: x.score,
-            reverse=True,
-        )
+        scored_results = self.score_results(self.results)
+        sorted_scored_results = sorted(scored_results, key=lambda x: x.improving_agent_score, reverse=True)
 
         if query_kps == 'true':
             # check BigGIM
             big_gim = BigGimClient()
-            results = big_gim.annotate_edges_with_biggim(
+            self.results = big_gim.annotate_edges_with_biggim(
                 session,
                 self.query_order,
                 sorted_scored_results,
                 self.query_options.get("psev-context"),
             )
 
-        return {"results": sorted_scored_results}
+        return sorted_scored_results, self.knowledge_graph

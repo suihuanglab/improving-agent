@@ -5,7 +5,7 @@ from unittest.mock import Mock, patch
 import pytest
 from requests.exceptions import HTTPError
 
-from improving_agent.src.node_normalization.sri_node_normalizer import SriNodeNormalizer
+from improving_agent.src.normalization.sri_node_normalizer import SriNodeNormalizer
 from improving_agent.test.test_config import RUN_REAL_API
 from improving_agent.test.client_test_data.node_normalization_data import (
     CHEMICAL_SUBSTANCE_CURIE_PREFIXES,
