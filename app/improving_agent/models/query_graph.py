@@ -55,7 +55,7 @@ class QueryGraph(Model):
     def nodes(self):
         """Gets the nodes of this QueryGraph.
 
-        List of nodes in the QueryGraph  # noqa: E501
+        The node specifications. The keys of this map are unique node identifiers and the corresponding values include the constraints on bound nodes.  # noqa: E501
 
         :return: The nodes of this QueryGraph.
         :rtype: Dict[str, QNode]
@@ -66,7 +66,7 @@ class QueryGraph(Model):
     def nodes(self, nodes):
         """Sets the nodes of this QueryGraph.
 
-        List of nodes in the QueryGraph  # noqa: E501
+        The node specifications. The keys of this map are unique node identifiers and the corresponding values include the constraints on bound nodes.  # noqa: E501
 
         :param nodes: The nodes of this QueryGraph.
         :type nodes: Dict[str, QNode]
@@ -80,7 +80,7 @@ class QueryGraph(Model):
     def edges(self):
         """Gets the edges of this QueryGraph.
 
-        List of edges in the QueryGraph  # noqa: E501
+        The edge specifications. The keys of this map are unique edge identifiers and the corresponding values include the constraints on bound edges, in addition to specifying the subject and object QNodes.  # noqa: E501
 
         :return: The edges of this QueryGraph.
         :rtype: Dict[str, QEdge]
@@ -91,7 +91,7 @@ class QueryGraph(Model):
     def edges(self, edges):
         """Sets the edges of this QueryGraph.
 
-        List of edges in the QueryGraph  # noqa: E501
+        The edge specifications. The keys of this map are unique edge identifiers and the corresponding values include the constraints on bound edges, in addition to specifying the subject and object QNodes.  # noqa: E501
 
         :param edges: The edges of this QueryGraph.
         :type edges: Dict[str, QEdge]

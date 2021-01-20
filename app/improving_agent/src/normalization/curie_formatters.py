@@ -188,7 +188,8 @@ def _format_food_for_spoke(curie):
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_GENE, '^NCBIGene:')
-def _format_gene_for_spoke(curie):
+def format_gene_for_spoke(curie):
+    # missing leading underscore because it's used by the BigGIM module
     return int(curie.replace('NCBIGene:', ''))
 
 

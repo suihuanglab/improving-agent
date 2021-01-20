@@ -100,7 +100,7 @@ class LogEntry(Model):
         :param level: The level of this LogEntry.
         :type level: str
         """
-        allowed_values = ["ERROR", "WARNING", "INFO", "DEBUG"]  # noqa: E501
+        allowed_values = [None, "ERROR", "WARNING", "INFO", "DEBUG"]  # noqa: E501
         if level not in allowed_values:
             raise ValueError(
                 "Invalid value for `level` ({0}), must be one of {1}"

@@ -17,21 +17,36 @@ class Query(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, message=None):  # noqa: E501
+    def __init__(self, message=None, max_results=200, query_kps=False, psev_context=None):  # noqa: E501
         """Query - a model defined in OpenAPI
 
         :param message: The message of this Query.  # noqa: E501
         :type message: Message
+        :param max_results: The max_results of this Query.  # noqa: E501
+        :type max_results: int
+        :param query_kps: The query_kps of this Query.  # noqa: E501
+        :type query_kps: bool
+        :param psev_context: The psev_context of this Query.  # noqa: E501
+        :type psev_context: str
         """
         self.openapi_types = {
-            'message': Message
+            'message': Message,
+            'max_results': int,
+            'query_kps': bool,
+            'psev_context': str
         }
 
         self.attribute_map = {
-            'message': 'message'
+            'message': 'message',
+            'max_results': 'max_results',
+            'query_kps': 'query_kps',
+            'psev_context': 'psev_context'
         }
 
         self._message = message
+        self._max_results = max_results
+        self._query_kps = query_kps
+        self._psev_context = psev_context
 
     @classmethod
     def from_dict(cls, dikt) -> 'Query':
@@ -66,3 +81,72 @@ class Query(Model):
             raise ValueError("Invalid value for `message`, must not be `None`")  # noqa: E501
 
         self._message = message
+
+    @property
+    def max_results(self):
+        """Gets the max_results of this Query.
+
+        The maximum number of results to return. Currently, this is hardcoded to 200 in the imProving Agent internals, but you can request fewer results for testing. The maximum number internally will certainly increase going forward.  # noqa: E501
+
+        :return: The max_results of this Query.
+        :rtype: int
+        """
+        return self._max_results
+
+    @max_results.setter
+    def max_results(self, max_results):
+        """Sets the max_results of this Query.
+
+        The maximum number of results to return. Currently, this is hardcoded to 200 in the imProving Agent internals, but you can request fewer results for testing. The maximum number internally will certainly increase going forward.  # noqa: E501
+
+        :param max_results: The max_results of this Query.
+        :type max_results: int
+        """
+
+        self._max_results = max_results
+
+    @property
+    def query_kps(self):
+        """Gets the query_kps of this Query.
+
+        A boolean value as to whether or not to attempt to query Translator Knowledge Providers for additional data that is not found in SPOKE. Note that choosing true may increase the processing time for your request significantly.  # noqa: E501
+
+        :return: The query_kps of this Query.
+        :rtype: bool
+        """
+        return self._query_kps
+
+    @query_kps.setter
+    def query_kps(self, query_kps):
+        """Sets the query_kps of this Query.
+
+        A boolean value as to whether or not to attempt to query Translator Knowledge Providers for additional data that is not found in SPOKE. Note that choosing true may increase the processing time for your request significantly.  # noqa: E501
+
+        :param query_kps: The query_kps of this Query.
+        :type query_kps: bool
+        """
+
+        self._query_kps = query_kps
+
+    @property
+    def psev_context(self):
+        """Gets the psev_context of this Query.
+
+        A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
+
+        :return: The psev_context of this Query.
+        :rtype: str
+        """
+        return self._psev_context
+
+    @psev_context.setter
+    def psev_context(self, psev_context):
+        """Sets the psev_context of this Query.
+
+        A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
+
+        :param psev_context: The psev_context of this Query.
+        :type psev_context: str
+        """
+
+        self._psev_context = psev_context

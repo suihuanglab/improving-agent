@@ -20,6 +20,14 @@ from improving_agent.util import get_evidara_logger
 logger = get_evidara_logger(__name__)
 
 
+def extract_query_options(query):
+    query_options = {
+        'psev_context': query.psev_context,
+        'query_kps': query.query_kps
+    }
+    return query_options
+
+
 def process_query(query):
     """Maps query nodes to SPOKE equivalents
 
@@ -47,10 +55,11 @@ def process_query(query):
     qnodes = validate_normalize_qnodes(query_graph.nodes)
     qedges = validate_normalize_qedges(query_graph)
 
+    query_options = extract_query_options(query)
+
     # TODO: logic for different query types
-    querier = BasicQuery(
-        qnodes, qedges  # query_message.query_options, query_message.n_results TODO: add these back
-    )
+    querier = BasicQuery(qnodes, qedges, query_options, query.max_results)
+
     # now query SPOKE
     with get_db() as session:
         results, knowledge_graph = querier.linear_spoke_query(session)

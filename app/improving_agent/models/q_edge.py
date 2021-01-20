@@ -84,7 +84,7 @@ class QEdge(Model):
     def relation(self):
         """Gets the relation of this QEdge.
 
-        Lower-level relationship type of this edge  # noqa: E501
+        Query constraint against the relationship type term of this edge, as originally specified by, or curated by inference from, the original external source of knowledge. Note that this should often be specified as predicate ontology term CURIE, although this may not be strictly enforced.  # noqa: E501
 
         :return: The relation of this QEdge.
         :rtype: str
@@ -95,7 +95,7 @@ class QEdge(Model):
     def relation(self, relation):
         """Sets the relation of this QEdge.
 
-        Lower-level relationship type of this edge  # noqa: E501
+        Query constraint against the relationship type term of this edge, as originally specified by, or curated by inference from, the original external source of knowledge. Note that this should often be specified as predicate ontology term CURIE, although this may not be strictly enforced.  # noqa: E501
 
         :param relation: The relation of this QEdge.
         :type relation: str
@@ -107,7 +107,7 @@ class QEdge(Model):
     def subject(self):
         """Gets the subject of this QEdge.
 
-        Corresponds to the id of subject node of this edge  # noqa: E501
+        Corresponds to the map key identifier of the subject concept node anchoring the query filter pattern for the query relationship edge.  # noqa: E501
 
         :return: The subject of this QEdge.
         :rtype: str
@@ -118,7 +118,7 @@ class QEdge(Model):
     def subject(self, subject):
         """Sets the subject of this QEdge.
 
-        Corresponds to the id of subject node of this edge  # noqa: E501
+        Corresponds to the map key identifier of the subject concept node anchoring the query filter pattern for the query relationship edge.  # noqa: E501
 
         :param subject: The subject of this QEdge.
         :type subject: str
@@ -132,7 +132,7 @@ class QEdge(Model):
     def object(self):
         """Gets the object of this QEdge.
 
-        Corresponds to the id of object node of this edge  # noqa: E501
+        Corresponds to the map key identifier of the object concept node anchoring the query filter pattern for the query relationship edge.  # noqa: E501
 
         :return: The object of this QEdge.
         :rtype: str
@@ -143,7 +143,7 @@ class QEdge(Model):
     def object(self, object):
         """Sets the object of this QEdge.
 
-        Corresponds to the id of object node of this edge  # noqa: E501
+        Corresponds to the map key identifier of the object concept node anchoring the query filter pattern for the query relationship edge.  # noqa: E501
 
         :param object: The object of this QEdge.
         :type object: str
