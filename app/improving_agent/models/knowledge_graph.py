@@ -55,7 +55,7 @@ class KnowledgeGraph(Model):
     def nodes(self):
         """Gets the nodes of this KnowledgeGraph.
 
-        List of nodes in the KnowledgeGraph  # noqa: E501
+        Dictionary of Node instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key.  # noqa: E501
 
         :return: The nodes of this KnowledgeGraph.
         :rtype: Dict[str, Node]
@@ -66,7 +66,7 @@ class KnowledgeGraph(Model):
     def nodes(self, nodes):
         """Sets the nodes of this KnowledgeGraph.
 
-        List of nodes in the KnowledgeGraph  # noqa: E501
+        Dictionary of Node instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key.  # noqa: E501
 
         :param nodes: The nodes of this KnowledgeGraph.
         :type nodes: Dict[str, Node]
@@ -80,7 +80,7 @@ class KnowledgeGraph(Model):
     def edges(self):
         """Gets the edges of this KnowledgeGraph.
 
-        List of edges in the KnowledgeGraph  # noqa: E501
+        Dictionary of Edge instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key.  # noqa: E501
 
         :return: The edges of this KnowledgeGraph.
         :rtype: Dict[str, Edge]
@@ -91,7 +91,7 @@ class KnowledgeGraph(Model):
     def edges(self, edges):
         """Sets the edges of this KnowledgeGraph.
 
-        List of edges in the KnowledgeGraph  # noqa: E501
+        Dictionary of Edge instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key.  # noqa: E501
 
         :param edges: The edges of this KnowledgeGraph.
         :type edges: Dict[str, Edge]

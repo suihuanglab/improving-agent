@@ -19,26 +19,31 @@ class Result(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, node_bindings=None, edge_bindings=None):  # noqa: E501
+    def __init__(self, node_bindings=None, edge_bindings=None, score=None):  # noqa: E501
         """Result - a model defined in OpenAPI
 
         :param node_bindings: The node_bindings of this Result.  # noqa: E501
         :type node_bindings: Dict[str, List[NodeBinding]]
         :param edge_bindings: The edge_bindings of this Result.  # noqa: E501
         :type edge_bindings: Dict[str, List[EdgeBinding]]
+        :param score: The score of this Result.  # noqa: E501
+        :type score: float
         """
         self.openapi_types = {
             'node_bindings': Dict[str, List[NodeBinding]],
-            'edge_bindings': Dict[str, List[EdgeBinding]]
+            'edge_bindings': Dict[str, List[EdgeBinding]],
+            'score': float
         }
 
         self.attribute_map = {
             'node_bindings': 'node_bindings',
-            'edge_bindings': 'edge_bindings'
+            'edge_bindings': 'edge_bindings',
+            'score': 'score'
         }
 
         self._node_bindings = node_bindings
         self._edge_bindings = edge_bindings
+        self._score = score
 
     @classmethod
     def from_dict(cls, dikt) -> 'Result':
@@ -55,7 +60,7 @@ class Result(Model):
     def node_bindings(self):
         """Gets the node_bindings of this Result.
 
-        List of QNode-KNode bindings.  # noqa: E501
+        The dictionary of Input Query Graph to Result Knowledge Graph node bindings where the dictionary keys are the key identifiers of the Query Graph nodes and the associated values of those keys are instances of NodeBinding schema type (see below). This value is an array of NodeBindings since a given query node may have multiple knowledge graph Node bindings in the result.  # noqa: E501
 
         :return: The node_bindings of this Result.
         :rtype: Dict[str, List[NodeBinding]]
@@ -66,7 +71,7 @@ class Result(Model):
     def node_bindings(self, node_bindings):
         """Sets the node_bindings of this Result.
 
-        List of QNode-KNode bindings.  # noqa: E501
+        The dictionary of Input Query Graph to Result Knowledge Graph node bindings where the dictionary keys are the key identifiers of the Query Graph nodes and the associated values of those keys are instances of NodeBinding schema type (see below). This value is an array of NodeBindings since a given query node may have multiple knowledge graph Node bindings in the result.  # noqa: E501
 
         :param node_bindings: The node_bindings of this Result.
         :type node_bindings: Dict[str, List[NodeBinding]]
@@ -80,7 +85,7 @@ class Result(Model):
     def edge_bindings(self):
         """Gets the edge_bindings of this Result.
 
-        List of QEdge-KEdge bindings.  # noqa: E501
+        The dictionary of Input Query Graph to Result Knowledge Graph edge bindings where the dictionary keys are the key identifiers of the Query Graph edges and the associated values of those keys are instances of EdgeBinding schema type (see below). This value is an array of EdgeBindings since a given query edge may resolve to multiple knowledge graph edges in the result.  # noqa: E501
 
         :return: The edge_bindings of this Result.
         :rtype: Dict[str, List[EdgeBinding]]
@@ -91,7 +96,7 @@ class Result(Model):
     def edge_bindings(self, edge_bindings):
         """Sets the edge_bindings of this Result.
 
-        List of QEdge-KEdge bindings.  # noqa: E501
+        The dictionary of Input Query Graph to Result Knowledge Graph edge bindings where the dictionary keys are the key identifiers of the Query Graph edges and the associated values of those keys are instances of EdgeBinding schema type (see below). This value is an array of EdgeBindings since a given query edge may resolve to multiple knowledge graph edges in the result.  # noqa: E501
 
         :param edge_bindings: The edge_bindings of this Result.
         :type edge_bindings: Dict[str, List[EdgeBinding]]
@@ -100,3 +105,26 @@ class Result(Model):
             raise ValueError("Invalid value for `edge_bindings`, must not be `None`")  # noqa: E501
 
         self._edge_bindings = edge_bindings
+
+    @property
+    def score(self):
+        """Gets the score of this Result.
+
+        The 'imProving Agent Score' that is the sum of the various scores calculated from PSEVs, KP metadata, etc. Individual scores should be visible as attributes on Nodes and Edges  # noqa: E501
+
+        :return: The score of this Result.
+        :rtype: float
+        """
+        return self._score
+
+    @score.setter
+    def score(self, score):
+        """Sets the score of this Result.
+
+        The 'imProving Agent Score' that is the sum of the various scores calculated from PSEVs, KP metadata, etc. Individual scores should be visible as attributes on Nodes and Edges  # noqa: E501
+
+        :param score: The score of this Result.
+        :type score: float
+        """
+
+        self._score = score

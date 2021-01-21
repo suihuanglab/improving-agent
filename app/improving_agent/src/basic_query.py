@@ -13,7 +13,7 @@ import neo4j
 from improving_agent import models  # TODO: replace with direct imports after fixing definitions
 from improving_agent.exceptions import MissingComponentError
 from improving_agent.src.improving_agent_constants import ATTRIBUTE_TYPE_PSEV_WEIGHT
-from improving_agent.src.kps.biggim import BigGimClient
+from improving_agent.src.kps.biggim import annotate_edges_with_biggim
 from improving_agent.src.kps.cohd import CohdClient
 from improving_agent.src.kps.text_miner import TextMinerClient
 from improving_agent.src.normalization import SearchNode
@@ -276,14 +276,15 @@ class BasicQuery:
             # TODO: filter these to something reasonable
             models.Attribute(type=k, value=v) for k, v in n4j_object.items()
         ]
-        if "psev-context" in self.query_options:
+        psev_context = self.query_options.get('psev_context')
+        if psev_context:
             try:
                 result_node.attributes.append(
                     models.Attribute(
                         type=ATTRIBUTE_TYPE_PSEV_WEIGHT,
                         value=get_psev_weights(
                             node_identifier=n4j_object["identifier"],
-                            disease_identifier=self.query_options["psev-context"],
+                            disease_identifier=psev_context,
                         ),
                     )
                 )
@@ -381,8 +382,8 @@ class BasicQuery:
             setattr(edge, 'subject', node_search_results[edge.subject])
 
         new_results = []
-        new_node_bindings = {}
         for result in self.results:
+            new_node_bindings = {}
             for qnode, node in result.node_bindings.items():
                 new_node_bindings[qnode] = models.NodeBinding(node_search_results[node.id])
             new_results.append(models.Result(new_node_bindings, result.edge_bindings))
@@ -421,24 +422,24 @@ class BasicQuery:
 
         # query kps
         query_kps = self.query_options.get('query_kps')
-        if query_kps == 'true':
-            # check KPs for annotations
-            cohd = CohdClient()
-            tm = TextMinerClient()
-            self.results = cohd.query_for_associations_in_cohd(self.query_order, self.results)
-            self.results = tm.query_for_associations_in_text_miner(self.query_order, self.results)
+        # if query_kps:
+        #     # check KPs for annotations
+        #     cohd = CohdClient()
+        #     tm = TextMinerClient()
+        #     self.results = cohd.query_for_associations_in_cohd(self.query_order, self.results)
+        #     self.results = tm.query_for_associations_in_text_miner(self.query_order, self.results)
 
         scored_results = self.score_results(self.results)
         sorted_scored_results = sorted(scored_results, key=lambda x: x.improving_agent_score, reverse=True)
 
-        if query_kps == 'true':
+        if query_kps:
             # check BigGIM
-            big_gim = BigGimClient()
-            self.results = big_gim.annotate_edges_with_biggim(
+            self.knowledge_graph['edges'] = annotate_edges_with_biggim(
                 session,
                 self.query_order,
+                self.knowledge_graph['edges'],
                 sorted_scored_results,
-                self.query_options.get("psev-context"),
+                self.query_options.get("psev_context"),
             )
 
         return sorted_scored_results, self.knowledge_graph

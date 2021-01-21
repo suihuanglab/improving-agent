@@ -68,7 +68,7 @@ class Attribute(Model):
     def name(self):
         """Gets the name of this Attribute.
 
-        Human-readable name or label for the attribute. Should be the name of the semantic type term.  # noqa: E501
+        Human-readable name or label for the attribute. If appropriate, should be the name of the semantic type term.  # noqa: E501
 
         :return: The name of this Attribute.
         :rtype: str
@@ -79,7 +79,7 @@ class Attribute(Model):
     def name(self, name):
         """Sets the name of this Attribute.
 
-        Human-readable name or label for the attribute. Should be the name of the semantic type term.  # noqa: E501
+        Human-readable name or label for the attribute. If appropriate, should be the name of the semantic type term.  # noqa: E501
 
         :param name: The name of this Attribute.
         :type name: str
@@ -116,7 +116,7 @@ class Attribute(Model):
     def type(self):
         """Gets the type of this Attribute.
 
-        CURIE of the semantic type of the attribute, from the EDAM ontology if possible. If a suitable identifier does not exist, enter a descriptive phrase here and submit the new type for consideration by the appropriate authority.  # noqa: E501
+        A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
 
         :return: The type of this Attribute.
         :rtype: str
@@ -127,7 +127,7 @@ class Attribute(Model):
     def type(self, type):
         """Sets the type of this Attribute.
 
-        CURIE of the semantic type of the attribute, from the EDAM ontology if possible. If a suitable identifier does not exist, enter a descriptive phrase here and submit the new type for consideration by the appropriate authority.  # noqa: E501
+        A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
 
         :param type: The type of this Attribute.
         :type type: str
@@ -141,7 +141,7 @@ class Attribute(Model):
     def url(self):
         """Gets the url of this Attribute.
 
-        Human-consumable URL to link out and read about the attribute (not the node).  # noqa: E501
+        Human-consumable URL to link out and provide additional information about the attribute (not the node or the edge).  # noqa: E501
 
         :return: The url of this Attribute.
         :rtype: str
@@ -152,7 +152,7 @@ class Attribute(Model):
     def url(self, url):
         """Sets the url of this Attribute.
 
-        Human-consumable URL to link out and read about the attribute (not the node).  # noqa: E501
+        Human-consumable URL to link out and provide additional information about the attribute (not the node or the edge).  # noqa: E501
 
         :param url: The url of this Attribute.
         :type url: str
@@ -164,7 +164,7 @@ class Attribute(Model):
     def source(self):
         """Gets the source of this Attribute.
 
-        Source of the attribute, as a CURIE prefix.  # noqa: E501
+        Source of the attribute, preferably as a CURIE prefix.  # noqa: E501
 
         :return: The source of this Attribute.
         :rtype: str
@@ -175,7 +175,7 @@ class Attribute(Model):
     def source(self, source):
         """Sets the source of this Attribute.
 
-        Source of the attribute, as a CURIE prefix.  # noqa: E501
+        Source of the attribute, preferably as a CURIE prefix.  # noqa: E501
 
         :param source: The source of this Attribute.
         :type source: str

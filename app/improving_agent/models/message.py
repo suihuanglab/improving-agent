@@ -62,7 +62,7 @@ class Message(Model):
     def results(self):
         """Gets the results of this Message.
 
-        List of all returned potential answers for the query posed  # noqa: E501
+        List of all returned Result objects for the query posed  # noqa: E501
 
         :return: The results of this Message.
         :rtype: List[Result]
@@ -73,7 +73,7 @@ class Message(Model):
     def results(self, results):
         """Sets the results of this Message.
 
-        List of all returned potential answers for the query posed  # noqa: E501
+        List of all returned Result objects for the query posed  # noqa: E501
 
         :param results: The results of this Message.
         :type results: List[Result]
@@ -85,6 +85,7 @@ class Message(Model):
     def query_graph(self):
         """Gets the query_graph of this Message.
 
+        QueryGraph object that contains a serialization of a query in the form of a graph  # noqa: E501
 
         :return: The query_graph of this Message.
         :rtype: QueryGraph
@@ -95,6 +96,7 @@ class Message(Model):
     def query_graph(self, query_graph):
         """Sets the query_graph of this Message.
 
+        QueryGraph object that contains a serialization of a query in the form of a graph  # noqa: E501
 
         :param query_graph: The query_graph of this Message.
         :type query_graph: QueryGraph
@@ -106,6 +108,7 @@ class Message(Model):
     def knowledge_graph(self):
         """Gets the knowledge_graph of this Message.
 
+        KnowledgeGraph object that contains lists of nodes and edges in the thought graph corresponding to the message  # noqa: E501
 
         :return: The knowledge_graph of this Message.
         :rtype: KnowledgeGraph
@@ -116,6 +119,7 @@ class Message(Model):
     def knowledge_graph(self, knowledge_graph):
         """Sets the knowledge_graph of this Message.
 
+        KnowledgeGraph object that contains lists of nodes and edges in the thought graph corresponding to the message  # noqa: E501
 
         :param knowledge_graph: The knowledge_graph of this Message.
         :type knowledge_graph: KnowledgeGraph

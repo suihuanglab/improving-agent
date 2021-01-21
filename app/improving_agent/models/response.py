@@ -134,6 +134,7 @@ class Response(Model):
     def logs(self):
         """Gets the logs of this Response.
 
+        Log entries containing errors, warnings, debugging information, etc  # noqa: E501
 
         :return: The logs of this Response.
         :rtype: List[LogEntry]
@@ -144,6 +145,7 @@ class Response(Model):
     def logs(self, logs):
         """Sets the logs of this Response.
 
+        Log entries containing errors, warnings, debugging information, etc  # noqa: E501
 
         :param logs: The logs of this Response.
         :type logs: List[LogEntry]
