@@ -239,14 +239,12 @@ class BasicQuery:
                 score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(attribute.type)
                 if score_func:
                     score += score_func(attribute)
-
         return score
 
     def score_results(self, results):
         scored_results = []
         for result in results:
-            score = self.score_result(result)
-            setattr(result, 'improving_agent_score', score)
+            result.score = self.score_result(result)
             scored_results.append(result)
         return scored_results
 
@@ -430,7 +428,7 @@ class BasicQuery:
         #     self.results = tm.query_for_associations_in_text_miner(self.query_order, self.results)
 
         scored_results = self.score_results(self.results)
-        sorted_scored_results = sorted(scored_results, key=lambda x: x.improving_agent_score, reverse=True)
+        sorted_scored_results = sorted(scored_results, key=lambda x: x.score, reverse=True)
 
         if query_kps:
             # check BigGIM
