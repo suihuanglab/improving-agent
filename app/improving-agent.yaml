@@ -31,7 +31,7 @@ tags:
   - name: SPOKE
     externalDocs:
       description: Documentation of SPOKE data
-      url: https://www.cgl.ucsf.edu/home/meng/spoke/docs/index.html
+      url: https://spoke.rbvi.ucsf.edu/docs/index.html
 paths:
   /predicates:
     get:
