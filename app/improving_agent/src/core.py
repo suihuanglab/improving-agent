@@ -11,7 +11,7 @@ from improving_agent.exceptions import (
     MissingComponentError,
     UnmatchedIdentifierError
 )
-from improving_agent.models import Message, QueryGraph, Response
+from improving_agent.models import Message, Query, QueryGraph, Response
 from improving_agent.src.basic_query import BasicQuery
 from improving_agent.src.normalization.edge_normalization import validate_normalize_qedges
 from improving_agent.src.normalization.node_normalization import validate_normalize_qnodes
@@ -20,15 +20,36 @@ from improving_agent.util import get_evidara_logger
 logger = get_evidara_logger(__name__)
 
 
-def extract_query_options(query):
-    query_options = {
+def deserialize_query(raw_json):
+    """Returns a Query and query_options
+
+    This is done manually so we can ignore other options that are sent,
+    for example, the `callback` key from the ARS.
+    """
+    try:
+        message = raw_json['message']
+    except KeyError:
+        raise BadRequest('`message` must be present in Query')
+
+    # max_results = raw_json.get('max_results') will make a return soon
+    query_kps = raw_json.get('query_kps')
+    psev_context = raw_json.get('psev_context')
+    # this might seem odd, but we let connexion do type checking here
+    # before we construct the query_options
+    try:
+        query = Query(message=message, query_kps=query_kps, psev_context=psev_context)
+    except TypeError as e:
+        raise BadRequest(f'Could not deserialize Query on error {e}')
+
+    query_options = query_options = {
         'psev_context': query.psev_context,
         'query_kps': query.query_kps
     }
-    return query_options
+
+    return query, query_options
 
 
-def process_query(query):
+def process_query(raw_json):
     """Maps query nodes to SPOKE equivalents
 
     Parameters
@@ -42,11 +63,12 @@ def process_query(query):
         reasoner-standard evidara.models.Result objects; alternatively
         returns str message on error
     """
-    logger.info("Got query...")
+    logger.info(f"Got query {raw_json}...")
     # as we unpack queries here and elsewhere, note that we never
     # use the classmethod `from_dict` because we've added some
     # openAPI-incompatible classes that prevent these from
     # deserializing using openAPI tools
+    query, query_options = deserialize_query(raw_json)
     try:
         query_message = Message(**query.message)
         query_graph = QueryGraph(**query_message.query_graph)
@@ -54,8 +76,6 @@ def process_query(query):
         raise BadRequest('Could not deserialize query_message or query_graph')
     qnodes = validate_normalize_qnodes(query_graph.nodes)
     qedges = validate_normalize_qedges(query_graph)
-
-    query_options = extract_query_options(query)
 
     # TODO: logic for different query types
     querier = BasicQuery(qnodes, qedges, query_options, query.max_results)

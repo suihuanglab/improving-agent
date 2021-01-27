@@ -18,5 +18,7 @@ def query(request_body):  # noqa: E501
     :rtype: Response
     """
     if connexion.request.is_json:
-        body = Query(**connexion.request.get_json())  # noqa: E501
-    return core.try_query(body)
+        request_json = connexion.request.get_json()
+        return core.try_query(request_json)
+    else:
+        return ('Request was not json', 400)
