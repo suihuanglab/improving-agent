@@ -34,7 +34,7 @@ def normalize_spoke_nodes_for_translator(spoke_search_nodes):
     """
     # don't search proteins
     formatted_curie_node_map = {
-        format_curie_for_sri(search_node.category, search_node.curie): search_node
+        format_curie_for_sri(search_node.category, search_node.curie, search_node.source): search_node
         for search_node
         in spoke_search_nodes
     }
@@ -50,7 +50,8 @@ def normalize_spoke_nodes_for_translator(spoke_search_nodes):
         if normalized_node is None:
             result_map[search_node.curie] = formatted_curie
         else:
-            result_map[search_node.curie] = normalized_node[NODE_NORMALIZATION_RESPONSE_VALUE_ID][NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
+            result_map[search_node.curie] = \
+                normalized_node[NODE_NORMALIZATION_RESPONSE_VALUE_ID][NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
     return result_map
 
 
@@ -105,7 +106,11 @@ def _check_and_format_qnode_curies_for_search(qnodes):
                 else:
                     # Not sure this actually does anything useful if don't already recognize its pattern
                     for category in qnode.category:
-                        formatted_search_nodes[format_curie_for_sri(category, curie)] = qnode_id
+                        formatted_curies = format_curie_for_sri(category, curie)
+                        if isinstance(formatted_curies, str):
+                            formatted_curies = [formatted_curies]
+                        for formatted_curie in formatted_curies:
+                            formatted_search_nodes[formatted_curie] = qnode_id
         else:
             normalized_qnodes[qnode_id] = qnode
 
