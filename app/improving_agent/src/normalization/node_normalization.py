@@ -3,7 +3,7 @@ from werkzeug.exceptions import NotImplemented as NotImplemented501
 from .curie_formatters import (
     format_curie_for_sri,
     get_spoke_identifier_from_normalized_node,
-    is_qnode_curie_already_acceptable_for_spoke,
+    get_label_if_appropriate_spoke_curie,
 )
 from .sri_node_normalizer import (
     NODE_NORMALIZATION_RESPONSE_VALUE_ID,
@@ -19,7 +19,7 @@ from improving_agent.src.spoke_biolink_constants import (
 )
 from improving_agent.util import get_evidara_logger
 
-QNODE_CURIE_SPOKE_IDENTIFIER = 'spoke_identifier'
+QNODE_CURIE_SPOKE_IDENTIFIERS = 'spoke_identifiers'
 
 logger = get_evidara_logger(__name__)
 
@@ -33,7 +33,11 @@ def normalize_spoke_nodes_for_translator(spoke_search_nodes):
     spoke_search_nodes (list of SearchNode)
     """
     # don't search proteins
-    formatted_curie_node_map = {format_curie_for_sri(search_node): search_node for search_node in spoke_search_nodes}
+    formatted_curie_node_map = {
+        format_curie_for_sri(search_node.category, search_node.curie): search_node
+        for search_node
+        in spoke_search_nodes
+    }
     search_results = SRI_NODE_NORMALIZER.get_normalized_nodes(list(formatted_curie_node_map.keys()))
     result_map = {}
     for formatted_curie, search_node in formatted_curie_node_map.items():
@@ -64,17 +68,17 @@ def _deserialize_qnode(qnode_id, qnode):
 
 
 def _assign_spoke_node_label(qnode):
-    spoke_label = ""
+    spoke_labels = []
     if qnode.category:
-        if len(qnode.category) > 1:
-            # developer warning: this could error if we stop getting lists of categories
-            # which is currently happening due to an openAPI generator workaround
-            # TODO: Support multi-label/category nodes
-            raise NotImplemented501('imProving Agent currently only accepts single-category query nodes')
-        spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS.get(qnode.category[0])
-        if spoke_label is None:
-            raise NotImplemented501(f'imProving Agent does not accept query nodes of category {qnode.category[0]}')
-    setattr(qnode, 'spoke_label', spoke_label)
+        for category in qnode.category:
+            spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS.get(category)
+            if spoke_label is None:
+                raise NotImplemented501(f'imProving Agent does not accept query nodes of category {category}')
+            if isinstance(spoke_label, str):
+                spoke_label = [spoke_label]
+            spoke_labels.extend(spoke_label)
+
+    setattr(qnode, 'spoke_labels', spoke_labels)
     return qnode
 
 
@@ -82,20 +86,27 @@ def _check_and_format_qnode_curies_for_search(qnodes):
     normalized_qnodes = {}
     formatted_search_nodes = {}
     for qnode_id, qnode in qnodes.items():
+        setattr(qnode, QNODE_CURIE_SPOKE_IDENTIFIERS, [])
         if qnode.id:
-            if len(qnode.id) > 1:  # this is a list
-                raise NotImplemented501('imProving Agent currently only accepts single-CURIE query nodes')
-            if is_qnode_curie_already_acceptable_for_spoke(qnode.spoke_label, qnode.id[0]):
-                if qnode.spoke_label == SPOKE_LABEL_GENE:
-                    setattr(qnode, QNODE_CURIE_SPOKE_IDENTIFIER, int(qnode.id[0]))
+            if not qnode.spoke_labels:
+                raise NotImplemented501(
+                    'imProving Agent requires that identifiers have a specified biolink category'
+                )
+            for curie in qnode.id:
+                matched_label = get_label_if_appropriate_spoke_curie(qnode.spoke_labels, curie)
+                if matched_label:
+                    # str formatting for where clauses
+                    if matched_label == SPOKE_LABEL_GENE:
+                        qnode.spoke_identifiers.append(curie)
+                    else:
+                        qnode.spoke_identifiers.append(f"'{curie}'")
+                    normalized_qnodes[qnode_id] = qnode
+                    continue
                 else:
-                    setattr(qnode, QNODE_CURIE_SPOKE_IDENTIFIER, qnode.id[0])
-                normalized_qnodes[qnode_id] = qnode
-                continue
-            else:
-                formatted_search_nodes[format_curie_for_sri(qnode)] = qnode_id
+                    # Not sure this actually does anything useful if don't already recognize its pattern
+                    for category in qnode.category:
+                        formatted_search_nodes[format_curie_for_sri(category, curie)] = qnode_id
         else:
-            setattr(qnode, QNODE_CURIE_SPOKE_IDENTIFIER, '')
             normalized_qnodes[qnode_id] = qnode
 
     return normalized_qnodes, formatted_search_nodes
@@ -107,14 +118,28 @@ def _normalize_query_nodes_for_spoke(qnodes):
         search_results = SRI_NODE_NORMALIZER.get_normalized_nodes(list(formatted_search_nodes.keys()))
         for formatted_curie, qnode_id in formatted_search_nodes.items():
             normalized_node = search_results.get(formatted_curie)
-            qnode = qnodes[qnode_id]
             if normalized_node is None:
-                # TODO make a more helpful message that includes the preferred curie for a given Biolink category
-                raise UnmatchedIdentifierError(f'Specified search CURIE {qnode.id[0]} could not be mapped to SPOKE')
-            spoke_identifier = get_spoke_identifier_from_normalized_node(qnode.spoke_label, normalized_node, qnode.id[0])
-            setattr(qnode, QNODE_CURIE_SPOKE_IDENTIFIER, spoke_identifier)
+                continue
+
+            qnode = normalized_qnodes.get(qnode_id)
+            if not qnode:
+                qnode = qnodes[qnode_id]
+
+            spoke_identifier = get_spoke_identifier_from_normalized_node(
+                qnode.spoke_labels,
+                normalized_node,
+                formatted_curie
+            )
+            if not spoke_identifier:
+                continue
+
+            qnode.spoke_identifiers.append(spoke_identifier)
             normalized_qnodes[qnode.qnode_id] = qnode
 
+    if not qnodes.keys() == normalized_qnodes.keys():  # we were unable to map some of the qnodes
+        raise UnmatchedIdentifierError(
+            f'No identifiers for qnodes {qnodes.keys() - normalized_qnodes.keys()} could be mapped to SPOKE'
+        )
     return normalized_qnodes
 
 
