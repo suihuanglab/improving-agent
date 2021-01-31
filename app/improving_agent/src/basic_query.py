@@ -3,7 +3,10 @@ from collections import Counter, namedtuple
 import neo4j
 from improving_agent import models  # TODO: replace with direct imports after fixing definitions
 from improving_agent.exceptions import MissingComponentError
-from improving_agent.src.improving_agent_constants import ATTRIBUTE_TYPE_PSEV_WEIGHT
+from improving_agent.src.improving_agent_constants import (
+    ATTRIBUTE_TYPE_PSEV_WEIGHT,
+    SPOKE_NODE_PROPERTY_SOURCE
+)
 from improving_agent.src.kps.biggim import annotate_edges_with_biggim
 from improving_agent.src.kps.cohd import CohdClient
 from improving_agent.src.kps.text_miner import TextMinerClient
@@ -246,7 +249,7 @@ class BasicQuery:
             scored_results.append(result)
         return scored_results
 
-    def make_result_node(self, n4j_object):
+    def make_result_node(self, n4j_object, spoke_curie):
         """Instantiates a reasoner-standard Node to return as part of a
         KnowledgeGraph result
 
@@ -254,6 +257,7 @@ class BasicQuery:
         ----------
         n4j_object (neo4j.types.graph.Node): a `Node` object returned from a
             neo4j.bolt.driver.session Cypher query
+        spoke_curie (str): spoke 'identifier'
 
         Returns
         -------
@@ -264,14 +268,20 @@ class BasicQuery:
         if not name:
             name = n4j_object.get("name")
 
+        result_node_attributes = []
+        node_source = None
+        for k, v in n4j_object.items():
+            # TODO: filter these to something reasonable
+            result_node_attributes.append(models.Attribute(type=k, value=v))
+            if k == SPOKE_NODE_PROPERTY_SOURCE:
+                node_source = v
+
         result_node = models.Node(
             name=name,
             category=[SPOKE_BIOLINK_NODE_MAPPINGS[label] for label in list(n4j_object.labels)],
+            attributes=result_node_attributes
         )
-        result_node.attributes = [
-            # TODO: filter these to something reasonable
-            models.Attribute(type=k, value=v) for k, v in n4j_object.items()
-        ]
+
         psev_context = self.query_options.get('psev_context')
         if psev_context:
             try:
@@ -288,6 +298,9 @@ class BasicQuery:
                 result_node.attributes.append(
                     models.Attribute(type=ATTRIBUTE_TYPE_PSEV_WEIGHT, value=0)
                 )
+
+        search_node = SearchNode(result_node.category[0], spoke_curie, node_source)
+        self.nodes_to_normalize.add(search_node)
         return result_node
 
     def make_result_edge(self, n4j_object):
@@ -346,11 +359,9 @@ class BasicQuery:
         for name in self.query_names:
             if isinstance(n4j_result[name], neo4j.types.graph.Node):
                 spoke_curie = n4j_result[name]['identifier']
-                result_node = self.make_result_node(n4j_result[name])
+                result_node = self.make_result_node(n4j_result[name], spoke_curie)
                 self.knowledge_graph['nodes'][spoke_curie] = result_node
                 node_bindings[self.query_mapping['nodes'][name]] = models.NodeBinding(spoke_curie)
-                search_node = SearchNode(result_node.category[0], spoke_curie)
-                self.nodes_to_normalize.add(search_node)
 
             else:
                 spoke_edge_id = n4j_result[name].id  # TODO: is there a way to make this consistent?

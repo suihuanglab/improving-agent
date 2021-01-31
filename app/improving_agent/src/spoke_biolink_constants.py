@@ -14,6 +14,8 @@ BIOLINK_ENTITY_GENE = 'biolink:Gene'
 BIOLINK_ENTITY_GROSS_ANATOMICAL_STRUCTURE = 'biolink:GrossAnatomicalStructure'
 BIOLINK_ENTITY_MOLECULAR_ACTIVITY = 'biolink:MolecularActivity'
 BIOLINK_ENTITY_NAMED_THING = 'biolink:NamedThing'
+BIOLINK_ENTITY_NUTRIENT = 'biolink:Nutrient'
+BIOLINK_ENTITY_ORGANISM_TAXON = 'biolink:OrganismTaxon'
 BIOLINK_ENTITY_PATHWAY = 'biolink:Pathway'
 BIOLINK_ENTITY_PHENOTYPIC_FEATURE = 'biolink:PhenotypicFeature'
 BIOLINK_ENTITY_PROTEIN = 'biolink:Protein'
@@ -25,13 +27,17 @@ SPOKE_LABEL_CELL_TYPE = 'CellType'
 SPOKE_LABEL_CELLULAR_COMPONENT = 'CellularComponent'
 SPOKE_LABEL_COMPOUND = 'Compound'
 SPOKE_LABEL_DISEASE = 'Disease'
+SPOKE_LABEL_EC = 'EC'
 SPOKE_LABEL_FOOD = 'Food'
 SPOKE_LABEL_GENE = 'Gene'
 SPOKE_LABEL_MOLECULAR_FUNCTION = 'MolecularFunction'
 SPOKE_LABEL_NUTRIENT = 'Nutrient'
+SPOKE_LABEL_ORGANISM = 'Organism'
 SPOKE_LABEL_PATHWAY = 'Pathway'
 SPOKE_LABEL_PHARMACOLOGIC_CLASS = 'PharmacologicClass'
 SPOKE_LABEL_PROTEIN = 'Protein'
+SPOKE_LABEL_REACTION = 'Reaction'
+SPOKE_LABEL_SARSCOV2 = 'SARSCov2'
 SPOKE_LABEL_SIDE_EFFECT = 'SideEffect'
 SPOKE_LABEL_SYMPTOM = 'Symptom'
 
@@ -44,14 +50,17 @@ BIOLINK_SPOKE_NODE_MAPPINGS = {
     BIOLINK_ENTITY_FOOD: SPOKE_LABEL_FOOD,
     BIOLINK_ENTITY_GENE: SPOKE_LABEL_GENE,
     BIOLINK_ENTITY_GROSS_ANATOMICAL_STRUCTURE: SPOKE_LABEL_ANATOMY,
-    BIOLINK_ENTITY_MOLECULAR_ACTIVITY: SPOKE_LABEL_MOLECULAR_FUNCTION,
+    BIOLINK_ENTITY_MOLECULAR_ACTIVITY: [SPOKE_LABEL_EC, SPOKE_LABEL_MOLECULAR_FUNCTION, SPOKE_LABEL_REACTION],
+    BIOLINK_ENTITY_NUTRIENT: SPOKE_LABEL_NUTRIENT,
+    BIOLINK_ENTITY_ORGANISM_TAXON: SPOKE_LABEL_ORGANISM,
     BIOLINK_ENTITY_PATHWAY: SPOKE_LABEL_PATHWAY,
     BIOLINK_ENTITY_PHENOTYPIC_FEATURE: SPOKE_LABEL_SYMPTOM,
-    BIOLINK_ENTITY_PROTEIN: SPOKE_LABEL_PROTEIN,
+    BIOLINK_ENTITY_PROTEIN: [SPOKE_LABEL_PROTEIN, SPOKE_LABEL_SARSCOV2],
     BIOLINK_ENTITY_NAMED_THING: '',  # for "any node type"
     # missing
-    # : "PharmacologicClass",
-    # : "SideEffect",
+    # : SPOKE_LABEL_ANATOMY_CELL_TYPE
+    # : SPOKE_LABEL_PHARMACOLOGIC_CLASS,
+    # : SPOKE_LABEL_SIDE_EFFECT
 }
 
 SPOKE_BIOLINK_NODE_MAPPINGS = {
@@ -62,13 +71,17 @@ SPOKE_BIOLINK_NODE_MAPPINGS = {
     SPOKE_LABEL_CELLULAR_COMPONENT: BIOLINK_ENTITY_CELLULAR_COMPONENT,
     SPOKE_LABEL_COMPOUND: BIOLINK_ENTITY_CHEMICAL_SUBSTANCE,
     SPOKE_LABEL_DISEASE: BIOLINK_ENTITY_DISEASE,
+    SPOKE_LABEL_EC: BIOLINK_ENTITY_MOLECULAR_ACTIVITY,
     SPOKE_LABEL_FOOD: BIOLINK_ENTITY_FOOD,
     SPOKE_LABEL_GENE: BIOLINK_ENTITY_GENE,
     SPOKE_LABEL_MOLECULAR_FUNCTION: BIOLINK_ENTITY_MOLECULAR_ACTIVITY,
-    SPOKE_LABEL_NUTRIENT: BIOLINK_ENTITY_NAMED_THING,
+    SPOKE_LABEL_NUTRIENT: BIOLINK_ENTITY_NUTRIENT,
+    SPOKE_LABEL_ORGANISM: BIOLINK_ENTITY_ORGANISM_TAXON,
     SPOKE_LABEL_PATHWAY: BIOLINK_ENTITY_PATHWAY,
     SPOKE_LABEL_PHARMACOLOGIC_CLASS: BIOLINK_ENTITY_NAMED_THING,
     SPOKE_LABEL_PROTEIN: BIOLINK_ENTITY_PROTEIN,
+    SPOKE_LABEL_REACTION: BIOLINK_ENTITY_MOLECULAR_ACTIVITY,
+    SPOKE_LABEL_SARSCOV2: BIOLINK_ENTITY_PROTEIN,
     SPOKE_LABEL_SIDE_EFFECT: BIOLINK_ENTITY_NAMED_THING,
     SPOKE_LABEL_SYMPTOM: BIOLINK_ENTITY_PHENOTYPIC_FEATURE,
 }
@@ -348,13 +361,13 @@ PREDICATES = {
     # SPOKE_LABEL_ANATOMY_CELL_TYPE: {
     #     BIOLINK_ENTITY_CELL: {
     #         BIOLINK_ASSOCIATION_PART_OF: SPOKE_EDGE_TYPE_ISIN_ACTiiCT
-    #     }
+    #     },
     #     BIOLINK_ENTITY_GENE: {
     #         BIOLINK_ASSOCIATION_EXPRESSES: SPOKE_EDGE_TYPE_EXPRESSES_ACTeG
     #     },
-    #     BIOLINK_ENTITY_GROSS_ANATOMICAL_STRUCTURE: [
+    #     BIOLINK_ENTITY_GROSS_ANATOMICAL_STRUCTURE: {
     #         BIOLINK_ASSOCIATION_PART_OF: SPOKE_EDGE_TYPE_ISIN_ACTiiA
-    #     ]
+    #     }
     # },
     BIOLINK_ENTITY_CHEMICAL_SUBSTANCE: {
         BIOLINK_ENTITY_DISEASE: {
@@ -373,8 +386,6 @@ PREDICATES = {
             BIOLINK_ASSOCIATION_MOLECULARLY_INTERACTS_WITH: SPOKE_EDGE_TYPE_BINDS_CbP
         }
     },
-    # MISSING: SARS-COV-2
-    #     • CoronavirusProtein-interacts-Protein – SARS-CoV-2-human protein-protein interactions from Gordon et al., 2020, as well as the known interaction between the SARS2CoV spike protein and ACE2_HUMAN
     BIOLINK_ENTITY_DISEASE: {
         BIOLINK_ENTITY_DISEASE: {
             BIOLINK_ASSOCIATION_HAS_PART: SPOKE_EDGE_TYPE_CONTAINS_DcD,
@@ -391,12 +402,11 @@ PREDICATES = {
             BIOLINK_ASSOCIATION_HAS_PHENOTYPE: SPOKE_EDGE_TYPE_PRESENTS_DpS
         }
     },
-    # MISSING: EC-catalyzes-Reaction – from microbiome pathway sources
     BIOLINK_ENTITY_FOOD: {
         BIOLINK_ENTITY_CHEMICAL_SUBSTANCE: {
             BIOLINK_ASSOCIATION_HAS_PART: SPOKE_EDGE_TYPE_CONTAINS_FcC
         },
-        BIOLINK_ENTITY_NAMED_THING: {  # nutrient
+        BIOLINK_ENTITY_NUTRIENT: {
             BIOLINK_ASSOCIATION_HAS_PART: SPOKE_EDGE_TYPE_CONTAINS_FcN
         }
     },
@@ -422,7 +432,7 @@ PREDICATES = {
         BIOLINK_ENTITY_MOLECULAR_ACTIVITY: {
             BIOLINK_ASSOCIATION_PARTICIPATES_IN: SPOKE_EDGE_TYPE_PARTICIPATES_GpMF
         },
-        # BIOLINK_ENTITY_PATHWAY: [], Gene-participates-Pathway – see the first set of Pathway sources
+        # BIOLINK_ENTITY_PATHWAY: {BIOLINK_ASSOCIATION_PARTICIPATES_IN:, Gene-participates-Pathway – see the first set of Pathway sources
         BIOLINK_ENTITY_PROTEIN: {
             BIOLINK_ASSOCIATION_HAS_GENE_PRODUCT: SPOKE_EDGE_TYPE_ENCODES_GeP
         },
@@ -438,20 +448,42 @@ PREDICATES = {
             BIOLINK_ASSOCIATION_POSITIVELY_REGULATES_ENTITY_TO_ENTITY: SPOKE_EDGE_TYPE_UPREGULATES_AuG,
         }
     },
-    # Organism-causes-Disease – from PathoPhenoDB, currently just between organism SARS-CoV-2 and disease Covid-19
-    # Organism→contains→Organism – from NCBI Taxonomy, indicates a relationship of increasing specificity between organisms (e.g., genus contains species)
-    # Organism→isa→Organism – from NCBI Taxonomy, indicates a relationship of increasing generality between organisms (e.g., species belongs to genus)
-    # Organism-encodes-Protein – between organism SARS-CoV-2 and its proteins
-    # Organism-includes-EC – from microbiome pathway sources
-    # Organism-includes-Pathway – from microbiome pathway sources and the Pathosystems Resource Integration Center (PATRIC)
+    BIOLINK_ENTITY_MOLECULAR_ACTIVITY: {
+        BIOLINK_ENTITY_CHEMICAL_SUBSTANCE: {
+            BIOLINK_ASSOCIATION_HAS_INPUT: SPOKE_EDGE_TYPE_CONSUMES_RcC,
+            BIOLINK_ASSOCIATION_HAS_OUTPUT: SPOKE_EDGE_TYPE_PRODUCES_RpC
+        },
+        BIOLINK_ENTITY_MOLECULAR_ACTIVITY: {
+            BIOLINK_ASSOCIATION_ENABLES: SPOKE_EDGE_TYPE_CATALYZES_ECcR
+        }
+    },
+    BIOLINK_ENTITY_ORGANISM_TAXON: {
+        # BIOLINK_ENTITY_DISEASE: {}  Organism-causes-Disease – from PathoPhenoDB,
+        # currently just between organism SARS-CoV-2 and disease Covid-19
+        BIOLINK_ENTITY_ORGANISM_TAXON: {
+            BIOLINK_ASSOCIATION_PART_OF: [
+                SPOKE_EDGE_TYPE_CONTAINS_OcO,
+                SPOKE_EDGE_TYPE_ISA_OiO
+            ]
+        },
+        BIOLINK_ENTITY_MOLECULAR_ACTIVITY: {
+            BIOLINK_ASSOCIATION_HAS_PART: SPOKE_EDGE_TYPE_INCLUDES_OiPW
+        },
+        BIOLINK_ENTITY_PROTEIN: {
+            BIOLINK_ASSOCIATION_HAS_PART: SPOKE_EDGE_TYPE_ENCODES_OeP  # TODO: check this
+        },
+        BIOLINK_ENTITY_PATHWAY: {
+            BIOLINK_ASSOCIATION_HAS_PART: SPOKE_EDGE_TYPE_INCLUDES_OiPW
+        }
+    },
     BIOLINK_ENTITY_PATHWAY: {
+        BIOLINK_ENTITY_MOLECULAR_ACTIVITY: {
+            BIOLINK_ASSOCIATION_HAS_PART: SPOKE_EDGE_TYPE_INCLUDES_PWiEC
+        },
         BIOLINK_ENTITY_PATHWAY: {
             BIOLINK_ASSOCIATION_HAS_PART: SPOKE_EDGE_TYPE_CONTAINS_PWcPW,
             BIOLINK_ASSOCIATION_PART_OF: SPOKE_EDGE_TYPE_ISA_PWiPW
-        },
-        # SPOKE_LABEL_EC: [
-        #   Pathway-includes-EC
-        # ]
+        }
     },
     # SPOKE_LABEL_PHARMACOLOGIC_CLASS: {
     #     BIOLINK_ENTITY_CHEMICAL_SUBSTANCE: [
@@ -460,27 +492,23 @@ PREDICATES = {
     # }
     BIOLINK_ENTITY_PROTEIN: {
         # BIOLINK_ENTITY_DISEASE: [
-        #     • Protein-decreasedin-Disease – from Institute for Systems Biology, human proteins decreased in Covid-19 disease (Su et al., 2020)
-        #     • Protein-increasedin-Disease – from Institute for Systems Biology, human proteins increased in Covid-19 disease (Su et al., 2020)
+        #     • Protein-decreasedin-Disease – from Institute for Systems Biology,
+        #       human proteins decreased in Covid-19 disease (Su et al., 2020)
+        #     • Protein-increasedin-Disease – from Institute for Systems Biology,
+        #       human proteins increased in Covid-19 disease (Su et al., 2020)
         # ]
-        # SPOKE_LABEL_EC: [
-        #     • Protein-isa-EC – from microbiome pathway sources
-        # ]
+        BIOLINK_ENTITY_MOLECULAR_ACTIVITY: {
+            BIOLINK_ASSOCIATION_RELATED_TO: SPOKE_EDGE_TYPE_ISA_PiEC
+        },
         BIOLINK_ENTITY_PROTEIN: {
-            BIOLINK_ASSOCIATION_INTERACTS_WITH: SPOKE_EDGE_TYPE_INTERACTS_PiP
+            BIOLINK_ASSOCIATION_INTERACTS_WITH: [
+                SPOKE_EDGE_TYPE_INTERACTS_CPiP, SPOKE_EDGE_TYPE_INTERACTS_PiP
+            ]
         }
     },
     # SPOKE_LABEL_PROTEIN_DOMAIN: {
     #     • ProteinDomain-memberof-ProteinFamily – from Pfam
     #     • ProteinDomain-partof-Protein – from InterPro
-    # }
-    # SPOKE_LABEL_REACTION : {
-    #    BIOLINK_ENTITY_CHEMICAL_SUBSTANCE: [
-    #       BIOLINK_ASSOCIATION_HAS_INPUT,
-    #       BIOLINK_ASSOCIATION_HAS_OUTPUT
-    # ]
-    #  • Reaction-consumes-Compound – from microbiome pathway sources
-    #  • Reaction-produces-Compound – from microbiome pathway sources
     # }
 }
 
