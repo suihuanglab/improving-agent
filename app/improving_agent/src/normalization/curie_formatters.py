@@ -146,13 +146,14 @@ def _format_ncbigene_for_search(curie, source=None):
 )
 def _format_ec_reaction_for_search(curie, source=None):
     # doesn't match MolecularFunction SPOKE label
-    if not source:
+
+    if not source:  # this happens when we receive the query
         return [f'KEGG:{curie}', f'MetaCyc:{curie}']
     if source == 'kegg':
         return f'KEGG:{curie}'
     if source == 'metacyc':
         return f'MetaCyc:{curie}'
-    return curie
+    return curie  # this happens when we're returning results
 
 
 @register_search_curie_formatter(BIOLINK_ENTITY_ORGANISM_TAXON, SPOKE_IDENTIFIER_REGEX_ORGANISM)
@@ -193,6 +194,11 @@ def format_curie_for_sri(category, curie, source=None):
 
 
 # Formatters for translating SRI Normalization results to SPOKE
+# It may seems silly (or insane) to do all of this checking instead of
+# simply letting the database do th work for us, but these regex help
+# to make the Cypher queries slightly safer by enforcing strict
+# patterns before sending the queries to the DB. The goal is to not allow
+# Cypher keywords like DELETE, CREATE, SET, etc to sneak into the queries
 def register_spoke_curie_formatter(node_type, regex):
     def wrapper(f):
         NODE_NORMALIZATION_SPOKE_CURIE_FORMATTERS[node_type][NODE_NORMALIZATION_KEY_FUNCTION] = f
