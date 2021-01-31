@@ -7,7 +7,7 @@ import six
 from improving_agent import typing_utils
 from improving_agent.src.config import LOG_LOCATION
 
-formatter = logging.Formatter("%(asctime)s %(name)s %(lineno)d %(levelname)s %(message)s")
+formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s line %(lineno)d: %(message)s')
 
 
 def _deserialize(data, klass):

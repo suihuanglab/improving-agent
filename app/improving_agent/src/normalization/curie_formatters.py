@@ -148,80 +148,79 @@ def register_spoke_curie_formatter(node_type, regex):
 
 @register_spoke_curie_formatter(SPOKE_LABEL_ANATOMY, SPOKE_IDENTIFIER_REGEX_ANATOMY)
 def _format_anatomy_for_spoke(curie):
-    return curie
+    return f"'{curie}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_BIOLOGICAL_PROCESS, SPOKE_IDENTIFIER_REGEX_BIOLOGICAL_PROCESS)
 def _format_biological_process_for_spoke(curie):
-    return curie
+    return f"'{curie}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_CELL_TYPE, SPOKE_IDENTIFIER_REGEX_CELL_TYPE)
 def _format_cell_type_for_spoke(curie):
-    return curie
+    return f"'{curie}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_CELLULAR_COMPONENT, SPOKE_IDENTIFIER_REGEX_CELLULAR_COMPONENT)
 def _format_cellular_component_for_spoke(curie):
-    return curie
+    return f"'{curie}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_COMPOUND, '^CHEMBL.COMPOUND:|^DRUGBANK:')
 def _format_compound_for_spoke(curie):
-    return re.sub('^CHEMBL.COMPOUND:|^DRUGBANK:', '', curie)
+    return f"'{re.sub('^CHEMBL.COMPOUND:|^DRUGBANK:', '', curie)}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_DISEASE, SPOKE_IDENTIFIER_REGEX_DISEASE)
 def _format_disease_for_spoke(curie):
-    return curie
+    return f"'{curie}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_FOOD, SPOKE_IDENTIFIER_REGEX_FOOD)
 def _format_food_for_spoke(curie):
-    return curie
+    return f"'{curie}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_GENE, '^NCBIGene:')
 def format_gene_for_spoke(curie):
     # missing leading underscore because it's used by the BigGIM module
     return curie.replace('NCBIGene:', '')
-    # this ^ is an int in SPOKE, but we keep a string here and forego
-    # addition of quotes when returning it below
+    # this ^ is an int in SPOKE, but we just forego the addition of quotes here
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_MOLECULAR_FUNCTION, SPOKE_IDENTIFIER_REGEX_MOLECULAR_FUNCTION)
 def _format_molecular_function_for_spoke(curie):
-    return curie
+    return f"'{curie}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_NUTRIENT, SPOKE_IDENTIFIER_REGEX_NUTRIENT)
 def _format_nutrient_for_spoke(curie):
-    return curie
+    return f"'{curie}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_PATHWAY, SPOKE_IDENTIFIER_REGEX_PATHWAY)
 def _format_pathway_for_spoke(curie):
-    return curie
+    return f"'{curie}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_PHARMACOLOGIC_CLASS, SPOKE_IDENTIFIER_REGEX_PHARMACOLOGIC_CLASS)
 def _format_pharmacological_class_for_spoke(curie):
-    return curie
+    return f"'{curie}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_PROTEIN, '^UniProtKB:')
 def _format_protein_for_spoke(curie):
-    return curie.replace('UniProtKB:', '')
+    return f"'{curie.replace('UniProtKB:', '')}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_SIDE_EFFECT, SPOKE_IDENTIFIER_REGEX_SIDE_EFFECT)
 def _format_side_effect_for_spoke(curie):
-    return curie
+    return f"'{curie}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_SYMPTOM, '^MESH:D[0-9]+')
 def _format_symptom_for_spoke(curie):
-    return curie
+    return f"'{curie}'"
 
 
 def get_label_if_appropriate_spoke_curie(spoke_labels, curie):
@@ -251,11 +250,6 @@ def get_spoke_identifier_from_normalized_node(spoke_labels, normalized_node, sea
                     node_type_config[NODE_NORMALIZATION_KEY_REGEX],
                     identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
             ):
-                spoke_identifier = node_type_config[NODE_NORMALIZATION_KEY_FUNCTION](
+                return node_type_config[NODE_NORMALIZATION_KEY_FUNCTION](
                     identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
                 )
-
-                # quote formatting for Cypher IN clause
-                if node_type_config[NODE_NORMALIZATION_KEY_REGEX] == '^NCBIGene:':  # unfortunate hack for gene
-                    return spoke_identifier
-                return f"'{spoke_identifier}'"
