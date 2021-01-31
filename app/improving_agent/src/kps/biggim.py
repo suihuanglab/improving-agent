@@ -9,6 +9,10 @@ from improving_agent.util import get_evidara_logger
 logger = get_evidara_logger(__name__)
 
 
+def format_gene_for_bg(identifier):
+    return int(format_gene_for_spoke(identifier))
+
+
 def get_relevant_anatomy(session, disease):
     """Returns SPOKE results for anatomy related to `disease`
     Parameters
@@ -105,7 +109,7 @@ def annotate_edges_with_biggim(
         edges_to_update = []
         for result in results:
             for bg_node in bg_nodes:
-                genes_to_search.add(format_gene_for_spoke(result.node_bindings[bg_node.qnode_id].id))
+                genes_to_search.add(format_gene_for_bg(result.node_bindings[bg_node.qnode_id].id))
             for bg_edge in bg_edges:
                 edges_to_update.append(result.edge_bindings[bg_edge.qedge_id].id)
 
@@ -123,12 +127,13 @@ def annotate_edges_with_biggim(
         for edge_id in edges_to_update:
             kedge = kg_edges[edge_id]
 
-            # TODO: Python 3.8+ update - take care of these ugly assignments with key :=
             key = None
-            if f"{format_gene_for_spoke(kedge.subject)}-{format_gene_for_spoke(kedge.object)}" in bg_results:
-                key = f"{format_gene_for_spoke(kedge.subject)}-{format_gene_for_spoke(kedge.object)}"
-            elif f"{format_gene_for_spoke(kedge.object)}-{format_gene_for_spoke(kedge.subject)}" in bg_results:
-                key = f"{format_gene_for_spoke(kedge.object)}-{format_gene_for_spoke(kedge.subject)}"
+            formatted_subject = format_gene_for_bg(kedge.subject)
+            formatted_object = format_gene_for_bg(kedge.object)
+            if f"{formatted_subject}-{formatted_object}" in bg_results:
+                key = f"{formatted_subject}-{formatted_object}"
+            elif f"{formatted_object}-{formatted_subject}" in bg_results:
+                key = f"{formatted_object}-{formatted_subject}"
             else:
                 continue
 

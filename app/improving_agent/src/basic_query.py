@@ -1,12 +1,3 @@
-# BIG TODOS:
-# Handle inconming identifiers
-# - get identifiers recognizable by SPOKE
-# -- come up with an acceptable list of identifiers for all SPOKE nodes
-# - fail on unrecognized - return 501
-# Other
-# - array properties should be string.. join together?
-# - update yamls with docs/proper servers
-
 from collections import Counter, namedtuple
 
 import neo4j
@@ -66,6 +57,57 @@ def get_text_miner_score(edge_attribute):
     return edge_attribute.value
 
 
+# Cypher
+def make_qnode_filter_clause(name, query_node):
+    labels_clause = ''
+    if query_node.spoke_labels:
+        labeled_names = [f'{name}:{label}' for label in query_node.spoke_labels]
+        labels_clause = f'({" OR ".join(labeled_names)})'
+
+    identifiers_clause = ''
+    if query_node.spoke_identifiers:
+        identifiers_clause = f'{name}.identifier IN [{",".join(query_node.spoke_identifiers)}]'
+
+    if labels_clause:
+        if identifiers_clause:
+            return f'({labels_clause} AND {identifiers_clause})'
+        else:
+            return labels_clause
+    if identifiers_clause:
+        return f'({identifiers_clause})'
+    return ''
+
+
+def make_qedge_cypher_repr(name, query_edge):
+    edge_repr = f'[{name}'
+    if query_edge.spoke_edge_types:
+        edge_repr = f'{edge_repr}:{"|".join(query_edge.spoke_edge_types)}'
+    edge_repr += ']'
+    return edge_repr
+
+
+def get_n4j_param_str(self, parameters):
+    """Returns a string properly formatted for neo4j parameter-based
+    searching
+
+    Parameters
+    ----------
+    parameters (dict of str -> int|str): parameter mappings to
+    convert to string suitable for Cypher querying
+
+    Returns
+    -------
+    <unnamed> (str): formatted string for parameter search
+    """
+    param_string = ", ".join(
+        [
+            f"{k}:'{v}'" if isinstance(v, str) else f"{k}:{v}"
+            for k, v in parameters.items()
+        ]
+    )
+    return "{" + param_string + "}"
+
+
 class BasicQuery:
     """A class for making basic queries to the SPOKE neo4j database"""
 
@@ -85,62 +127,6 @@ class BasicQuery:
 
         self.n_results = self.n_results if self.n_results < 200 else 200
         # TODO: write a message in the response that the max results is 200
-
-    # neo4j
-    def get_n4j_param_str(self, parameters):
-        """Returns a string properly formatted for neo4j parameter-based
-        searching
-
-        Parameters
-        ----------
-        parameters (dict of str -> int|str): parameter mappings to
-        convert to string suitable for Cypher querying
-
-        Returns
-        -------
-        <unnamed> (str): formatted string for parameter search
-        """
-        param_string = ", ".join(
-            [
-                f"{k}:'{v}'" if isinstance(v, str) else f"{k}:{v}"
-                for k, v in parameters.items()
-            ]
-        )
-        return "{" + param_string + "}"
-
-    def get_n4j_str_repr(self, query_part, name):
-        """Returns string representation of node or edge for Cypher
-        querying
-
-        Parameters
-        ----------
-        query_part (QNode or QEdge): a node or edge from a QueryGraph
-        name (str): alias for Cypher
-
-        Returns
-        -------
-        A Cypher string representative of a node or edge
-        """
-        # not supporting specific edge types until mapped to biolink
-        if isinstance(query_part, models.QEdge):
-            edge_repr = f'[{name}'
-            if query_part.spoke_edge_types:
-                edge_repr = f'{edge_repr}:{"|".join(query_part.spoke_edge_types)}'
-            edge_repr += ']'
-            return edge_repr
-
-        # start constructing the string, then add optional features
-        node_repr = f"({name}"
-        # TODO: refactor below to make where clauses
-        # add a label if we can, then add parameters if possible
-        if query_part.spoke_label:
-            node_repr += f":{query_part.spoke_label} "
-            # add a parameter if we can
-            if query_part.spoke_identifier:
-                parameter_string = self.get_n4j_param_str({"identifier": query_part.spoke_identifier})
-                node_repr += f"{parameter_string}"
-        node_repr += ")"
-        return node_repr
 
     def make_query_order(self):
         """Constructs a list of QNodes and QEdges in the order in which
@@ -192,18 +178,30 @@ class BasicQuery:
 
     def make_cypher_query_string(self):
         # spoke diameter is <7 but consider enforcing max query length anyway
-        # TODO: get rid of this naming and use the now-available `qedge_id` or `qnode_id` attr
-        self.query_names = "abcdefghijklmn"[: len(self.query_order)]
+        # TODO: get rid of this silly naming and use the now-available `qedge_id` or `qnode_id` attr
+        self.query_names = list("abcdefghijklmn"[: len(self.query_order)])
         query_parts = []
+        node_filter_clauses = []
         self.query_mapping = {"edges": {}, "nodes": {}}
         for query_part, name in zip(self.query_order, self.query_names):
-            query_parts.append(self.get_n4j_str_repr(query_part, name))
             if isinstance(query_part, models.QNode):
                 self.query_mapping["nodes"][name] = query_part.qnode_id
+                query_parts.append(f'({name})')
+                node_filter_clause = make_qnode_filter_clause(name, query_part)
+                if node_filter_clause:
+                    node_filter_clauses.append(node_filter_clause)
+
             else:
                 self.query_mapping["edges"][name] = query_part.qedge_id
-        query_string = "-".join(query_parts)
-        return query_string
+                query_parts.append(make_qedge_cypher_repr(name, query_part))
+
+        match_clause = f'MATCH p={"-".join(query_parts)}'
+        where_clause = ''
+        if node_filter_clauses:
+            where_clause = f'WHERE {" AND ".join(node_filter_clauses)}'
+        return_clause = f'RETURN * limit {self.n_results}'
+
+        return f'{match_clause} {where_clause} {return_clause};'
 
     # Result handling
     def score_result(self, result):
@@ -345,12 +343,6 @@ class BasicQuery:
         edge_bindings, node_bindings = {}, {}
 
         # iterate through results and add to result objects
-        #
-        #
-        # This has fundamentally changed. Result.nodes and Result.edges
-        # are now Result.node_bindings and Result.edge_bindings and they
-        # are now simply lists of Node and EdgeBindings to the single
-        # KnowledgeGraph for the entire set of results
         for name in self.query_names:
             if isinstance(n4j_result[name], neo4j.types.graph.Node):
                 spoke_curie = n4j_result[name]['identifier']
@@ -410,7 +402,7 @@ class BasicQuery:
 
         # query
         logger.info(f'Querying SPOKE with {query_string}')
-        r = session.run(f"match p = {query_string} " f"return * limit {self.n_results}")
+        r = session.run(query_string)
         self.results = [self.extract_result(record) for record in r.records()]
         if not self.results:
             return self.results, self.knowledge_graph

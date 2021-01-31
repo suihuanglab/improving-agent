@@ -23,14 +23,10 @@ import re
 from collections import defaultdict
 
 from werkzeug.exceptions import NotImplemented as NotImplemented501
-
-from . import SearchNode
 from .sri_node_normalizer import (
     NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS,
     NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER
 )
-from improving_agent.exceptions import UnmatchedIdentifierError
-from improving_agent.models import QNode
 from improving_agent.src.spoke_biolink_constants import (
     BIOLINK_ENTITY_CHEMICAL_SUBSTANCE,
     BIOLINK_ENTITY_GENE,
@@ -98,7 +94,7 @@ SPOKE_IDENTIFIER_REGEXES = {
 
 
 # Formatters for searching the SRI node normalizer
-def register_search_curie_formatter(node_type, regex):  # TODO: inclue the node type here
+def register_search_curie_formatter(node_type, regex):
     def wrapper(f):
         NODE_NORMALIZATION_SEARCH_CURIE_FORMATTERS[node_type][regex] = f
         return f
@@ -130,17 +126,15 @@ def _format_protein_for_search(curie):
     return f'UniProtKB:{curie}'
 
 
-def format_curie_for_sri(search_node):
-    if isinstance(search_node, QNode):
-        search_node = SearchNode(search_node.category[0], search_node.id[0])
-    format_funcs = NODE_NORMALIZATION_SEARCH_CURIE_FORMATTERS.get(search_node.category)
+def format_curie_for_sri(category, curie):
+    format_funcs = NODE_NORMALIZATION_SEARCH_CURIE_FORMATTERS.get(category)
     if not format_funcs:
-        return search_node.curie
+        return curie
     for regex, format_func in format_funcs.items():
-        if re.match(regex, str(search_node.curie)):
-            return format_func(search_node.curie)
+        if re.match(regex, str(curie)):
+            return format_func(curie)
 
-    return search_node.curie
+    return curie
 
 
 # Formatters for translating SRI Normalization results to SPOKE
@@ -190,7 +184,9 @@ def _format_food_for_spoke(curie):
 @register_spoke_curie_formatter(SPOKE_LABEL_GENE, '^NCBIGene:')
 def format_gene_for_spoke(curie):
     # missing leading underscore because it's used by the BigGIM module
-    return int(curie.replace('NCBIGene:', ''))
+    return curie.replace('NCBIGene:', '')
+    # this ^ is an int in SPOKE, but we keep a string here and forego
+    # addition of quotes when returning it below
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_MOLECULAR_FUNCTION, SPOKE_IDENTIFIER_REGEX_MOLECULAR_FUNCTION)
@@ -228,13 +224,13 @@ def _format_symptom_for_spoke(curie):
     return curie
 
 
-def is_qnode_curie_already_acceptable_for_spoke(spoke_label, curie):
-    if re.match(SPOKE_IDENTIFIER_REGEXES[spoke_label], curie):
-        return True
-    return False
+def get_label_if_appropriate_spoke_curie(spoke_labels, curie):
+    for spoke_label in spoke_labels:
+        if re.match(SPOKE_IDENTIFIER_REGEXES[spoke_label], curie):
+            return spoke_label
 
 
-def get_spoke_identifier_from_normalized_node(spoke_label, normalized_node, searched_curie):
+def get_spoke_identifier_from_normalized_node(spoke_labels, normalized_node, searched_curie):
     """Returns a SPOKE identifier from a node normalizer response
 
     Iterates through an SRI Node Normalizer response and attempts to
@@ -244,14 +240,22 @@ def get_spoke_identifier_from_normalized_node(spoke_label, normalized_node, sear
     for all node types at this point in time, but to be more consistent
     we should use biolink categories here when the mapping is complete
     """
-    node_type_config = NODE_NORMALIZATION_SPOKE_CURIE_FORMATTERS.get(spoke_label)
-    if not node_type_config:
-        raise NotImplemented501('Could not find a SPOKE identifer formatter func for category {spoke_label}')
-    for identifier in normalized_node[NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS]:
-        if re.match(
-            node_type_config[NODE_NORMALIZATION_KEY_REGEX],
-            identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
-        ):
-            return node_type_config[NODE_NORMALIZATION_KEY_FUNCTION](identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER])
+    node_type_configs = [NODE_NORMALIZATION_SPOKE_CURIE_FORMATTERS.get(spoke_label) for spoke_label in spoke_labels]
 
-    raise UnmatchedIdentifierError(f'Specified search CURIE {searched_curie} could not be mapped to SPOKE')
+    if not node_type_configs:
+        raise NotImplemented501(f'Could not find a SPOKE identifer formatter func for category {",".join(spoke_labels)}')
+
+    for identifier in normalized_node[NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS]:
+        for node_type_config in node_type_configs:
+            if re.match(
+                    node_type_config[NODE_NORMALIZATION_KEY_REGEX],
+                    identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
+            ):
+                spoke_identifier = node_type_config[NODE_NORMALIZATION_KEY_FUNCTION](
+                    identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
+                )
+
+                # quote formatting for Cypher IN clause
+                if node_type_config[NODE_NORMALIZATION_KEY_REGEX] == '^NCBIGene:':  # unfortunate hack for gene
+                    return spoke_identifier
+                return f"'{spoke_identifier}'"

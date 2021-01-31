@@ -77,7 +77,6 @@ def process_query(raw_json):
     qnodes = validate_normalize_qnodes(query_graph.nodes)
     qedges = validate_normalize_qedges(query_graph)
 
-    # TODO: logic for different query types
     querier = BasicQuery(qnodes, qedges, query_options, query.max_results)
 
     # now query SPOKE
@@ -98,7 +97,7 @@ def try_query(query):
     except UnmatchedIdentifierError as e:
         return Response(Message(), status=200, description=f'{str(e)}; returning empty message...'), 200
     except Exception as e:
-        logger.error(str(e))
+        logger.exception(str(e))
         timestamp = datetime.now().isoformat()
         error_description = (
             'Something went wrong. If this error is reproducible using the same '
