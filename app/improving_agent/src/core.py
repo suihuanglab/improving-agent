@@ -31,13 +31,13 @@ def deserialize_query(raw_json):
     except KeyError:
         raise BadRequest('`message` must be present in Query')
 
-    # max_results = raw_json.get('max_results') will make a return soon
+    max_results = raw_json.get('max_results')
     query_kps = raw_json.get('query_kps')
     psev_context = raw_json.get('psev_context')
     # this might seem odd, but we let connexion do type checking here
     # before we construct the query_options
     try:
-        query = Query(message=message, query_kps=query_kps, psev_context=psev_context)
+        query = Query(message=message, query_kps=query_kps, psev_context=psev_context, max_results=max_results)
     except TypeError as e:
         raise BadRequest(f'Could not deserialize Query on error {e}')
 
