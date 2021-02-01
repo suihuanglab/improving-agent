@@ -1,5 +1,4 @@
 from werkzeug.exceptions import BadRequest
-from werkzeug.exceptions import NotImplemented as NotImplemented501
 from .curie_formatters import (
     format_curie_for_sri,
     get_spoke_identifier_from_normalized_node,
@@ -11,7 +10,7 @@ from .sri_node_normalizer import (
     SRI_NODE_NORMALIZER
 )
 from improving_agent.models import QNode
-from improving_agent.exceptions import UnmatchedIdentifierError
+from improving_agent.exceptions import UnmatchedIdentifierError, UnsupportedTypeError
 from improving_agent.src.spoke_biolink_constants import (
     BIOLINK_ENTITY_PROTEIN,
     BIOLINK_SPOKE_NODE_MAPPINGS,
@@ -74,7 +73,7 @@ def _assign_spoke_node_label(qnode):
         for category in qnode.category:
             spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS.get(category)
             if spoke_label is None:
-                raise NotImplemented501(f'imProving Agent does not accept query nodes of category {category}')
+                raise UnsupportedTypeError(f'imProving Agent does not accept query nodes of category {category}')
             if isinstance(spoke_label, str):
                 spoke_label = [spoke_label]
             spoke_labels.extend(spoke_label)
@@ -90,7 +89,7 @@ def _check_and_format_qnode_curies_for_search(qnodes):
         setattr(qnode, QNODE_CURIE_SPOKE_IDENTIFIERS, [])
         if qnode.id:
             if not qnode.spoke_labels:
-                raise NotImplemented501(
+                raise UnsupportedTypeError(
                     'imProving Agent requires that identifiers have a specified biolink category'
                 )
             for curie in qnode.id:

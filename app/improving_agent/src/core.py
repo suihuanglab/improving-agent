@@ -3,13 +3,13 @@
 from datetime import datetime
 
 from werkzeug.exceptions import BadRequest
-from werkzeug.exceptions import NotImplemented as NotImplemented501
 
 from improving_agent.__main__ import get_db
 from improving_agent.exceptions import (
     AmbiguousPredicateMappingError,
     MissingComponentError,
-    UnmatchedIdentifierError
+    UnmatchedIdentifierError,
+    UnsupportedTypeError
 )
 from improving_agent.models import Message, Query, QueryGraph, Response
 from improving_agent.src.basic_query import BasicQuery
@@ -92,8 +92,8 @@ def try_query(query):
         return process_query(query)
     except (AmbiguousPredicateMappingError, BadRequest, MissingComponentError) as e:
         return Response(message=Message(), status=400, description=str(e)), 400
-    except NotImplemented501 as e:
-        return Response(message=Message(), status=501, description=str(e)), 501
+    except UnsupportedTypeError as e:
+        return Response(message=Message(), status=200, description=str(e)), 200
     except UnmatchedIdentifierError as e:
         return Response(Message(), status=200, description=f'{str(e)}; returning empty message...'), 200
     except Exception as e:

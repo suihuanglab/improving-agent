@@ -22,11 +22,11 @@ SideEffect          |  biolink:NamedThing         |  C0235309           |  not s
 import re
 from collections import defaultdict
 
-from werkzeug.exceptions import NotImplemented as NotImplemented501
 from .sri_node_normalizer import (
     NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS,
     NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER
 )
+from improving_agent.exceptions import UnsupportedTypeError
 from improving_agent.src.spoke_biolink_constants import (
     BIOLINK_ENTITY_CHEMICAL_SUBSTANCE,
     BIOLINK_ENTITY_GENE,
@@ -325,7 +325,7 @@ def get_spoke_identifier_from_normalized_node(spoke_labels, normalized_node, sea
     node_type_configs = [NODE_NORMALIZATION_SPOKE_CURIE_FORMATTERS.get(spoke_label) for spoke_label in spoke_labels]
 
     if not node_type_configs:
-        raise NotImplemented501(f'Could not find a SPOKE identifer formatter func for category {",".join(spoke_labels)}')
+        raise UnsupportedTypeError(f'Could not find a SPOKE identifer formatter func for category {",".join(spoke_labels)}')
 
     for identifier in normalized_node[NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS]:
         for node_type_config in node_type_configs:

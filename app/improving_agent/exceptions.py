@@ -28,3 +28,10 @@ class UnmatchedIdentifierError(Exception):
     """
 
     pass
+
+
+class UnsupportedTypeError(Exception):
+    """Raise when a request specifies a category or predicate that
+    imProving Agent does not support
+    """
+    pass
