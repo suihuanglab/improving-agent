@@ -5,6 +5,7 @@ info:
   title: imProving Agent
   contact:
     email: brett.smith@isbscience.org
+    x-role: responsible developer
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0.html
