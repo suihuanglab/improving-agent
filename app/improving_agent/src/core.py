@@ -32,6 +32,8 @@ def deserialize_query(raw_json):
         raise BadRequest('`message` must be present in Query')
 
     max_results = raw_json.get('max_results')
+    if not max_results:
+        max_results = 200
     query_kps = raw_json.get('query_kps')
     psev_context = raw_json.get('psev_context')
     # this might seem odd, but we let connexion do type checking here
