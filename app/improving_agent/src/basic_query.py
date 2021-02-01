@@ -8,7 +8,7 @@ from improving_agent.src.improving_agent_constants import (
     SPOKE_NODE_PROPERTY_SOURCE
 )
 from improving_agent.src.kps.biggim import annotate_edges_with_biggim
-from improving_agent.src.kps.cohd import CohdClient
+from improving_agent.src.kps.cohd import annotate_edges_with_cohd
 from improving_agent.src.kps.text_miner import TextMinerClient
 from improving_agent.src.normalization import SearchNode
 from improving_agent.src.normalization.node_normalization import normalize_spoke_nodes_for_translator
@@ -423,11 +423,9 @@ class BasicQuery:
 
         # query kps
         query_kps = self.query_options.get('query_kps')
-        # if query_kps:
-        #     # check KPs for annotations
-        #     cohd = CohdClient()
-        #     tm = TextMinerClient()
-        #     self.results = cohd.query_for_associations_in_cohd(self.query_order, self.results)
+        if query_kps:
+            # check KPs for annotations
+            self.knowledge_graph['edges'] = annotate_edges_with_cohd(self.knowledge_graph)
         #     self.results = tm.query_for_associations_in_text_miner(self.query_order, self.results)
 
         scored_results = self.score_results(self.results)
