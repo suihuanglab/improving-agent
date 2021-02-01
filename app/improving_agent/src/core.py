@@ -33,7 +33,7 @@ def deserialize_query(raw_json):
 
     max_results = raw_json.get('max_results')
     if not max_results:
-        max_results = 200
+        max_results = 1000
     query_kps = raw_json.get('query_kps')
     psev_context = raw_json.get('psev_context')
     # this might seem odd, but we let connexion do type checking here

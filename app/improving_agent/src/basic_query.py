@@ -128,9 +128,6 @@ class BasicQuery:
         self.nodes_to_normalize = set()
         self.results = []
 
-        self.n_results = self.n_results if self.n_results < 200 else 200
-        # TODO: write a message in the response that the max results is 200
-
     def make_query_order(self):
         """Constructs a list of QNodes and QEdges in the order in which
         they should be sent to neo4j for querying
