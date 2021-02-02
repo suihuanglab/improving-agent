@@ -73,9 +73,12 @@ def process_query(raw_json):
     query, query_options = deserialize_query(raw_json)
     try:
         query_message = Message(**query.message)
-        query_graph = QueryGraph(**query_message.query_graph)
-    except TypeError:
+        qedges = query_message.query_graph['edges']
+        qnodes = query_message.query_graph['nodes']
+        query_graph = QueryGraph(nodes=qnodes, edges=qedges)
+    except (KeyError, TypeError):
         raise BadRequest('Could not deserialize query_message or query_graph')
+
     qnodes = validate_normalize_qnodes(query_graph.nodes)
     qedges = validate_normalize_qedges(query_graph)
 

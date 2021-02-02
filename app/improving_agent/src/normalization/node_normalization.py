@@ -59,7 +59,10 @@ def _deserialize_qnode(qnode_id, qnode):
     TRAPI request
     """
     try:
-        qnode = QNode(**qnode)
+        id_ = qnode.get('id')
+        category = qnode.get('category')
+        is_set = qnode.get('is_set')
+        qnode = QNode(id_, category, is_set)
         setattr(qnode, 'qnode_id', qnode_id)
     except TypeError:
         raise BadRequest(f'Could not deserialize qnode={qnode}')

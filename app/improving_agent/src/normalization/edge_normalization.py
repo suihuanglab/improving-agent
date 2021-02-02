@@ -11,9 +11,13 @@ from improving_agent.src.spoke_biolink_constants import BIOLINK_SPOKE_EDGE_MAPPI
 
 def _deserialize_qedge(qedge_id, qedge):
     try:
-        qedge = QEdge(**qedge)
+        subject = qedge['subject']
+        object_ = qedge['object']
+        predicate = qedge.get('predicate')
+        relation = qedge.get('relation')
+        qedge = QEdge(predicate, relation, subject, object_)
         setattr(qedge, 'qedge_id', qedge_id)
-    except TypeError:
+    except (KeyError, TypeError):
         raise BadRequest(f'Could not deserialize query edge {qedge_id}')
 
     return qedge
