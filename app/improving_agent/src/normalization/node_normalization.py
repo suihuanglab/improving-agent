@@ -1,7 +1,7 @@
 from werkzeug.exceptions import BadRequest
 from .curie_formatters import (
     format_curie_for_sri,
-    get_spoke_identifier_from_normalized_node,
+    get_spoke_identifiers_from_normalized_node,
     get_label_if_appropriate_spoke_curie,
 )
 from .sri_node_normalizer import (
@@ -134,15 +134,15 @@ def _normalize_query_nodes_for_spoke(qnodes):
             if not qnode:
                 qnode = qnodes[qnode_id]
 
-            spoke_identifier = get_spoke_identifier_from_normalized_node(
+            spoke_identifiers = get_spoke_identifiers_from_normalized_node(
                 qnode.spoke_labels,
                 normalized_node,
                 formatted_curie
             )
-            if not spoke_identifier:
+            if not spoke_identifiers:
                 continue
 
-            qnode.spoke_identifiers.append(spoke_identifier)
+            qnode.spoke_identifiers.extend(spoke_identifiers)
             normalized_qnodes[qnode.qnode_id] = qnode
 
     if not qnodes.keys() == normalized_qnodes.keys():  # we were unable to map some of the qnodes

@@ -312,7 +312,7 @@ def get_label_if_appropriate_spoke_curie(spoke_labels, curie):
             return spoke_label
 
 
-def get_spoke_identifier_from_normalized_node(spoke_labels, normalized_node, searched_curie):
+def get_spoke_identifiers_from_normalized_node(spoke_labels, normalized_node, searched_curie):
     """Returns a SPOKE identifier from a node normalizer response
 
     Iterates through an SRI Node Normalizer response and attempts to
@@ -327,12 +327,14 @@ def get_spoke_identifier_from_normalized_node(spoke_labels, normalized_node, sea
     if not node_type_configs:
         raise UnsupportedTypeError(f'Could not find a SPOKE identifer formatter func for category {",".join(spoke_labels)}')
 
+    spoke_identifiers = []
     for identifier in normalized_node[NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS]:
         for node_type_config in node_type_configs:
             if re.match(
                     node_type_config[NODE_NORMALIZATION_KEY_REGEX],
                     identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
             ):
-                return node_type_config[NODE_NORMALIZATION_KEY_FUNCTION](
-                    identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
+                spoke_identifiers.append(
+                    node_type_config[NODE_NORMALIZATION_KEY_FUNCTION](identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER])
                 )
+    return spoke_identifiers
