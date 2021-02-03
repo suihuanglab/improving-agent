@@ -2,7 +2,7 @@ from collections import Counter, namedtuple
 
 import neo4j
 from improving_agent import models  # TODO: replace with direct imports after fixing definitions
-from improving_agent.exceptions import MissingComponentError
+from improving_agent.exceptions import MissingComponentError, NonLinearQueryError
 from improving_agent.src.improving_agent_constants import (
     ATTRIBUTE_TYPE_PSEV_WEIGHT,
     SPOKE_NODE_PROPERTY_SOURCE
@@ -16,9 +16,12 @@ from improving_agent.src.psev import get_psev_weights
 from improving_agent.src.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_TYPE,
     BIOLINK_ASSOCIATION_RELATED_TO,
+    BIOLINK_ENTITY_CHEMICAL_SUBSTANCE,
+    BIOLINK_ENTITY_DRUG,
     RELATIONSHIP_ONTOLOGY_CURIE,
     SPOKE_BIOLINK_NODE_MAPPINGS,
     SPOKE_BIOLINK_EDGE_MAPPINGS,
+    SPOKE_LABEL_COMPOUND,
 )
 from improving_agent.util import get_evidara_logger
 
@@ -70,6 +73,13 @@ def make_qnode_filter_clause(name, query_node):
     identifiers_clause = ''
     if query_node.spoke_identifiers:
         identifiers_clause = f'{name}.identifier IN [{",".join(query_node.spoke_identifiers)}]'
+        # TODO: this will quickly become untenable as we add better querying
+        # and we'll need specific funcs; see also drug below
+        if SPOKE_LABEL_COMPOUND in query_node.spoke_labels:
+            identifiers_clause = f'({identifiers_clause} OR {name}.chembl_id IN [{",".join(query_node.spoke_identifiers)}])'
+    if query_node.category:
+        if BIOLINK_ENTITY_DRUG in query_node.category and BIOLINK_ENTITY_CHEMICAL_SUBSTANCE not in query_node.category:
+            identifiers_clause = f'{identifiers_clause} AND {name}.max_phase > 0'
 
     if labels_clause:
         if identifiers_clause:
@@ -145,7 +155,11 @@ class BasicQuery:
             terminal_nodes = list(self.qnodes.keys())
 
         # start query order with either of the terminal nodes
-        self.query_order = [self.qnodes[terminal_nodes[0]]]
+        try:
+            self.query_order = [self.qnodes[terminal_nodes[0]]]
+        except IndexError:
+            raise NonLinearQueryError('imProving Agent currently only supports linear queries')
+
         target_query_length = len(self.qnodes) + len(self.qedges)
 
         # create copy of edges that can be destroyed

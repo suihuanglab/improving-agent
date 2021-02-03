@@ -8,6 +8,7 @@ from improving_agent.__main__ import get_db
 from improving_agent.exceptions import (
     AmbiguousPredicateMappingError,
     MissingComponentError,
+    NonLinearQueryError,
     UnmatchedIdentifierError,
     UnsupportedTypeError
 )
@@ -97,9 +98,7 @@ def try_query(query):
         return process_query(query)
     except (AmbiguousPredicateMappingError, BadRequest, MissingComponentError) as e:
         return Response(message=Message(), status=400, description=str(e)), 400
-    except UnsupportedTypeError as e:
-        return Response(message=Message(), status=200, description=str(e)), 200
-    except UnmatchedIdentifierError as e:
+    except (NonLinearQueryError, UnmatchedIdentifierError, UnsupportedTypeError) as e:
         return Response(Message(), status=200, description=f'{str(e)}; returning empty message...'), 200
     except Exception as e:
         logger.exception(str(e))

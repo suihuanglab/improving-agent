@@ -76,10 +76,12 @@ def _assign_spoke_node_label(qnode):
         for category in qnode.category:
             spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS.get(category)
             if spoke_label is None:
-                raise UnsupportedTypeError(f'imProving Agent does not accept query nodes of category {category}')
+                continue
             if isinstance(spoke_label, str):
                 spoke_label = [spoke_label]
             spoke_labels.extend(spoke_label)
+        if not spoke_labels:
+            raise UnsupportedTypeError(f'imProving Agent could not find query nodes of category {qnode.category}')
 
     setattr(qnode, 'spoke_labels', spoke_labels)
     return qnode
