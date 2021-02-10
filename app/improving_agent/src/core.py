@@ -3,13 +3,14 @@
 from datetime import datetime
 
 from werkzeug.exceptions import BadRequest
-from werkzeug.exceptions import NotImplemented as NotImplemented501
 
 from improving_agent.__main__ import get_db
 from improving_agent.exceptions import (
     AmbiguousPredicateMappingError,
     MissingComponentError,
-    UnmatchedIdentifierError
+    NonLinearQueryError,
+    UnmatchedIdentifierError,
+    UnsupportedTypeError
 )
 from improving_agent.models import Message, Query, QueryGraph, Response
 from improving_agent.src.basic_query import BasicQuery
@@ -32,6 +33,8 @@ def deserialize_query(raw_json):
         raise BadRequest('`message` must be present in Query')
 
     max_results = raw_json.get('max_results')
+    if not max_results:
+        max_results = 1000
     query_kps = raw_json.get('query_kps')
     psev_context = raw_json.get('psev_context')
     # this might seem odd, but we let connexion do type checking here
@@ -71,9 +74,12 @@ def process_query(raw_json):
     query, query_options = deserialize_query(raw_json)
     try:
         query_message = Message(**query.message)
-        query_graph = QueryGraph(**query_message.query_graph)
-    except TypeError:
+        qedges = query_message.query_graph['edges']
+        qnodes = query_message.query_graph['nodes']
+        query_graph = QueryGraph(nodes=qnodes, edges=qedges)
+    except (KeyError, TypeError):
         raise BadRequest('Could not deserialize query_message or query_graph')
+
     qnodes = validate_normalize_qnodes(query_graph.nodes)
     qedges = validate_normalize_qedges(query_graph)
 
@@ -92,9 +98,7 @@ def try_query(query):
         return process_query(query)
     except (AmbiguousPredicateMappingError, BadRequest, MissingComponentError) as e:
         return Response(message=Message(), status=400, description=str(e)), 400
-    except NotImplemented501 as e:
-        return Response(message=Message(), status=501, description=str(e)), 501
-    except UnmatchedIdentifierError as e:
+    except (NonLinearQueryError, UnmatchedIdentifierError, UnsupportedTypeError) as e:
         return Response(Message(), status=200, description=f'{str(e)}; returning empty message...'), 200
     except Exception as e:
         logger.exception(str(e))

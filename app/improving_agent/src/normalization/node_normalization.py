@@ -1,8 +1,7 @@
 from werkzeug.exceptions import BadRequest
-from werkzeug.exceptions import NotImplemented as NotImplemented501
 from .curie_formatters import (
     format_curie_for_sri,
-    get_spoke_identifier_from_normalized_node,
+    get_spoke_identifiers_from_normalized_node,
     get_label_if_appropriate_spoke_curie,
 )
 from .sri_node_normalizer import (
@@ -11,7 +10,7 @@ from .sri_node_normalizer import (
     SRI_NODE_NORMALIZER
 )
 from improving_agent.models import QNode
-from improving_agent.exceptions import UnmatchedIdentifierError
+from improving_agent.exceptions import UnmatchedIdentifierError, UnsupportedTypeError
 from improving_agent.src.spoke_biolink_constants import (
     BIOLINK_ENTITY_PROTEIN,
     BIOLINK_SPOKE_NODE_MAPPINGS,
@@ -60,7 +59,10 @@ def _deserialize_qnode(qnode_id, qnode):
     TRAPI request
     """
     try:
-        qnode = QNode(**qnode)
+        id_ = qnode.get('id')
+        category = qnode.get('category')
+        is_set = qnode.get('is_set')
+        qnode = QNode(id_, category, is_set)
         setattr(qnode, 'qnode_id', qnode_id)
     except TypeError:
         raise BadRequest(f'Could not deserialize qnode={qnode}')
@@ -74,10 +76,12 @@ def _assign_spoke_node_label(qnode):
         for category in qnode.category:
             spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS.get(category)
             if spoke_label is None:
-                raise NotImplemented501(f'imProving Agent does not accept query nodes of category {category}')
+                continue
             if isinstance(spoke_label, str):
                 spoke_label = [spoke_label]
             spoke_labels.extend(spoke_label)
+        if not spoke_labels:
+            raise UnsupportedTypeError(f'imProving Agent could not find query nodes of category {qnode.category}')
 
     setattr(qnode, 'spoke_labels', spoke_labels)
     return qnode
@@ -90,7 +94,7 @@ def _check_and_format_qnode_curies_for_search(qnodes):
         setattr(qnode, QNODE_CURIE_SPOKE_IDENTIFIERS, [])
         if qnode.id:
             if not qnode.spoke_labels:
-                raise NotImplemented501(
+                raise UnsupportedTypeError(
                     'imProving Agent requires that identifiers have a specified biolink category'
                 )
             for curie in qnode.id:
@@ -130,15 +134,15 @@ def _normalize_query_nodes_for_spoke(qnodes):
             if not qnode:
                 qnode = qnodes[qnode_id]
 
-            spoke_identifier = get_spoke_identifier_from_normalized_node(
+            spoke_identifiers = get_spoke_identifiers_from_normalized_node(
                 qnode.spoke_labels,
                 normalized_node,
                 formatted_curie
             )
-            if not spoke_identifier:
+            if not spoke_identifiers:
                 continue
 
-            qnode.spoke_identifiers.append(spoke_identifier)
+            qnode.spoke_identifiers.extend(spoke_identifiers)
             normalized_qnodes[qnode.qnode_id] = qnode
 
     if not qnodes.keys() == normalized_qnodes.keys():  # we were unable to map some of the qnodes

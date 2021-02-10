@@ -19,6 +19,14 @@ class MissingComponentError(Exception):
     pass
 
 
+class NonLinearQueryError(Exception):
+    """Raise when we encounter a non-linear graph query
+
+    This should result in a 200 with empty message
+    """
+    pass
+
+
 class UnmatchedIdentifierError(Exception):
     """Raise when a request specifies a CURIE that cannot be mapped
     to SPOKE
@@ -27,4 +35,13 @@ class UnmatchedIdentifierError(Exception):
     with a helpful log message about the issue
     """
 
+    pass
+
+
+class UnsupportedTypeError(Exception):
+    """Raise when a request specifies a category or predicate that
+    imProving Agent does not support
+
+    This should result in a 200 with an empty message
+    """
     pass
