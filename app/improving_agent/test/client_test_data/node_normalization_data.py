@@ -1,4 +1,4 @@
-"""This module holds test data used for testing the node normalization 
+"""This module holds test data used for testing the node normalization
 client"""
 CHEMICAL_SUBSTANCE_CURIE_PREFIXES = {
     "chemical_substance": {
@@ -23,7 +23,7 @@ GENE_CURIE_PREFIXES = {
   "gene": {
         "curie_prefix": [
             {
-                "NCBIGene": 41740,
+                "NCBIGENE": 41740,
                 "ENSEMBL": 38556,
                 "HGNC": 43545,
                 "UniProtKB": 20292,
