@@ -7,7 +7,7 @@ const curieExamples = {
   "biolink:CellularComponent": "e.g. GO:0005759",
   "biolink:ChemicalSubstance": "e.g. DB08991",
   "biolink:Disease": "e.g. DOID:4606",
-  "biolink:Gene": "e.g. NCBIGene:59272",
+  "biolink:Gene": "e.g. NCBIGENE:59272",
   "biolink:GrossAnatomicalStructure": "e.g. UBERON:0002352",
   "biolink:MolecularActivity": "e.g. GO:0003884",
   "biolink:Pathway": "e.g. PC7_2621",

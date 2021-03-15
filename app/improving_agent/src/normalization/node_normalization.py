@@ -41,7 +41,7 @@ def normalize_spoke_nodes_for_translator(spoke_search_nodes):
     result_map = {}
     for formatted_curie, search_node in formatted_curie_node_map.items():
         if search_node.category == BIOLINK_ENTITY_PROTEIN:
-            # the node normalizer will suggest the NCBIGene curies for proteins
+            # the node normalizer will suggest the NCBIGENE curies for proteins
             # so we keep the UNIPROT CURIE here instead
             result_map[search_node.curie] = formatted_curie
             continue

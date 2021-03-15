@@ -137,7 +137,7 @@ def _format_kegg_compound_for_search(curie, source=None):
 
 @register_search_curie_formatter(BIOLINK_ENTITY_GENE, SPOKE_IDENTIFIER_REGEX_GENE)
 def _format_ncbigene_for_search(curie, source=None):
-    return f'NCBIGene:{curie}'
+    return f'NCBIGENE:{curie}'
 
 
 @register_search_curie_formatter(
@@ -247,10 +247,10 @@ def _format_food_for_spoke(curie):
     return f"'{curie}'"
 
 
-@register_spoke_curie_formatter(SPOKE_LABEL_GENE, '^NCBIGene:')
+@register_spoke_curie_formatter(SPOKE_LABEL_GENE, '^NCBIGENE:')
 def format_gene_for_spoke(curie):
     # missing leading underscore because it's used by the BigGIM module
-    return curie.replace('NCBIGene:', '')
+    return curie.replace('NCBIGENE:', '')
     # this ^ is an int in SPOKE, but we just forego the addition of quotes here
 
 
