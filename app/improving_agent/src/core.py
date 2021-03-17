@@ -89,7 +89,9 @@ def process_query(raw_json):
     with get_db() as session:
         results, knowledge_graph = querier.linear_spoke_query(session)
         response_message = Message(results, query_graph, knowledge_graph)
-        response = Response(response_message, f'Success. Returning {len(results)} results...')
+        success_message = f'Success. Returning {len(results)} results...'
+        response = Response(response_message, success_message)
+        logger.info(success_message)
     return response
 
 
