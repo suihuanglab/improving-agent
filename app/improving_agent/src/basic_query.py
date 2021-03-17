@@ -22,6 +22,7 @@ from improving_agent.src.spoke_biolink_constants import (
     SPOKE_BIOLINK_NODE_MAPPINGS,
     SPOKE_BIOLINK_EDGE_MAPPINGS,
     SPOKE_LABEL_COMPOUND,
+    SPOKE_ANY_TYPE
 )
 from improving_agent.util import get_evidara_logger
 
@@ -67,8 +68,9 @@ def get_text_miner_score(edge_attribute):
 def make_qnode_filter_clause(name, query_node):
     labels_clause = ''
     if query_node.spoke_labels:
-        labeled_names = [f'{name}:{label}' for label in query_node.spoke_labels]
-        labels_clause = f'({" OR ".join(labeled_names)})'
+        if SPOKE_ANY_TYPE not in query_node.spoke_labels:
+            labeled_names = [f'{name}:{label}' for label in query_node.spoke_labels]
+            labels_clause = f'({" OR ".join(labeled_names)})'
 
     identifiers_clause = ''
     if query_node.spoke_identifiers:
