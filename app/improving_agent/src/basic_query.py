@@ -241,14 +241,20 @@ class BasicQuery:
         score = 0
 
         for knode in result.node_bindings.values():
-            node = self.knowledge_graph['nodes'][knode.id]
+            # knode is a list of node_bindings, but we only support
+            # one, so index at 0
+            # TODO: reconsider upon version upgrade
+            node = self.knowledge_graph['nodes'][knode[0].id]
             for attribute in node.attributes:
                 score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(attribute.type)
                 if score_func:
                     score += score_func(attribute)
 
         for kedge in result.edge_bindings.values():
-            edge = self.knowledge_graph['edges'][kedge.id]
+            # kedge is a list of node_bindings, but we only support
+            # one, so index at 0
+            # TODO: reconsider upon version upgrade
+            edge = self.knowledge_graph['edges'][kedge[0].id]
             for attribute in edge.attributes:
                 score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(attribute.type)
                 if score_func:
@@ -377,8 +383,9 @@ class BasicQuery:
                 node_bindings[self.query_mapping['nodes'][name]] = models.NodeBinding(spoke_curie)
 
             else:
-                spoke_edge_id = n4j_result[name].id  # TODO: is there a way to make this consistent?
-                edge_bindings[self.query_mapping['edges'][name]] = models.EdgeBinding(spoke_edge_id)
+                # these are ints, but we want them as strings for TRAPI spec
+                spoke_edge_id = str(n4j_result[name].id)  # TODO: is there a way to make this consistent?
+                edge_bindings[self.query_mapping['edges'][name]] = [models.EdgeBinding(spoke_edge_id)]
                 result_edge = self.make_result_edge(n4j_result[name])
                 self.knowledge_graph['edges'][spoke_edge_id] = result_edge
 
@@ -399,7 +406,7 @@ class BasicQuery:
         for result in self.results:
             new_node_bindings = {}
             for qnode, node in result.node_bindings.items():
-                new_node_bindings[qnode] = models.NodeBinding(node_search_results[node.id])
+                new_node_bindings[qnode] = [models.NodeBinding(node_search_results[node.id])]
             new_results.append(models.Result(new_node_bindings, result.edge_bindings))
 
         self.results = new_results
