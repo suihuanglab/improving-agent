@@ -98,6 +98,7 @@ def process_query(raw_json):
 def try_query(query):
     try:
         return process_query(query)
+    # TODO: Make 'status' here strings
     except (AmbiguousPredicateMappingError, BadRequest, MissingComponentError) as e:
         return Response(message=Message(), status=400, description=str(e)), 400
     except (NonLinearQueryError, UnmatchedIdentifierError, UnsupportedTypeError) as e:
