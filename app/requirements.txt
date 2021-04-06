@@ -7,3 +7,4 @@ python-Levenshtein ~= 0.12
 requests ~= 2.23
 setuptools >= 21.0.0
 swagger-ui-bundle >= 0.0.2
+uwsgi ~= 2.0.19.1
