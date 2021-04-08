@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 
+from http import HTTPStatus
+
 import connexion
+import flask
 import neo4j
 
 from flask import g, jsonify, render_template
@@ -63,13 +66,28 @@ def index():
     return render_template("home.html", node_types=node_types)
 
 
+@app.route("/node_search")
+def search_page():
+    """returns node search page"""
+    return render_template("node_search.html")
+
+
 @app.route("/text-search/<search>")
 def text_search(search):
+    autocomplete = flask.request.args.get('autocomplete')
+    fuzz = flask.request.args.get('fuzz')
+    if autocomplete and autocomplete == 'true':
+        search = f'{search}*'
+    if fuzz and fuzz == 'true':
+        if autocomplete and autocomplete == 'true':
+            return 'Must specify only one of fuzz or autocomplete', HTTPStatus.BAD_REQUEST
+        search = f'{search}~'
+
     session = get_db()
     r = session.run(
         'CALL db.index.fulltext.queryNodes("namesAndPrefNames", $search) '
         'YIELD node, score '
-        'RETURN labels(node)[0] as label, node.identifier as identifier, node.name as name, node.pref_name as pref_name, score LIMIT 25',
+        'RETURN labels(node)[0] as label, node.identifier as identifier, node.name as name, node.pref_name as pref_name, score LIMIT 10',
         search=search
     )
 

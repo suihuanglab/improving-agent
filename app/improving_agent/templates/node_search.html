@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+
+<html lang="en">
+    <meta charset="utf-8" />
+    <head>
+        <link rel="stylesheet" href="../static/evidara.css" />
+    </head>
+    <body>
+        <div id="node-search" class="suggestions">
+                <div><input id="text-search" placeholder="Search for nodes" oninput="searchNodes()"/></div>
+            <div class="search-params-div">
+                <form>
+                    <label for="autocomplete-checkbox" class="search-param">
+                        <input id="autocomplete-checkbox" type="radio" name="params" checked />
+                        Autocomplete
+                    </label>
+                    <label for="fuzz-checkbox" class="search-param">
+                        <input id="fuzz-checkbox" type="radio" name="params" />
+                        Fuzzy Search
+                    </label>
+                </form>
+            </div>
+        </div>
+        <br />
+        <div id="results"></div>
+        <script src="../static/node-search.js"></script>
+    </body>
+</html>
