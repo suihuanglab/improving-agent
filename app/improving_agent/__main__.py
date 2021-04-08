@@ -3,7 +3,7 @@
 import connexion
 import neo4j
 
-from flask import g, render_template
+from flask import g, jsonify, render_template
 
 from improving_agent import encoder
 from improving_agent.src import config
@@ -46,11 +46,38 @@ app.add_api(
 )
 
 
+def extract_text_result(result):
+    new_result = {}
+    new_result['label'] = result.get('label')
+    new_result['identifier'] = result.get('identifier')
+    new_result['name'] = result.get('name')
+    new_result['pref_name'] = result.get('pref_name')
+    new_result['score'] = result.get('score')
+    return new_result
+
+
 @app.route("/")
 def index():
     """returns welcome home page"""
     node_types = list(BIOLINK_SPOKE_NODE_MAPPINGS.keys())
     return render_template("home.html", node_types=node_types)
+
+
+@app.route("/text-search/<search>")
+def text_search(search):
+    session = get_db()
+    r = session.run(
+        'CALL db.index.fulltext.queryNodes("namesAndPrefNames", $search) '
+        'YIELD node, score '
+        'RETURN labels(node)[0] as label, node.identifier as identifier, node.name as name, node.pref_name as pref_name, score LIMIT 25',
+        search=search
+    )
+
+    results = {
+        'results': [extract_text_result(record) for record in r.records()],
+        'search': search
+    }
+    return jsonify(results)
 
 
 @app.app.teardown_appcontext
