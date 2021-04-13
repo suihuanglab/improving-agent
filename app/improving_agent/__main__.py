@@ -58,6 +58,17 @@ def extract_text_result(result):
     new_result['score'] = result.get('score')
     return new_result
 
+def full_text_search(tx, _search):
+    r = tx.run(
+        'CALL db.index.fulltext.queryNodes("namesAndPrefNames", $_search) '
+        'YIELD node, score '
+        'RETURN DISTINCT labels(node)[0] AS label, node.identifier AS identifier, node.name AS name, node.pref_name AS pref_name, score '
+        'ORDER BY score DESC '
+        'LIMIT 15',
+        _search=_search
+    )
+    return [extract_text_result(record) for record in r]
+
 
 @app.route("/")
 def index():
@@ -74,28 +85,20 @@ def search_page():
 
 @app.route("/text-search/<search>")
 def text_search(search):
+    search_fuzz_or_autocomplete = search
     autocomplete = flask.request.args.get('autocomplete')
     fuzz = flask.request.args.get('fuzz')
     if autocomplete and autocomplete == 'true':
-        search = f'{search}*'
+        search_fuzz_or_autocomplete = f'{search}*'
     if fuzz and fuzz == 'true':
         if autocomplete and autocomplete == 'true':
             return 'Must specify only one of fuzz or autocomplete', HTTPStatus.BAD_REQUEST
-        search = f'{search}~'
-
+        search_fuzz_or_autocomplete = f'{search}~'
+    
+    _search = f'{search} OR {search}?^6 OR {search}??^4 OR {search}???^3 OR {search_fuzz_or_autocomplete}'
     session = get_db()
-    r = session.run(
-        'CALL db.index.fulltext.queryNodes("namesAndPrefNames", $search) '
-        'YIELD node, score '
-        'RETURN labels(node)[0] as label, node.identifier as identifier, node.name as name, node.pref_name as pref_name, score LIMIT 10',
-        search=search
-    )
-
-    results = {
-        'results': [extract_text_result(record) for record in r.records()],
-        'search': search
-    }
-    return jsonify(results)
+    results = session.read_transaction(full_text_search, _search)
+    return jsonify({'results': results, 'search': search})
 
 
 @app.app.teardown_appcontext

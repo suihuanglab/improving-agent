@@ -13,7 +13,7 @@ makeSuggestionRow = function (suggestionTable, fieldNames, result) {
   }
 
   makeSuggestions = function(data) {
-    resultFields = ["identifier", "label", "name", "pref_name", "score"]
+    resultFields = ["identifier", "label", "name", "pref_name"]
   
     const search_div = document.getElementById("results")
     destroySuggestions();

@@ -1,6 +1,6 @@
 connexion[swagger-ui] >= 2.6.0; python_version>="3.6"
 fuzzywuzzy ~= 0.18
-neo4j ~= 1.7.0
+neo4j ~= 4.2
 numpy ~= 1.18.1
 python_dateutil >= 2.6.0
 python-Levenshtein ~= 0.12

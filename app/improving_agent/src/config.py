@@ -1,7 +1,7 @@
 import os
 
 # neo4j configuration
-NEO4J_URI = "bolt://host.docker.internal:7687"
+NEO4J_URI = "bolt://spoke:7687"
 NEO4J_USER = os.getenv("NEO4J_SPOKE_USER")
 NEO4J_PASS = os.getenv("NEO4J_SPOKE_PASSWORD")
 
