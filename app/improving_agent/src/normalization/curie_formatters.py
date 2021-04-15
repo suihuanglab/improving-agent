@@ -132,7 +132,7 @@ def _format_drugbank_for_search(curie, source=None):
 
 @register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_SUBSTANCE, '^(C|G)[0-9]{5}$')
 def _format_kegg_compound_for_search(curie, source=None):
-    return f'KEGG:{curie}'
+    return f'KEGG.COMPOUND:{curie}'
 
 
 @register_search_curie_formatter(BIOLINK_ENTITY_GENE, SPOKE_IDENTIFIER_REGEX_GENE)
@@ -227,9 +227,9 @@ def _format_cellular_component_for_spoke(curie):
     return f"'{curie}'"
 
 
-@register_spoke_curie_formatter(SPOKE_LABEL_COMPOUND, '^CHEMBL.COMPOUND:|^DRUGBANK:|^KEGG:')
+@register_spoke_curie_formatter(SPOKE_LABEL_COMPOUND, '^CHEMBL.COMPOUND:|^DRUGBANK:|^KEGG.COMPOUND:')
 def _format_compound_for_spoke(curie):
-    return f"'{re.sub('^CHEMBL.COMPOUND:|^DRUGBANK:|^KEGG:', '', curie)}'"
+    return f"'{re.sub('^CHEMBL.COMPOUND:|^DRUGBANK:|^KEGG.COMPOUND:', '', curie)}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_DISEASE, SPOKE_IDENTIFIER_REGEX_DISEASE)
@@ -247,10 +247,10 @@ def _format_food_for_spoke(curie):
     return f"'{curie}'"
 
 
-@register_spoke_curie_formatter(SPOKE_LABEL_GENE, '^NCBIGENE:')
+@register_spoke_curie_formatter(SPOKE_LABEL_GENE, '^NCBIGENE:|^NCBIGene:')
 def format_gene_for_spoke(curie):
     # missing leading underscore because it's used by the BigGIM module
-    return curie.replace('NCBIGENE:', '')
+    return re.sub('^NCBIGENE:|^NCBIGene:', '', curie)
     # this ^ is an int in SPOKE, but we just forego the addition of quotes here
 
 
@@ -334,6 +334,7 @@ def get_spoke_identifiers_from_normalized_node(spoke_labels, normalized_node, se
                     node_type_config[NODE_NORMALIZATION_KEY_REGEX],
                     identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
             ):
+                print(identifier, node_type_configs)
                 spoke_identifiers.append(
                     node_type_config[NODE_NORMALIZATION_KEY_FUNCTION](identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER])
                 )
