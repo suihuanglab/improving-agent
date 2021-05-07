@@ -99,9 +99,9 @@ def try_query(query):
     try:
         return process_query(query)
     except (AmbiguousPredicateMappingError, BadRequest, MissingComponentError) as e:
-        return Response(message=Message(), status=400, description=str(e)), 400
+        return Response(message=Message(), status="Bad Request", description=str(e)), 400
     except (NonLinearQueryError, UnmatchedIdentifierError, UnsupportedTypeError) as e:
-        return Response(Message(), status=200, description=f'{str(e)}; returning empty message...'), 200
+        return Response(Message(), status="Query unprocessable", description=f'{str(e)}; returning empty message...'), 200
     except Exception as e:
         logger.exception(str(e))
         timestamp = datetime.now().isoformat()
@@ -111,4 +111,4 @@ def try_query(query):
             'page https://github.com/suihuanglab/improving-agent '
             f'timestamp: {timestamp}'
         )
-        return Response(Message(), status=500, description=error_description), 500
+        return Response(Message(), status="Server Error", description=error_description), 500

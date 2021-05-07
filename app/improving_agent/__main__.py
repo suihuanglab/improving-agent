@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 
+from http import HTTPStatus
+
 import connexion
+import flask
 import neo4j
 
-from flask import g, render_template
+from flask import g, jsonify, render_template
 
 from improving_agent import encoder
 from improving_agent.src import config
@@ -46,11 +49,56 @@ app.add_api(
 )
 
 
+def extract_text_result(result):
+    new_result = {}
+    new_result['label'] = result.get('label')
+    new_result['identifier'] = result.get('identifier')
+    new_result['name'] = result.get('name')
+    new_result['pref_name'] = result.get('pref_name')
+    new_result['score'] = result.get('score')
+    return new_result
+
+def full_text_search(tx, _search):
+    r = tx.run(
+        'CALL db.index.fulltext.queryNodes("namesAndPrefNames", $_search) '
+        'YIELD node, score '
+        'RETURN DISTINCT labels(node)[0] AS label, node.identifier AS identifier, node.name AS name, node.pref_name AS pref_name, score '
+        'ORDER BY score DESC '
+        'LIMIT 15',
+        _search=_search
+    )
+    return [extract_text_result(record) for record in r]
+
+
 @app.route("/")
 def index():
     """returns welcome home page"""
     node_types = list(BIOLINK_SPOKE_NODE_MAPPINGS.keys())
     return render_template("home.html", node_types=node_types)
+
+
+@app.route("/node_search")
+def search_page():
+    """returns node search page"""
+    return render_template("node_search.html")
+
+
+@app.route("/text-search/<search>")
+def text_search(search):
+    search_fuzz_or_autocomplete = search
+    autocomplete = flask.request.args.get('autocomplete')
+    fuzz = flask.request.args.get('fuzz')
+    if autocomplete and autocomplete == 'true':
+        search_fuzz_or_autocomplete = f'{search}*'
+    if fuzz and fuzz == 'true':
+        if autocomplete and autocomplete == 'true':
+            return 'Must specify only one of fuzz or autocomplete', HTTPStatus.BAD_REQUEST
+        search_fuzz_or_autocomplete = f'{search}~'
+    
+    _search = f'{search} OR {search}?^6 OR {search}??^4 OR {search}???^3 OR {search_fuzz_or_autocomplete}'
+    session = get_db()
+    results = session.read_transaction(full_text_search, _search)
+    return jsonify({'results': results, 'search': search})
 
 
 @app.app.teardown_appcontext

@@ -1,4 +1,5 @@
 from collections import Counter, namedtuple
+from string import ascii_letters
 
 import neo4j
 from improving_agent import models  # TODO: replace with direct imports after fixing definitions
@@ -81,7 +82,9 @@ def make_qnode_filter_clause(name, query_node):
             identifiers_clause = f'({identifiers_clause} OR {name}.chembl_id IN [{",".join(query_node.spoke_identifiers)}])'
     if query_node.category:
         if BIOLINK_ENTITY_DRUG in query_node.category and BIOLINK_ENTITY_CHEMICAL_SUBSTANCE not in query_node.category:
-            identifiers_clause = f'{identifiers_clause} AND {name}.max_phase > 0'
+            if identifiers_clause:
+                identifiers_clause = f'{identifiers_clause} AND'
+            identifiers_clause = f'{identifiers_clause} {name}.max_phase > 0'
 
     if labels_clause:
         if identifiers_clause:
@@ -195,7 +198,7 @@ class BasicQuery:
     def make_cypher_query_string(self):
         # spoke diameter is <7 but consider enforcing max query length anyway
         # TODO: get rid of this silly naming and use the now-available `qedge_id` or `qnode_id` attr
-        self.query_names = list("abcdefghijklmn"[: len(self.query_order)])
+        self.query_names = list(ascii_letters[: len(self.query_order)])
         query_parts = []
         node_filter_clauses = []
         self.query_mapping = {"edges": {}, "nodes": {}}
@@ -211,7 +214,7 @@ class BasicQuery:
                 self.query_mapping["edges"][name] = query_part.qedge_id
                 query_parts.append(make_qedge_cypher_repr(name, query_part))
 
-        match_clause = f'MATCH p={"-".join(query_parts)}'
+        match_clause = f'MATCH path={"-".join(query_parts)}'
         where_clause = ''
         if node_filter_clauses:
             where_clause = f'WHERE {" AND ".join(node_filter_clauses)}'
@@ -274,7 +277,7 @@ class BasicQuery:
 
         Parameters
         ----------
-        n4j_object (neo4j.types.graph.Node): a `Node` object returned from a
+        n4j_object (neo4j.graph.Node): a `Node` object returned from a
             neo4j.bolt.driver.session Cypher query
         spoke_curie (str): spoke 'identifier'
 
@@ -376,7 +379,7 @@ class BasicQuery:
 
         # iterate through results and add to result objects
         for name in self.query_names:
-            if isinstance(n4j_result[name], neo4j.types.graph.Node):
+            if isinstance(n4j_result[name], neo4j.graph.Node):
                 spoke_curie = n4j_result[name]['identifier']
                 result_node = self.make_result_node(n4j_result[name], spoke_curie)
                 self.knowledge_graph['nodes'][spoke_curie] = result_node
@@ -411,6 +414,11 @@ class BasicQuery:
 
         self.results = new_results
 
+    def run_query(self, tx, query_string):
+        r = tx.run(query_string)
+        self.results = [self.extract_result(record) for record in r]
+
+
     # Query
     def linear_spoke_query(self, session):
         """Returns the SPOKE node label equivalent to `node_type`
@@ -433,8 +441,8 @@ class BasicQuery:
 
         # query
         logger.info(f'Querying SPOKE with {query_string}')
-        r = session.run(query_string)
-        self.results = [self.extract_result(record) for record in r.records()]
+        session.read_transaction(self.run_query, query_string)
+        
         if not self.results:
             return self.results, self.knowledge_graph
 

@@ -95,7 +95,8 @@ def _check_and_format_qnode_curies_for_search(qnodes):
         if qnode.id:
             if not qnode.spoke_labels:
                 raise UnsupportedTypeError(
-                    'imProving Agent requires that identifiers have a specified biolink category'
+                    'imProving Agent requires that qNodes with identifier also specify a '
+                    'biolink category'
                 )
             for curie in qnode.id:
                 matched_label = get_label_if_appropriate_spoke_curie(qnode.spoke_labels, curie)
