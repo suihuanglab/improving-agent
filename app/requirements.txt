@@ -1,4 +1,6 @@
+bmt == 0.6.0
 connexion[swagger-ui] >= 2.6.0; python_version>="3.6"
+flake8 ~=3.9
 fuzzywuzzy ~= 0.18
 neo4j ~= 4.2
 numpy ~= 1.18.1

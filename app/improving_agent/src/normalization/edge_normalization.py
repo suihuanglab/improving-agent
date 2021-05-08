@@ -7,16 +7,17 @@ from improving_agent.exceptions import (
     UnsupportedTypeError
 )
 from improving_agent.models import QEdge
-from improving_agent.src.spoke_biolink_constants import PREDICATES
+from improving_agent.src.biolink.biolink import EDGE, get_supported_biolink_descendants
+from improving_agent.src.biolink.spoke_biolink_constants import BIOLINK_SPOKE_EDGE_MAPPINGS, PREDICATES
 
 
 def _deserialize_qedge(qedge_id, qedge):
     try:
         subject = qedge['subject']
         object_ = qedge['object']
-        predicate = qedge.get('predicate')
+        predicates = qedge.get('predicates')
         relation = qedge.get('relation')
-        qedge = QEdge(predicate, relation, subject, object_)
+        qedge = QEdge(predicates, relation, subject, object_)
         setattr(qedge, 'qedge_id', qedge_id)
     except (KeyError, TypeError):
         raise BadRequest(f'Could not deserialize query edge {qedge_id}')
@@ -62,7 +63,6 @@ def _get_potential_predicate_maps(subj_qnode, obj_qnode):
             'Could not find any supported predicates for subject category: '
             f'{subj_qnode.category} and object category: {obj_qnode.category}'
         )
-    print(potential_predicates_map)
     return potential_predicates_map
 
 
@@ -77,12 +77,10 @@ def _get_subject_object_qnodes(query_graph, qedge):
 
 def _assign_spoke_edge_types(qedge, subj_qnode, obj_qnode, query_graph):
     spoke_edge_types = []
-    if qedge.predicate:
-        # TODO: this may not perform well, evaluate it against the quick
-        # lookup and disambugation implemented up to commit f17f12a261ce1b6f80ae47b86a6c704639566444
-        valid_predicates_maps = _get_potential_predicate_maps(subj_qnode, obj_qnode)
-        for predicate in qedge.predicate:
-            spoke_edge_mappings = valid_predicates_maps.get(predicate)
+    if qedge.predicates:
+        compatible_predicates = get_supported_biolink_descendants(qedge.predicates, EDGE)
+        for predicate in compatible_predicates:
+            spoke_edge_mappings = BIOLINK_SPOKE_EDGE_MAPPINGS.get(predicate)
             if not spoke_edge_mappings:
                 raise UnsupportedTypeError(f'imProving Agent does not currently accept predicates of type {predicate}')
             spoke_edge_types.extend(spoke_edge_mappings)

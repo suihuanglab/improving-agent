@@ -10,6 +10,7 @@ from improving_agent.util import get_evidara_logger
 
 NODE_NORMALIZATION_BASE_URL = "https://nodenormalization-sri.renci.org"
 NODE_NORMALIZATION_CURIE_IDENTIFER = "curie"
+NODE_NORMALIZATION_CURIE_PREFIX = "curie_prefix"
 NODE_NORMALIZATION_CURIE_PREFIXES_ENDPOINT = "get_curie_prefixes"
 NODE_NORMALIZATION_NORMALIZED_NODES_ENDPOINT = "get_normalized_nodes"
 NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS = 'equivalent_identifiers'

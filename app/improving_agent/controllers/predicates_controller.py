@@ -4,7 +4,7 @@ import connexion
 import six
 
 from improving_agent import util
-from improving_agent.src.spoke_biolink_constants import PREDICATES
+from improving_agent.src.biolink.spoke_biolink_constants import PREDICATES
 
 TRAPI_PREDICATES = defaultdict(dict)
 for biolink_subject, biolink_objects in PREDICATES.items():

@@ -46,7 +46,7 @@ class EdgeBinding(Model):
     def id(self):
         """Gets the id of this EdgeBinding.
 
-        A knowledge-graph edge id, i.e. the `id` of a KEdge  # noqa: E501
+        The key identifier of a specific KnowledgeGraph Edge.  # noqa: E501
 
         :return: The id of this EdgeBinding.
         :rtype: str
@@ -57,7 +57,7 @@ class EdgeBinding(Model):
     def id(self, id):
         """Sets the id of this EdgeBinding.
 
-        A knowledge-graph edge id, i.e. the `id` of a KEdge  # noqa: E501
+        The key identifier of a specific KnowledgeGraph Edge.  # noqa: E501
 
         :param id: The id of this EdgeBinding.
         :type id: str

@@ -3,7 +3,7 @@ from fuzzywuzzy.process import extractOne
 from .biggim_client import BIG_GIM_CLIENT
 from improving_agent.models import Attribute
 from improving_agent.src.normalization.curie_formatters import format_gene_for_spoke
-from improving_agent.src.spoke_biolink_constants import BIOLINK_ENTITY_GENE
+from improving_agent.src.biolink.spoke_biolink_constants import BIOLINK_ENTITY_GENE
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)

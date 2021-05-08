@@ -7,7 +7,7 @@ from improving_agent.models.query import Query  # noqa: E501
 from improving_agent.src import core
 
 
-def query(request_body):  # noqa: E501
+def query_post(request_body):  # noqa: E501
     """Query reasoner via one of several inputs
 
      # noqa: E501

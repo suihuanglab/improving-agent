@@ -10,25 +10,34 @@ from improving_agent.src.improving_agent_constants import (
 )
 from improving_agent.src.kps.biggim import annotate_edges_with_biggim
 from improving_agent.src.kps.cohd import annotate_edges_with_cohd
-from improving_agent.src.kps.text_miner import TextMinerClient
+# from improving_agent.src.kps.text_miner import TextMinerClient
 from improving_agent.src.normalization import SearchNode
 from improving_agent.src.normalization.node_normalization import normalize_spoke_nodes_for_translator
 from improving_agent.src.psev import get_psev_weights
-from improving_agent.src.spoke_biolink_constants import (
+from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_TYPE,
     BIOLINK_ASSOCIATION_RELATED_TO,
     BIOLINK_ENTITY_CHEMICAL_SUBSTANCE,
     BIOLINK_ENTITY_DRUG,
     RELATIONSHIP_ONTOLOGY_CURIE,
-    SPOKE_BIOLINK_NODE_MAPPINGS,
+    SPOKE_ANY_TYPE,
     SPOKE_BIOLINK_EDGE_MAPPINGS,
+    SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
+    SPOKE_BIOLINK_NODE_MAPPINGS,
+    SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS,
     SPOKE_LABEL_COMPOUND,
-    SPOKE_ANY_TYPE
 )
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)
 ExtractedResult = namedtuple('ExtractedResult', ['nodes', 'edges'])
+
+SPOKE_GRAPH_TYPE_EDGE = 'edge'
+SPOKE_GRAPH_TYPE_NODE = 'node'
+ATTRIBUTE_MAPS = {
+    SPOKE_GRAPH_TYPE_EDGE: SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
+    SPOKE_GRAPH_TYPE_NODE: SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS
+}
 
 IMPROVING_AGENT_SCORING_FUCNTIONS = {}
 
@@ -41,28 +50,28 @@ def register_scoring_function(attribute_name):
 
 
 @register_scoring_function('cohd_paired_concept_freq_concept_frequency')
-def get_cohd_edge_score(edge_attribute):
-    return edge_attribute.value * 1000
+def get_cohd_edge_score(value):
+    return value * 1000
 
 
 @register_scoring_function('has_feature_importance')
-def get_multiomics_model_score(edge_attribute):
-    return edge_attribute.value
+def get_multiomics_model_score(value):
+    return value
 
 
 @register_scoring_function(ATTRIBUTE_TYPE_PSEV_WEIGHT)
-def get_psev_score(node_attribute):
-    return node_attribute.value * 10000
+def get_psev_score(value):
+    return value * 10000
 
 
 @register_scoring_function('spearman_correlation')
-def get_evidential_score(edge_attribute):
-    return edge_attribute.value
+def get_evidential_score(value):
+    return value
 
 
 @register_scoring_function('text_miner_max_ngd_for_sub_obj')
-def get_text_miner_score(edge_attribute):
-    return edge_attribute.value
+def get_text_miner_score(value):
+    return value
 
 
 # Cypher
@@ -80,8 +89,8 @@ def make_qnode_filter_clause(name, query_node):
         # and we'll need specific funcs; see also drug below
         if SPOKE_LABEL_COMPOUND in query_node.spoke_labels:
             identifiers_clause = f'({identifiers_clause} OR {name}.chembl_id IN [{",".join(query_node.spoke_identifiers)}])'
-    if query_node.category:
-        if BIOLINK_ENTITY_DRUG in query_node.category and BIOLINK_ENTITY_CHEMICAL_SUBSTANCE not in query_node.category:
+    if query_node.categories:
+        if BIOLINK_ENTITY_DRUG in query_node.categories and BIOLINK_ENTITY_CHEMICAL_SUBSTANCE not in query_node.categories:
             if identifiers_clause:
                 identifiers_clause = f'{identifiers_clause} AND'
             identifiers_clause = f'{identifiers_clause} {name}.max_phase > 0'
@@ -98,7 +107,7 @@ def make_qnode_filter_clause(name, query_node):
 
 def make_qedge_cypher_repr(name, query_edge):
     edge_repr = f'[{name}'
-    if query_edge.spoke_edge_types:
+    if SPOKE_ANY_TYPE not in query_edge.spoke_edge_types:
         edge_repr = f'{edge_repr}:{"|".join(query_edge.spoke_edge_types)}'
     edge_repr += ']'
     return edge_repr
@@ -223,6 +232,16 @@ class BasicQuery:
         return f'{match_clause} {where_clause} {return_clause};'
 
     # Result handling
+    def _get_psev_weight(self, psev_context, identifier):
+        try:
+            psev_weight = get_psev_weights(
+                node_identifier=identifier,
+                disease_identifier=psev_context,
+            )
+            return psev_weight
+        except IndexError:  # TODO is this really a 0?
+            return 0
+
     def score_result(self, result):
         """Returns a score based on psev weights, cohort edge correlations,
             both, or none
@@ -242,6 +261,7 @@ class BasicQuery:
             future
         """
         score = 0
+        psev_context = self.query_options.get('psev_context')
 
         for knode in result.node_bindings.values():
             # knode is a list of node_bindings, but we only support
@@ -249,9 +269,15 @@ class BasicQuery:
             # TODO: reconsider upon version upgrade
             node = self.knowledge_graph['nodes'][knode[0].id]
             for attribute in node.attributes:
-                score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(attribute.type)
+                attribute_name = attribute.original_attribute_name
+                value = attribute.value
+                # first lookup psev if possible
+                if psev_context and attribute_name == 'identifier':
+                    attribute_name = 'psev'
+                    value = self._get_psev_weight(psev_context, value)
+                score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(attribute_name)
                 if score_func:
-                    score += score_func(attribute)
+                    score += score_func(value)
 
         for kedge in result.edge_bindings.values():
             # kedge is a list of node_bindings, but we only support
@@ -259,9 +285,9 @@ class BasicQuery:
             # TODO: reconsider upon version upgrade
             edge = self.knowledge_graph['edges'][kedge[0].id]
             for attribute in edge.attributes:
-                score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(attribute.type)
+                score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(attribute.original_attribute_name)
                 if score_func:
-                    score += score_func(attribute)
+                    score += score_func(attribute.value)
         return score
 
     def score_results(self, results):
@@ -270,6 +296,53 @@ class BasicQuery:
             result.score = self.score_result(result)
             scored_results.append(result)
         return scored_results
+
+    def _make_result_attribute(
+        self,
+        property_type,
+        property_value,
+        edge_or_node,
+        spoke_object_type
+    ):
+        """Returns a TRAPI-spec attribute for a result node or edge
+
+        Parameters
+        ----------
+        property_type: the neo4j-SPOKE property type
+        property_value: the value of the property
+        edge_or_node: string 'edge' or 'node' specifiying the type of
+            graph object that is described by this attributee
+        spoke_object_type: the neo4j node label or edge type from SPOKE
+
+        Returns
+        -------
+        models.Attribute or None
+        """
+        if edge_or_node not in ATTRIBUTE_MAPS:
+            raise ValueError(
+                f'Got {edge_or_node=} but it must be one of "edge" or "node"'
+            )
+
+        object_properties = ATTRIBUTE_MAPS[edge_or_node].get(spoke_object_type)
+        if not object_properties:
+            logger.warning(
+                f'Could not find any properties in the attribute map for {spoke_object_type=}'
+            )
+            return
+
+        attribute_type_id = object_properties.get(property_type)
+        if not attribute_type_id:
+            logger.warning(
+                f'Could not find an attribute mapping for {spoke_object_type=} and {property_type=}'
+            )
+            return
+
+        attribute = models.Attribute(
+            attribute_type_id=attribute_type_id,
+            original_attribute_name=property_type,
+            value=property_value
+        )
+        return attribute
 
     def make_result_node(self, n4j_object, spoke_curie):
         """Instantiates a reasoner-standard Node to return as part of a
@@ -290,38 +363,31 @@ class BasicQuery:
         if not name:
             name = n4j_object.get("name")
 
-        result_node_attributes = []
+        spoke_node_labels = list(n4j_object.labels)
+        result_node_categories = [
+            SPOKE_BIOLINK_NODE_MAPPINGS[label]
+            for label
+            in spoke_node_labels
+        ]
+
         node_source = None
+        result_node_attributes = []
         for k, v in n4j_object.items():
-            # TODO: filter these to something reasonable
-            result_node_attributes.append(models.Attribute(type=k, value=v))
             if k == SPOKE_NODE_PROPERTY_SOURCE:
                 node_source = v
+            node_attribute = self._make_result_attribute(
+                    k, v, SPOKE_GRAPH_TYPE_NODE, spoke_node_labels[0]
+            )
+            if node_attribute:
+                result_node_attributes.append(node_attribute)
 
         result_node = models.Node(
             name=name,
-            category=[SPOKE_BIOLINK_NODE_MAPPINGS[label] for label in list(n4j_object.labels)],
+            categories=result_node_categories,
             attributes=result_node_attributes
         )
 
-        psev_context = self.query_options.get('psev_context')
-        if psev_context:
-            try:
-                result_node.attributes.append(
-                    models.Attribute(
-                        type=ATTRIBUTE_TYPE_PSEV_WEIGHT,
-                        value=get_psev_weights(
-                            node_identifier=n4j_object["identifier"],
-                            disease_identifier=psev_context,
-                        ),
-                    )
-                )
-            except IndexError:  # TODO is this really a 0?
-                result_node.attributes.append(
-                    models.Attribute(type=ATTRIBUTE_TYPE_PSEV_WEIGHT, value=0)
-                )
-
-        search_node = SearchNode(result_node.category[0], spoke_curie, node_source)
+        search_node = SearchNode(result_node.categories[0], spoke_curie, node_source)
         self.nodes_to_normalize.add(search_node)
         return result_node
 
@@ -339,7 +405,8 @@ class BasicQuery:
         result_edge (models.Edge): reasoner-standard Edge object for
             inclusion as a part of a KnowledgeGraph result
         """
-        biolink_map_info = SPOKE_BIOLINK_EDGE_MAPPINGS.get(n4j_object.type)
+        edge_type = n4j_object.type
+        biolink_map_info = SPOKE_BIOLINK_EDGE_MAPPINGS.get(edge_type)
         if not biolink_map_info:
             biolink_edge_data = {'predicate': BIOLINK_ASSOCIATION_RELATED_TO}
         else:
@@ -348,15 +415,20 @@ class BasicQuery:
                 'relation': biolink_map_info[RELATIONSHIP_ONTOLOGY_CURIE]
             }
 
+        edge_attributes = []
+        for k, v in n4j_object.items():
+            edge_attribute = self._make_result_attribute(k, v, SPOKE_GRAPH_TYPE_EDGE, edge_type)
+            if edge_attribute:
+                edge_attributes.append(edge_attribute)
+
         result_edge = models.Edge(
             # TODO get correlations score for P100/cohort data
             subject=n4j_object.start_node["identifier"],
             object=n4j_object.end_node["identifier"],
+            attributes=edge_attributes,
             **biolink_edge_data
         )
-        result_edge.attributes = [
-            models.Attribute(type=k, value=v) for k, v in n4j_object.items()
-        ]
+
         return result_edge
 
     def extract_result(self, n4j_result):
@@ -418,7 +490,6 @@ class BasicQuery:
         r = tx.run(query_string)
         self.results = [self.extract_result(record) for record in r]
 
-
     # Query
     def linear_spoke_query(self, session):
         """Returns the SPOKE node label equivalent to `node_type`
@@ -442,7 +513,7 @@ class BasicQuery:
         # query
         logger.info(f'Querying SPOKE with {query_string}')
         session.read_transaction(self.run_query, query_string)
-        
+
         if not self.results:
             return self.results, self.knowledge_graph
 

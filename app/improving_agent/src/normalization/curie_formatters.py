@@ -27,7 +27,7 @@ from .sri_node_normalizer import (
     NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER
 )
 from improving_agent.exceptions import UnsupportedTypeError
-from improving_agent.src.spoke_biolink_constants import (
+from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_CHEMICAL_SUBSTANCE,
     BIOLINK_ENTITY_GENE,
     BIOLINK_ENTITY_MOLECULAR_ACTIVITY,
@@ -237,9 +237,9 @@ def _format_disease_for_spoke(curie):
     return f"'{curie}'"
 
 
-@register_spoke_curie_formatter(SPOKE_LABEL_EC, SPOKE_IDENTIFIER_REGEX_EC)
+@register_spoke_curie_formatter(SPOKE_LABEL_EC, '^KEGG.EC')
 def _format_ec_for_spoke(curie):
-    return f"'{curie}'"
+    return f"'{re.sub('KEGG.EC:', '', curie)}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_FOOD, SPOKE_IDENTIFIER_REGEX_FOOD)
@@ -286,9 +286,9 @@ def _format_protein_for_spoke(curie):
     return f"'{curie.replace('UniProtKB:', '')}'"
 
 
-@register_spoke_curie_formatter(SPOKE_LABEL_REACTION, '^KEGG:|^MetaCyc:')
+@register_spoke_curie_formatter(SPOKE_LABEL_REACTION, '^KEGG.REACTION:|^MetaCyc:')
 def _format_reaction_for_spoke(curie):
-    return f"'{re.sub('^KEGG:|^MetaCyc:', '', curie)}'"
+    return f"'{re.sub('^KEGG.REACTION:|^MetaCyc:', '', curie)}'"
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_SARSCOV2, SPOKE_IDENTIFIER_REGEX_SARSCOV2)
@@ -334,7 +334,6 @@ def get_spoke_identifiers_from_normalized_node(spoke_labels, normalized_node, se
                     node_type_config[NODE_NORMALIZATION_KEY_REGEX],
                     identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
             ):
-                print(identifier, node_type_configs)
                 spoke_identifiers.append(
                     node_type_config[NODE_NORMALIZATION_KEY_FUNCTION](identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER])
                 )
