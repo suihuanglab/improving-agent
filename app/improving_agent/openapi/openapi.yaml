@@ -28,7 +28,7 @@ externalDocs:
   url: https://github.com/NCATSTranslator/ReasonerAPI
 servers:
 - description: dev
-  url: http://0.0.0.0:3031/api/v1.1/
+  url: http://ia.healthdatascience.cloud/api/v1.1/
 tags:
 - description: Get supported relationships by source and target
   name: predicates
