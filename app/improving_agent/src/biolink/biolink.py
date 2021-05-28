@@ -34,8 +34,8 @@ def _get_entity_descendents(entity, entity_type):
     uri_attr = BIOLINK_MODEL_ELEMENT_URI_MAPPINGS[entity_type]
 
     _supported_descendants = set()
-    descendants = BMT.get_descendants(entity)
-    for descendant in descendants:
+    search_entities = BMT.get_descendants(entity)
+    for descendant in search_entities:
         biolink_element = BMT.get_element(descendant)
         element_uri = getattr(biolink_element, uri_attr)
         if element_uri in mappings:

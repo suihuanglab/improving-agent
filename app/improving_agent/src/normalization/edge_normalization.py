@@ -8,7 +8,7 @@ from improving_agent.exceptions import (
 )
 from improving_agent.models import QEdge
 from improving_agent.src.biolink.biolink import EDGE, get_supported_biolink_descendants
-from improving_agent.src.biolink.spoke_biolink_constants import BIOLINK_SPOKE_EDGE_MAPPINGS, PREDICATES
+from improving_agent.src.biolink.spoke_biolink_constants import BIOLINK_SPOKE_EDGE_MAPPINGS, PREDICATES, SPOKE_ANY_TYPE
 
 
 def _deserialize_qedge(qedge_id, qedge):
@@ -84,6 +84,12 @@ def _assign_spoke_edge_types(qedge, subj_qnode, obj_qnode, query_graph):
             if not spoke_edge_mappings:
                 raise UnsupportedTypeError(f'imProving Agent does not currently accept predicates of type {predicate}')
             spoke_edge_types.extend(spoke_edge_mappings)
+        if not spoke_edge_types:
+            raise UnsupportedTypeError(
+                f'imProving Agent does not currently accept predicates of type {qedge.predicates}'
+            )
+    else:
+        spoke_edge_types.append(SPOKE_ANY_TYPE)
 
     setattr(qedge, 'spoke_edge_types', set(spoke_edge_types))
     return qedge
