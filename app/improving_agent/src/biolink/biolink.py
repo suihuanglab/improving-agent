@@ -3,9 +3,10 @@ from functools import cache
 from bmt.toolkit import Toolkit
 
 from .spoke_biolink_constants import (
+    BIOLINK_ASSOCIATION_RELATED_TO,
+    BIOLINK_ENTITY_NAMED_THING,
     BIOLINK_SPOKE_EDGE_MAPPINGS,
     BIOLINK_SPOKE_NODE_MAPPINGS,
-    SPOKE_ANY_TYPE
 )
 
 BMT = Toolkit()
@@ -43,12 +44,22 @@ def _get_entity_descendents(entity, entity_type):
     return _supported_descendants
 
 
+def _check_for_wildcard(entities, entity_type):
+    if entity_type == NODE:
+        if BIOLINK_ENTITY_NAMED_THING in entities:
+            return BIOLINK_ENTITY_NAMED_THING
+    else:
+        if BIOLINK_ASSOCIATION_RELATED_TO in entities:
+            return BIOLINK_ASSOCIATION_RELATED_TO
+
+
 def get_supported_biolink_descendants(entities, entity_type):
     """Returns a set of str biolink class URIs that are supported for
     lookup in SPOKE
     """
-    if SPOKE_ANY_TYPE in entities:
-        return set([SPOKE_ANY_TYPE])
+    wildcard = _check_for_wildcard(entities, entity_type)
+    if wildcard:
+        return set([wildcard])
 
     supported_descendants = set()
     for entity in entities:

@@ -137,7 +137,7 @@ def _format_kegg_compound_for_search(curie, source=None):
 
 @register_search_curie_formatter(BIOLINK_ENTITY_GENE, SPOKE_IDENTIFIER_REGEX_GENE)
 def _format_ncbigene_for_search(curie, source=None):
-    return f'NCBIGENE:{curie}'
+    return f'NCBIGene:{curie}'
 
 
 @register_search_curie_formatter(

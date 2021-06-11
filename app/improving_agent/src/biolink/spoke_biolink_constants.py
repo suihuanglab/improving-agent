@@ -627,6 +627,7 @@ for biolink_subject, biolink_object_map in PREDICATES.items():
     for biolink_object, predicates_map in biolink_object_map.items():
         for predicate, spoke_edge_type in predicates_map.items():
             BIOLINK_SPOKE_EDGE_MAPPINGS[predicate].extend(spoke_edge_type)
+BIOLINK_SPOKE_EDGE_MAPPINGS[BIOLINK_ASSOCIATION_RELATED_TO] = [SPOKE_ANY_TYPE]
 
 
 ##############
