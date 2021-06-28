@@ -10,7 +10,7 @@ from flask import g, jsonify, render_template
 
 from improving_agent import encoder
 from improving_agent.src import config
-from improving_agent.src.spoke_biolink_constants import BIOLINK_SPOKE_NODE_MAPPINGS
+from improving_agent.src.biolink.spoke_biolink_constants import BIOLINK_SPOKE_NODE_MAPPINGS
 from improving_agent.util import get_evidara_logger
 
 driver = neo4j.GraphDatabase.driver(
@@ -94,7 +94,7 @@ def text_search(search):
         if autocomplete and autocomplete == 'true':
             return 'Must specify only one of fuzz or autocomplete', HTTPStatus.BAD_REQUEST
         search_fuzz_or_autocomplete = f'{search}~'
-    
+
     _search = f'{search} OR {search}?^6 OR {search}??^4 OR {search}???^3 OR {search_fuzz_or_autocomplete}'
     session = get_db()
     results = session.read_transaction(full_text_search, _search)

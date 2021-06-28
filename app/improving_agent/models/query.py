@@ -6,9 +6,11 @@ from datetime import date, datetime  # noqa: F401
 from typing import List, Dict  # noqa: F401
 
 from improving_agent.models.base_model_ import Model
+from improving_agent.models.log_level import LogLevel
 from improving_agent.models.message import Message
 from improving_agent import util
 
+from improving_agent.models.log_level import LogLevel  # noqa: E501
 from improving_agent.models.message import Message  # noqa: E501
 
 class Query(Model):
@@ -17,11 +19,13 @@ class Query(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, message=None, max_results=200, query_kps=False, psev_context=None):  # noqa: E501
+    def __init__(self, message=None, log_level=None, max_results=200, query_kps=False, psev_context=None):  # noqa: E501
         """Query - a model defined in OpenAPI
 
         :param message: The message of this Query.  # noqa: E501
         :type message: Message
+        :param log_level: The log_level of this Query.  # noqa: E501
+        :type log_level: LogLevel
         :param max_results: The max_results of this Query.  # noqa: E501
         :type max_results: int
         :param query_kps: The query_kps of this Query.  # noqa: E501
@@ -31,6 +35,7 @@ class Query(Model):
         """
         self.openapi_types = {
             'message': Message,
+            'log_level': LogLevel,
             'max_results': int,
             'query_kps': bool,
             'psev_context': str
@@ -38,12 +43,14 @@ class Query(Model):
 
         self.attribute_map = {
             'message': 'message',
+            'log_level': 'log_level',
             'max_results': 'max_results',
             'query_kps': 'query_kps',
             'psev_context': 'psev_context'
         }
 
         self._message = message
+        self._log_level = log_level
         self._max_results = max_results
         self._query_kps = query_kps
         self._psev_context = psev_context
@@ -81,6 +88,29 @@ class Query(Model):
             raise ValueError("Invalid value for `message`, must not be `None`")  # noqa: E501
 
         self._message = message
+
+    @property
+    def log_level(self):
+        """Gets the log_level of this Query.
+
+        The least critical level of logs to return  # noqa: E501
+
+        :return: The log_level of this Query.
+        :rtype: LogLevel
+        """
+        return self._log_level
+
+    @log_level.setter
+    def log_level(self, log_level):
+        """Sets the log_level of this Query.
+
+        The least critical level of logs to return  # noqa: E501
+
+        :param log_level: The log_level of this Query.
+        :type log_level: LogLevel
+        """
+
+        self._log_level = log_level
 
     @property
     def max_results(self):

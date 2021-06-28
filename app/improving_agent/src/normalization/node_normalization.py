@@ -11,7 +11,8 @@ from .sri_node_normalizer import (
 )
 from improving_agent.models import QNode
 from improving_agent.exceptions import UnmatchedIdentifierError, UnsupportedTypeError
-from improving_agent.src.spoke_biolink_constants import (
+from improving_agent.src.biolink.biolink import get_supported_biolink_descendants, NODE
+from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_PROTEIN,
     BIOLINK_SPOKE_NODE_MAPPINGS,
     SPOKE_LABEL_GENE
@@ -59,10 +60,10 @@ def _deserialize_qnode(qnode_id, qnode):
     TRAPI request
     """
     try:
-        id_ = qnode.get('id')
-        category = qnode.get('category')
+        ids = qnode.get('ids')
+        categories = qnode.get('categories')
         is_set = qnode.get('is_set')
-        qnode = QNode(id_, category, is_set)
+        qnode = QNode(ids, categories, is_set)
         setattr(qnode, 'qnode_id', qnode_id)
     except TypeError:
         raise BadRequest(f'Could not deserialize qnode={qnode}')
@@ -72,16 +73,18 @@ def _deserialize_qnode(qnode_id, qnode):
 
 def _assign_spoke_node_label(qnode):
     spoke_labels = []
-    if qnode.category:
-        for category in qnode.category:
-            spoke_label = BIOLINK_SPOKE_NODE_MAPPINGS.get(category)
-            if spoke_label is None:
+    if qnode.categories:
+        compatible_categories = get_supported_biolink_descendants(qnode.categories, NODE)
+        for category in compatible_categories:
+            node_mapping = BIOLINK_SPOKE_NODE_MAPPINGS.get(category)
+            if node_mapping is None:
                 continue
+            spoke_label = node_mapping.spoke_label
             if isinstance(spoke_label, str):
                 spoke_label = [spoke_label]
             spoke_labels.extend(spoke_label)
         if not spoke_labels:
-            raise UnsupportedTypeError(f'imProving Agent could not find query nodes of category {qnode.category}')
+            raise UnsupportedTypeError(f'imProving Agent could not find query nodes of category {qnode.categories}')
 
     setattr(qnode, 'spoke_labels', spoke_labels)
     return qnode
@@ -92,13 +95,13 @@ def _check_and_format_qnode_curies_for_search(qnodes):
     formatted_search_nodes = {}
     for qnode_id, qnode in qnodes.items():
         setattr(qnode, QNODE_CURIE_SPOKE_IDENTIFIERS, [])
-        if qnode.id:
+        if qnode.ids:
             if not qnode.spoke_labels:
                 raise UnsupportedTypeError(
                     'imProving Agent requires that qNodes with identifier also specify a '
                     'biolink category'
                 )
-            for curie in qnode.id:
+            for curie in qnode.ids:
                 matched_label = get_label_if_appropriate_spoke_curie(qnode.spoke_labels, curie)
                 if matched_label:
                     # str formatting for where clauses
@@ -110,7 +113,7 @@ def _check_and_format_qnode_curies_for_search(qnodes):
                     continue
                 else:
                     # Not sure this actually does anything useful if don't already recognize its pattern
-                    for category in qnode.category:
+                    for category in qnode.categories:
                         formatted_curies = format_curie_for_sri(category, curie)
                         if isinstance(formatted_curies, str):
                             formatted_curies = [formatted_curies]

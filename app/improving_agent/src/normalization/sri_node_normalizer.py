@@ -8,8 +8,9 @@ from werkzeug.utils import cached_property
 
 from improving_agent.util import get_evidara_logger
 
-NODE_NORMALIZATION_BASE_URL = "https://nodenormalization-sri.renci.org"
+NODE_NORMALIZATION_BASE_URL = "https://nodenormalization-sri.renci.org/1.1/"
 NODE_NORMALIZATION_CURIE_IDENTIFER = "curie"
+NODE_NORMALIZATION_CURIE_PREFIX = "curie_prefix"
 NODE_NORMALIZATION_CURIE_PREFIXES_ENDPOINT = "get_curie_prefixes"
 NODE_NORMALIZATION_NORMALIZED_NODES_ENDPOINT = "get_normalized_nodes"
 NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS = 'equivalent_identifiers'
@@ -60,7 +61,7 @@ class SriNodeNormalizer:
             return cached
 
         logger.info(f'Querying SRI to normalize {subset}')
-        payload = [(NODE_NORMALIZATION_CURIE_IDENTIFER, curie) for curie in subset]
+        payload = {NODE_NORMALIZATION_CURIE_IDENTIFER: list(subset)}
         response = requests.get(
             f"{NODE_NORMALIZATION_BASE_URL}/{NODE_NORMALIZATION_NORMALIZED_NODES_ENDPOINT}", params=payload
         )
