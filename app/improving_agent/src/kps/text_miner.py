@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import requests
 
-from improving_agent.src.config import TEXT_MINER_NODE_MAP
+from improving_agent.src.config import app_config
 from improving_agent.models.edge_attribute import EdgeAttribute
 from improving_agent.util import get_evidara_logger
 
@@ -15,7 +15,7 @@ TEXT_MINER_BASE_URL = 'https://biothings.ncats.io/text_mining_co_occurrence_kp/'
 TEXT_MINER_NODES_TO_QUERY = ['biolink:ChemicalSubstance', 'biolink:Disease']
 TEXT_MINER_QUERY_URL = 'query'
 
-with open(TEXT_MINER_NODE_MAP, 'rb') as inpickle:
+with open(app_config.TEXT_MINER_NODE_MAP, 'rb') as inpickle:
     TEXT_MINER_LOCAL_NODE_CACHE = pickle.load(inpickle)
 
 Triplet = namedtuple('Triplet', ['node1', 'edge', 'node2'])

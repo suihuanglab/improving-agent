@@ -1,0 +1,28 @@
+version: "3.9"
+
+networks:
+  spoke-components:
+    external: true
+  default:
+    external:
+      name: spoke-components
+
+services:
+  web:
+    build: app/
+    environment:
+      APP_ENV: "${IA_APP_ENV}"
+      AWS_SHARED_CREDENTIALS_FILE: '/.aws/credentials'
+      PSEV_API_KEY: "${PSEV_API_KEY}"
+      NEO4J_SPOKE_USER: "${NEO4J_SPOKE_USER}"
+      NEO4J_SPOKE_PASSWORD: "${NEO4J_SPOKE_PASSWORD}"
+    networks:
+      spoke-components:
+        aliases:
+          - improving-agent
+    ports:
+      - "3031:3031"
+      - "3032:3032"
+    volumes:
+      - ./app:/usr/src/app
+      - ~/.aws:/.aws

@@ -1,4 +1,5 @@
 from collections import Counter, namedtuple
+from typing import Dict, List, Union
 from string import ascii_letters
 
 import neo4j
@@ -13,7 +14,7 @@ from improving_agent.src.kps.cohd import annotate_edges_with_cohd
 # from improving_agent.src.kps.text_miner import TextMinerClient
 from improving_agent.src.normalization import SearchNode
 from improving_agent.src.normalization.node_normalization import normalize_spoke_nodes_for_translator
-from improving_agent.src.psev import get_psev_weights
+from improving_agent.src.psev import get_psev_scores
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_TYPE,
     BIOLINK_ASSOCIATION_RELATED_TO,
@@ -150,6 +151,7 @@ class BasicQuery:
         self.knowledge_edge_counter = 0
 
         self.nodes_to_normalize = set()
+        self.result_nodes_spoke_identifiers = set()
         self.results = []
 
     def make_query_order(self):
@@ -232,24 +234,37 @@ class BasicQuery:
         return f'{match_clause} {where_clause} {return_clause};'
 
     # Result handling
-    def _get_psev_weight(self, psev_context, identifier):
-        try:
-            psev_weight = get_psev_weights(
-                node_identifier=identifier,
-                disease_identifier=psev_context,
-            )
-            return psev_weight
-        except IndexError:  # TODO is this really a 0?
-            return 0
+    def _get_psev_scores(
+        self,
+        psev_contexts: List[str]
+    ) -> Dict[str, Dict[Union[str, int], float]]:
+        """Query the PSEV API to get scores for all nodes and contexts
 
-    def score_result(self, result):
+        Eventually this will "intelligently" figure out concepts if they
+        are not defined, but that algorithm remains to be developed.
+        """
+        # TODO: find reasonable concepts when no concepts are given
+        if not psev_contexts:
+            return {'no-concepts': {si: 0 for si in self.result_nodes_spoke_identifiers}}
+        if psev_contexts and isinstance(psev_contexts, str):
+            psev_contexts = [psev_contexts]
+        psev_scores = get_psev_scores(psev_contexts, self.result_nodes_spoke_identifiers)
+        return psev_scores
+
+    def score_result(
+        self,
+        result: 'models.Result',
+        psev_scores: Dict[str, Dict[Union[str, int], float]]
+    ):
         """Returns a score based on psev weights, cohort edge correlations,
             both, or none
 
         Parameters
         ----------
         result (Result): TRAPI Result object containing node_bindings
-            and edge_bindings
+            and edge_bindings,
+        psev_scores: psev scores for all result nodes for all conepts
+            related to the query
 
         Returns
         -------
@@ -274,7 +289,13 @@ class BasicQuery:
                 # first lookup psev if possible
                 if psev_context and attribute_name == 'identifier':
                     attribute_name = 'psev'
-                    value = self._get_psev_weight(psev_context, value)
+                    # iterate on all PSEV concepts and sum the
+                    # psev value for the node of interest across all
+                    # conepts
+                    psev_sum = 0
+                    for concept in psev_scores:
+                        psev_sum += psev_scores[concept][value]
+                    value = psev_sum
                 score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(attribute_name)
                 if score_func:
                     score += score_func(value)
@@ -292,8 +313,10 @@ class BasicQuery:
 
     def score_results(self, results):
         scored_results = []
+        psev_concepts = self.query_options.get('psev_context')
+        psev_scores = self._get_psev_scores(psev_concepts)
         for result in results:
-            result.score = self.score_result(result)
+            result.score = self.score_result(result, psev_scores)
             scored_results.append(result)
         return scored_results
 
@@ -387,7 +410,11 @@ class BasicQuery:
             attributes=result_node_attributes
         )
 
-        search_node = SearchNode(result_node.categories[0], spoke_curie, node_source)
+        # set up downstream searches
+        self.result_nodes_spoke_identifiers.add(spoke_curie)  # for PSEV retrieval
+
+        # for normalization
+        search_node = SearchNode(result_node.categories[0], spoke_curie, node_source)  
         self.nodes_to_normalize.add(search_node)
         return result_node
 
