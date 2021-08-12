@@ -17,8 +17,9 @@ from improving_agent.src.psev import get_psev_weights
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_TYPE,
     BIOLINK_ASSOCIATION_RELATED_TO,
-    BIOLINK_ENTITY_CHEMICAL_SUBSTANCE,
+    BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_DRUG,
+    BIOLINK_ENTITY_SMALL_MOLECULE,
     RELATIONSHIP_ONTOLOGY_CURIE,
     SPOKE_ANY_TYPE,
     SPOKE_BIOLINK_EDGE_MAPPINGS,
@@ -90,7 +91,11 @@ def make_qnode_filter_clause(name, query_node):
         if SPOKE_LABEL_COMPOUND in query_node.spoke_labels:
             identifiers_clause = f'({identifiers_clause} OR {name}.chembl_id IN [{",".join(query_node.spoke_identifiers)}])'
     if query_node.categories:
-        if BIOLINK_ENTITY_DRUG in query_node.categories and BIOLINK_ENTITY_CHEMICAL_SUBSTANCE not in query_node.categories:
+        if (
+            BIOLINK_ENTITY_DRUG in query_node.categories
+            and BIOLINK_ENTITY_CHEMICAL_ENTITY not in query_node.categories
+            and BIOLINK_ENTITY_SMALL_MOLECULE not in query_node.categories
+        ):
             if identifiers_clause:
                 identifiers_clause = f'{identifiers_clause} AND'
             identifiers_clause = f'{identifiers_clause} {name}.max_phase > 0'

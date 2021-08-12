@@ -28,8 +28,9 @@ from .sri_node_normalizer import (
 )
 from improving_agent.exceptions import UnsupportedTypeError
 from improving_agent.src.biolink.spoke_biolink_constants import (
-    BIOLINK_ENTITY_CHEMICAL_SUBSTANCE,
+    BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_GENE,
+    BIOLINK_ENTITY_GENE_FAMILY,
     BIOLINK_ENTITY_MOLECULAR_ACTIVITY,
     BIOLINK_ENTITY_ORGANISM_TAXON,
     BIOLINK_ENTITY_PATHWAY,
@@ -81,6 +82,7 @@ SPOKE_IDENTIFIER_REGEX_ORGANISM = '^[0-9]{2,7}$'
 SPOKE_IDENTIFIER_REGEX_PATHWAY = '[a-zA-Z0-9-+ ]+'
 SPOKE_IDENTIFIER_REGEX_PHARMACOLOGIC_CLASS = '^N[0-9]{10}$'
 SPOKE_IDENTIFIER_REGEX_PROTEIN = '[OPQ][0-9][A-Z0-9]{3}[0-9]$|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$|^[0-9]{2,3}$'
+SPOKE_IDENTIFIER_REGEX_PROTEIN_DOMAIN_FAMILY = '^CL[0-9]{4}$|^PF[0-9]{5}$'
 SPOKE_IDENTIFIER_REGEX_REACTION = '^(TRANS-)?RXN([A-Z0-9]{1,4})?-[0-9]{1,5}|R[0-9]{5}|^[0-9A-Z-+.]+[RXN|SYN]$'  # not great
 SPOKE_IDENTIFIER_REGEX_SARSCOV2 = '^[0-9]{1,3}$'
 SPOKE_IDENTIFIER_REGEX_SIDE_EFFECT = '^C[0-9]{7}$'
@@ -120,17 +122,17 @@ def register_search_curie_formatter(node_type, regex):
     return wrapper
 
 
-@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_SUBSTANCE, '^CHEMBL[0-9]{1,7}$')
+@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_ENTITY, '^CHEMBL[0-9]{1,7}$')
 def _format_chembl_for_search(curie, source=None):
     return f"CHEMBL.COMPOUND:{curie}"
 
 
-@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_SUBSTANCE, '^DB[0-9]{5}$')
+@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_ENTITY, '^DB[0-9]{5}$')
 def _format_drugbank_for_search(curie, source=None):
     return f'DRUGBANK:{curie}'
 
 
-@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_SUBSTANCE, '^(C|G)[0-9]{5}$')
+@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_ENTITY, '^(C|G)[0-9]{5}$')
 def _format_kegg_compound_for_search(curie, source=None):
     return f'KEGG.COMPOUND:{curie}'
 
@@ -172,6 +174,11 @@ def _format_pathway_for_search(curie, source=None):
     return curie
 
 
+@register_search_curie_formatter(BIOLINK_ENTITY_PHENOTYPIC_FEATURE, SPOKE_IDENTIFIER_REGEX_SIDE_EFFECT)
+def _format_side_effect_for_search(curie, source=None):
+    return f'UMLS:{curie}'
+
+
 @register_search_curie_formatter(BIOLINK_ENTITY_PHENOTYPIC_FEATURE, SPOKE_IDENTIFIER_REGEX_SYMPTOM)
 def _format_symptom_for_search(curie, source=None):
     return f'MESH:{curie}'
@@ -180,6 +187,12 @@ def _format_symptom_for_search(curie, source=None):
 @register_search_curie_formatter(BIOLINK_ENTITY_PROTEIN, SPOKE_IDENTIFIER_REGEX_PROTEIN)
 def _format_protein_for_search(curie, source=None):
     return f'UniProtKB:{curie}'
+
+
+# Protein domain and protein family
+@register_search_curie_formatter(BIOLINK_ENTITY_GENE_FAMILY, SPOKE_IDENTIFIER_REGEX_PROTEIN_DOMAIN_FAMILY)
+def _format_protein_domain_family_for_search(curie, source=None):
+    return f'PFAM:{curie}'
 
 
 def format_curie_for_sri(category, curie, source=None):
