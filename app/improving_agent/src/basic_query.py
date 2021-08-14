@@ -1,5 +1,6 @@
 from collections import Counter, namedtuple
 from string import ascii_letters
+from typing import Dict, List, Union
 
 import neo4j
 from improving_agent import models  # TODO: replace with direct imports after fixing definitions
@@ -348,6 +349,40 @@ class BasicQuery:
             value=property_value
         )
         return attribute
+
+    def _make_source_provenance_attribute(self, source_or_sources):
+        # each attribute needs at least two attributes
+        # 1. the src attribute with a tag that spoke is the attribute_source
+        # 2. the aggregator attribute with a tag that spoke is the attribute_source and the informationation resource
+        # improving agentshould have a third tag that has itself as the info resource and attribute_source
+        if not isinstance(source_or_sources, list):
+            source_or_sources = [source_or_sources]
+
+        for source in source_or_sources:
+            pass
+
+
+    def _make_provenance_attributes(
+        self,
+        source_info: Dict[str, Union[List[str], str, int]],
+        label_or_relation: str
+    ) -> List[Dict[str, Union[str, int]]]:
+        """Returns a list of source-provenance attributes to be attached
+        to the result node or edge
+
+        source_info (dict):
+            a collection of attributes (Neo4j properties) and their
+            values pulled from the object of interest. Keys should be
+            one of source, sources, pubmed, pmid_list, preprint_list
+        label_or_relation (str):
+            the SPOKE node label or relationship type associated with
+            the source info
+        """
+        # check source, sources, pubmed, pmid_list, preprint_list
+        # do mapping lookup / attribution
+        # if nothing found, look in default map
+
+        pass
 
     def make_result_node(self, n4j_object, spoke_curie):
         """Instantiates a reasoner-standard Node to return as part of a

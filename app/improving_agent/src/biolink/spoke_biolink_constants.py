@@ -653,6 +653,12 @@ BIOLINK_SPOKE_EDGE_MAPPINGS[BIOLINK_ASSOCIATION_RELATED_TO] = [SPOKE_ANY_TYPE]
 ##############
 # ATTRIBUTES #
 ##############
+SPOKE_PROPERTY_PMID_LIST = 'pmid_list'
+SPOKE_PROPERTY_PREPRINT_LIST = 'preprint_list'
+SPOKE_PROPERTY_PUBMED = 'pubmed'
+SPOKE_PROPERTY_SOURCE = 'source'
+SPOKE_PROPERTY_SOURCES = 'sources'
+
 
 SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS = {
     SPOKE_EDGE_TYPE_AFFECTS_CamG: {
@@ -660,17 +666,17 @@ SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS = {
         'variant': 'biolink:qualifiers',
         'url': 'biolink:iri',
         'clin_sig': 'biolink:qualifiers',
-        'pubmed': 'biolink:publications',
+        SPOKE_PROPERTY_PUBMED: 'biolink:publications',
         'sensitivity_anova': 'biolink:has_confidence_level',
         'anova_mut_id': 'biolink:id',
         'pvalue_anova': 'biolink:p_value',
         'ic50_anova': 'biolink:has_evidence',
         'anova_mut_type': 'biolink:qualifiers',
         'anova_mut_feature': 'biolink:qualifiers',
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_ASSOCIATES_DaG: {
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'o_modifiers': 'biolink:qualifiers',
         'o_inheritance': 'biolink:qualifiers',
         'diseases_sources': 'biolink:qualifiers',
@@ -683,7 +689,7 @@ SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS = {
         'bindingdb_urls': 'biolink:iri',
         'bindingdb_ic50s': 'biolink:has_evidence',
         'bindingdb_sources': 'biolink:provided_by',
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'bindingdb_k': 'biolink:has_evidence',
         'bindingdb_kis': 'biolink:has_evidence',
         'bindingdb_kds': 'biolink:has_evidence',
@@ -692,72 +698,73 @@ SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS = {
     SPOKE_EDGE_TYPE_CAUSES_CcSE: {
         'inchikey': 'biolink:id',
         'inchi': 'biolink:id',
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_CAUSES_OcD: {
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_CONTAINS_AcA: {
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_CONTAINS_DcD: {
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_CONTRAINDICATES_CcD: {
         'act_sources': 'biolink:provided_by',
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_DECREASEDIN_PdD: {
-        'pmid_list': 'biolink:publications',
-        'preprint_list': 'biolink:publications'
+        SPOKE_PROPERTY_PMID_LIST: 'biolink:publications',
+        SPOKE_PROPERTY_PREPRINT_LIST: 'biolink:publications'
     },
     SPOKE_EDGE_TYPE_DOWNREGULATES_AdG: {
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'pvalue': 'biolink:p_value',
         'log2fc': 'biolink:has_evidence',
         'fdr': 'biolink:has_evidence'
     },
     SPOKE_EDGE_TYPE_DOWNREGULATES_CdG: {
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'zscore': 'biolink:has_evidence',
         'pvalue': 'biolink:p_value'
     },
     SPOKE_EDGE_TYPE_DOWNREGULATES_GPdG: {
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'zscore': 'biolink:has_evidence',
         'pvalue': 'biolink:p_value'
     },
     SPOKE_EDGE_TYPE_DOWNREGULATES_KGdG: {
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'zscore': 'biolink:has_evidence',
         'pvalue': 'biolink:p_value'
     },
     SPOKE_EDGE_TYPE_DOWNREGULATES_OGdG: {
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'zscore': 'biolink:has_evidence',
         'pvalue': 'biolink:p_value'
     },
     SPOKE_EDGE_TYPE_ENCODES_GeP: {
         'license': 'biolink:license',
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by',
+        SPOKE_PROPERTY_PUBMED: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_EXPRESSES_ACTeG: {
         'level': 'biolink:qualifiers',
         'reliability': 'biolink:qualifiers'
     },
     SPOKE_EDGE_TYPE_EXPRESSES_AeG: {
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'level': 'biolink:qualifiers',
         'reliability': 'biolink:qualifiers'
     },
     SPOKE_EDGE_TYPE_INCLUDES_PCiC: {
         'license': 'biolink:license',
-        'source': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by',
         'unbiased': 'metatype:Boolean',
     },
     SPOKE_EDGE_TYPE_INCREASEDIN_PiD: {
-        'pmid_list': 'biolink:publications',
-        'preprint_list': 'biolink:publications'
+        SPOKE_PROPERTY_PMID_LIST: 'biolink:publications',
+        SPOKE_PROPERTY_PREPRINT_LIST: 'biolink:publications'
     },
     SPOKE_EDGE_TYPE_INTERACTS_CPiP: {
         'interaction': 'biolink:qualifiers',
@@ -765,7 +772,8 @@ SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS = {
         'AvgSpec': 'biolink:has_evidence',
         'Saint_BFDR': 'biolink:has_evidence',
         'name': 'biolink:name',
-        'FoldChange': 'biolink:has_evidence'
+        'FoldChange': 'biolink:has_evidence',
+        SPOKE_PROPERTY_PUBMED: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_INTERACTS_PiP: {
         'databases_score': 'biolink:has_evidence',
@@ -777,93 +785,93 @@ SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS = {
         'cooccurrence_score': 'biolink:has_evidence',
         'exp_score': 'biolink:has_evidence',
         'fusion_score': 'biolink:has_evidence',
-        'source': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by',
     },
     SPOKE_EDGE_TYPE_ISA_AiA: {
-        'source': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by',
     },
     SPOKE_EDGE_TYPE_ISA_DiD: {
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_LOCALIZES_DlA: {
         'cooccur': 'biolink:has_evidence',
         'fisher': 'biolink:has_evidence',
         'enrichment': 'biolink:has_evidence',
         'odds': 'biolink:has_evidence',
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_MEMBEROF_PDmPF: {
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_PARTOF_ApA: {
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_PARTOF_PDpP: {
         'end': 'biolink:sequence_localization_attribute',
-        'source': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by',
         'start': 'biolink:sequence_localization_attribute'
     },
     SPOKE_EDGE_TYPE_PARTICIPATES_GpBP: {
         'unbiased': 'metatype:Boolean',
         'evidence': 'biolink:qualifiers',
         'vestige': 'metatype:Boolean',
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_PARTICIPATES_GpCC: {
         'unbiased': 'metatype:Boolean',
         'evidence': 'biolink:qualifiers',
         'vestige': 'metatype:Boolean',
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_PARTICIPATES_GpMF: {
         'unbiased': 'metatype:Boolean',
         'evidence': 'biolink:qualifiers',
         'vestige': 'metatype:Boolean',
-        'source': 'biolink:provided_by'
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by'
     },
     SPOKE_EDGE_TYPE_PRESENTS_DpS: {
         'cooccur': 'biolink:has_evidence',
         'fisher': 'biolink:has_evidence',
         'enrichment': 'biolink:has_evidence',
         'odds': 'biolink:has_evidence',
-        'source': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by',
     },
     SPOKE_EDGE_TYPE_RESEMBLES_DrD: {
         'cooccur': 'biolink:has_evidence',
         'fisher': 'biolink:has_evidence',
         'enrichment': 'biolink:has_evidence',
         'odds': 'biolink:has_evidence',
-        'source': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by',
     },
     SPOKE_EDGE_TYPE_TREATS_CtD: {
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'phase': 'biolink:has_confidence_level',
         'act_sources': 'biolink:provided_by',
-        'source': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCE: 'biolink:provided_by',
     },
     SPOKE_EDGE_TYPE_UPREGULATES_AuG: {
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'pvalue': 'biolink:p_value',
         'log2fc': 'biolink:has_evidence',
         'fdr': 'biolink:has_evidence'
     },
     SPOKE_EDGE_TYPE_UPREGULATES_CuG: {
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'zscore': 'biolink:has_evidence',
         'pvalue': 'biolink:p_value'
     },
     SPOKE_EDGE_TYPE_UPREGULATES_GPuG: {
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'zscore': 'biolink:has_evidence',
         'pvalue': 'biolink:p_value'
     },
     SPOKE_EDGE_TYPE_UPREGULATES_KGuG: {
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'zscore': 'biolink:has_evidence',
         'pvalue': 'biolink:p_value'
     },
     SPOKE_EDGE_TYPE_UPREGULATES_OGuG: {
-        'sources': 'biolink:provided_by',
+        SPOKE_PROPERTY_SOURCES: 'biolink:provided_by',
         'zscore': 'biolink:has_evidence',
         'pvalue': 'biolink:p_value'
     }
@@ -873,7 +881,7 @@ SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS = {
 SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS = {
     SPOKE_LABEL_ANATOMY: {
         'identifier': 'biolink:id',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
         'name': 'biolink:full_name',
         'bto': 'biolink:has_attribute',
         'mesh_id': 'biolink:id'
@@ -881,11 +889,11 @@ SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS = {
     SPOKE_LABEL_ANATOMY_CELL_TYPE: {
         'identifier': 'biolink:id',
         'name': 'biolink:full_name',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
     },
     SPOKE_LABEL_BIOLOGICAL_PROCESS: {
         'identifier': 'biolink:id',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
         'vestige': 'metatype:Boolean',
         'name': 'biolink:full_name',
         'url': 'biolink:iri',
@@ -900,7 +908,7 @@ SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS = {
     },
     SPOKE_LABEL_CELLULAR_COMPONENT: {
         'identifier': 'biolink:id',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
         'vestige': 'metatype:Boolean',
         'name': 'biolink:full_name',
         'url': 'biolink:iri',
@@ -915,7 +923,7 @@ SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS = {
         'inchikey': 'biolink:id',
         'inchi': 'biolink:id',
         'chembl_id': 'biolink:id',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
         'canonical_smiles': 'biolink:id',
         'drugbank_id': 'biolink:id',
         'vestige': 'metatype:Boolean',
@@ -926,7 +934,7 @@ SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS = {
     },
     SPOKE_LABEL_DISEASE: {
         'identifier': 'biolink:id',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
         'name': 'biolink:full_name',
         'mesh_list': 'biolink:mesh_terms'
     },
@@ -935,7 +943,7 @@ SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS = {
         'aliases': 'biolink:synonym',
         'name': 'biolink:full_name',
         'org_relation': 'biolink:related_to',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
 
     },
     SPOKE_LABEL_FOOD: {
@@ -947,7 +955,7 @@ SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS = {
     SPOKE_LABEL_GENE: {
         'identifier': 'biolink:id',
         'chembl_id': 'biolink:id',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
         'vestige': 'metatype:Boolean',
         'name': 'biolink:full_name',
         'license': 'biolink:license',
@@ -960,7 +968,7 @@ SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS = {
         'description': 'biolink:description',
         'name': 'biolink:full_name',
         'license': 'biolink:license',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
         'url': 'biolink:iri',
         'vestige': 'metatype:Boolean',
     },
@@ -970,13 +978,13 @@ SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS = {
     },
     SPOKE_LABEL_ORGANISM: {
         'identifier': 'biolink:id',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
         'name': 'biolink:full_name',
         'level': 'biolink:has_taxonomic_rank'
     },
     SPOKE_LABEL_PATHWAY: {
         'identifier': 'biolink:id',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
         'vestige': 'metatype:Boolean',
         'name': 'biolink:full_name',
         'level': 'biolink:has_taxonomic_rank'
@@ -986,7 +994,7 @@ SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS = {
         'class_type': 'biolink:type',
         'name': 'biolink:full_name',
         'license': 'biolink:license',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
         'url': 'biolink:iri',
     },
     SPOKE_LABEL_PROTEIN: {
@@ -998,24 +1006,24 @@ SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS = {
         'license': 'biolink:license',
         'name': 'biolink:full_name',
         'reviewed': 'biolink:description',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
         'vestige': 'metatype:boolean',
     },
     SPOKE_LABEL_PROTEIN_DOMAIN: {
         'identifier': 'biolink:id',
         'entryName': 'biolink:full_name',
         'name': 'biolink:full_name',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
     },
     SPOKE_LABEL_PROTEIN_FAMILY: {
         'identifier': 'biolink:id',
         'name': 'biolink:full_name',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
     },
     SPOKE_LABEL_REACTION: {
         'identifier': 'biolink:id',
         'name': 'biolink:full_name',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
     },
     SPOKE_LABEL_SARSCOV2: {
         'identifier': 'biolink:id',
@@ -1024,13 +1032,141 @@ SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS = {
     SPOKE_LABEL_SIDE_EFFECT: {
         'identifier': 'biolink:id',
         'name': 'biolink:full_name',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
     },
     SPOKE_LABEL_SYMPTOM: {
         'identifier': 'biolink:id',
-        'source': 'biolink:source',
+        SPOKE_PROPERTY_SOURCE: 'biolink:source',
         'name': 'biolink:full_name',
         'url': 'biolink:iri',
         'license': 'biolink:license'
     }
 }
+
+# EPC / INFORES
+SPOKE_PROVENANCE_FIELDS = [
+    SPOKE_PROPERTY_PMID_LIST,
+    SPOKE_PROPERTY_PREPRINT_LIST,
+    SPOKE_PROPERTY_PUBMED,
+    SPOKE_PROPERTY_SOURCE,
+    SPOKE_PROPERTY_SOURCES
+]
+
+BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE = 'biolink:aggregator_knowledge_source'
+BL_ATTR_KNOWLEDGE_SOURCE = 'biolink:knowledge_source'
+BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE = 'biolink:primary_knowledge_source'
+BL_ATTR_ORIGINAL_KNOWLEDGE_SOURCE = 'biolink:original_knowledge_source'
+BL_ATTR_SUPPORTING_DATA_SOURCE = 'biolink:supporting_data_source'
+
+Infores = namedtuple('Infores', ['infores', 'source_type'])
+
+INFORES_BGEE = Infores('infores:bgee', BL_ATTR_ORIGINAL_KNOWLEDGE_SOURCE)
+INFORES_BINDINGDB = Infores('infores:bindingdb', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+INFORES_CANCERRX = Infores('infores:gdsc', BL_ATTR_ORIGINAL_KNOWLEDGE_SOURCE)  # genomics of drug sensitivity in cancer
+INFORES_CHEMBL = Infores('infores:chembl', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+INFORES_CIVIC = Infores('infores:civic', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+INFORES_CMAP_LINCS = Infores('infores:lincs', BL_ATTR_ORIGINAL_KNOWLEDGE_SOURCE)
+INFORES_DISEASE_ONTOLOGY = Infores('infores:disease-ontology', BL_ATTR_ORIGINAL_KNOWLEDGE_SOURCE)
+INFORES_DISEASES = Infores('infores:diseases', BL_ATTR_ORIGINAL_KNOWLEDGE_SOURCE)
+INFORES_DRUGCENTRAL = Infores('infores:drugcentral', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+INFORES_FOODB = Infores('infores:fooddb', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+INFORES_GWAS = Infores('infores:gwas-catalog', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+INFORES_HUMAN_PROTEIN_ATLAS = Infores('infores:hpa', BL_ATTR_ORIGINAL_KNOWLEDGE_SOURCE)
+INFORES_INTERPRO = Infores('infores:interpro', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+INFORES_KEGG = Infores('infores:kegg', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+INFORES_NCBI_GENE2GO = Infores('infores:go', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+INFORES_NCBI_PUBMED = Infores('infores:pubmed', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+INFORES_NCBI_TAXONOMY = Infores('infores:ncbi-taxonomy', BL_ATTR_ORIGINAL_KNOWLEDGE_SOURCE)
+INFORES_OMIM = Infores('infores:omim', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+INFORES_PATHOPHENODB = Infores('infores:path-pheno-db', BL_ATTR_ORIGINAL_KNOWLEDGE_SOURCE)
+INFORES_PFAM = Infores('infores:pfam', BL_ATTR_ORIGINAL_KNOWLEDGE_SOURCE)
+INFORES_SIDER = Infores('infores:sider', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+INFORES_STRING = Infores('infores:string', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+INFORES_UBERON = Infores('infores:uberon', BL_ATTR_ORIGINAL_KNOWLEDGE_SOURCE)
+INFORES_UNIPROT = Infores('infores:uniprot', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
+
+SPOKE_SOURCE_BGEE = 'BGee'
+SPOKE_SOURCE_BINDINGDB = 'BindingDB'
+SPOKE_SOURCE_CANCERRX = 'CancerRX'
+SPOKE_SOURCE_CHEMBL = 'ChEMBL'
+SPOKE_SOURCE_CIVIC = 'CIVIC'
+SPOKE_SOURCE_CMAP_LINCS_COMPOUND = 'CMAP/LINCS compound (trt_cp)'
+SPOKE_SOURCE_CMAP_LINCS_OE = 'CMAP/LINCS overexpression (trt_oe)'
+SPOKE_SOURCE_CMAP_LINCS_KD = 'CMAP/LINCS knockdown (trt_xrt,trt_sh)'
+SPOKE_SOURCE_CMAP_LINCS_LIGAND = 'CMAP/LINCS ligand (trt_lig)'
+SPOKE_SOURCE_DISEASE_ONTOLOGY = 'Disease Ontology'
+SPOKE_SOURCE_DISEASES = 'DISEASES'
+SPOKE_SOURCE_DRUGCENTRAL = 'DrugCentral'
+SPOKE_SOURCE_FOODB = 'FooDB'  # Not used in SPOKE
+SPOKE_SOURCE_GWAS = 'GWAS'
+SPOKE_SOURCE_HUMAN_PROTEIN_ATLAS = 'Human Protein Atlas'
+SPOKE_SOURCE_INTERPRO = 'InterPro'
+SPOKE_SOURCE_KEGG = 'KEGG'  # Not used in SPOKE
+SPOKE_SOURCE_NCBI_GENE2GO = 'NCBI gene2go'
+SPOKE_SOURCE_NCBI_PUBMED = 'NCBI PubMed'
+SPOKE_SOURCE_NCBI_TAXONOMY = 'NCBI Taxonomy'  # Not used in SPOKE
+SPOKE_SOURCE_OMIM = 'OMIM'
+SPOKE_SOURCE_PATHOPHENODB = 'PathoPhenoDB'
+SPOKE_SOURCE_PFAM = 'Pfam'
+SPOKE_SOURCE_SIDER = 'Sider 4.1'
+SPOKE_SOURCE_STRING = 'STRING'
+SPOKE_SOURCE_UBERON = 'Uberon'
+SPOKE_SOURCE_UNIPROT = 'UniProt'
+
+SPOKE_SOURCE_INFORES_MAP = {
+    SPOKE_SOURCE_BGEE: INFORES_BGEE,
+    SPOKE_SOURCE_BINDINGDB: INFORES_BINDINGDB,
+    SPOKE_SOURCE_CANCERRX: INFORES_CANCERRX,
+    SPOKE_SOURCE_CHEMBL: INFORES_CHEMBL,
+    SPOKE_SOURCE_CIVIC: INFORES_CIVIC,
+    SPOKE_SOURCE_CMAP_LINCS_COMPOUND: INFORES_CMAP_LINCS,
+    SPOKE_SOURCE_CMAP_LINCS_OE: INFORES_CMAP_LINCS,
+    SPOKE_SOURCE_CMAP_LINCS_KD: INFORES_CMAP_LINCS,
+    SPOKE_SOURCE_CMAP_LINCS_LIGAND: INFORES_CMAP_LINCS,
+    SPOKE_SOURCE_DISEASE_ONTOLOGY: INFORES_DISEASE_ONTOLOGY,
+    SPOKE_SOURCE_DISEASES: INFORES_DISEASES,
+    SPOKE_SOURCE_DRUGCENTRAL: INFORES_DRUGCENTRAL,
+    SPOKE_SOURCE_FOODB: INFORES_FOODB,
+    SPOKE_SOURCE_GWAS: INFORES_GWAS,
+    SPOKE_SOURCE_HUMAN_PROTEIN_ATLAS: INFORES_HUMAN_PROTEIN_ATLAS,
+    SPOKE_SOURCE_INTERPRO: INFORES_INTERPRO,
+    SPOKE_SOURCE_KEGG: INFORES_KEGG,
+    SPOKE_SOURCE_NCBI_GENE2GO: INFORES_NCBI_GENE2GO,
+    SPOKE_SOURCE_NCBI_PUBMED: INFORES_NCBI_PUBMED,
+    SPOKE_SOURCE_NCBI_TAXONOMY: INFORES_NCBI_TAXONOMY,
+    SPOKE_SOURCE_OMIM: INFORES_OMIM,
+    SPOKE_SOURCE_PATHOPHENODB: INFORES_PATHOPHENODB,
+    SPOKE_SOURCE_PFAM: INFORES_PFAM,
+    SPOKE_SOURCE_SIDER: INFORES_SIDER,
+    SPOKE_SOURCE_STRING: INFORES_STRING,
+    SPOKE_SOURCE_UBERON: INFORES_UBERON,
+    SPOKE_SOURCE_UNIPROT: INFORES_UNIPROT,
+}
+
+# default mapping if null
+SPOKE_EDGE_DEFAULT_SOURCE = {
+    SPOKE_EDGE_TYPE_CATALYZES_ECcR: INFORES_KEGG,
+    SPOKE_EDGE_TYPE_CAUSES_OcD: INFORES_PATHOPHENODB,
+    SPOKE_EDGE_TYPE_CONSUMES_RcC: INFORES_KEGG,
+    SPOKE_EDGE_TYPE_CONTAINS_FcC: INFORES_FOODB,
+    SPOKE_EDGE_TYPE_CONTAINS_FcN: INFORES_FOODB,
+    SPOKE_EDGE_TYPE_CONTAINS_OcO: INFORES_NCBI_TAXONOMY,
+    SPOKE_EDGE_TYPE_CONTAINS_PWcPW: INFORES_KEGG,
+    # SPOKE_EDGE_TYPE_DECREASEDIN_PdD: GET FROM PMID/PREPRINT LIST,
+    SPOKE_EDGE_TYPE_EXPRESSES_ACTeG: INFORES_HUMAN_PROTEIN_ATLAS,
+    SPOKE_EDGE_TYPE_INCLUDES_OiEC: INFORES_KEGG,
+    SPOKE_EDGE_TYPE_INCLUDES_OiPW: INFORES_KEGG,
+    SPOKE_EDGE_TYPE_INCLUDES_PWiEC: INFORES_KEGG,
+    # SPOKE_EDGE_TYPE_INCREASEDIN_PdD: GET FROM PMID/PREPRINT LIST,
+    SPOKE_EDGE_TYPE_ISA_OiO: INFORES_NCBI_TAXONOMY,
+    SPOKE_EDGE_TYPE_ISA_PiEC: INFORES_KEGG,
+    SPOKE_EDGE_TYPE_ISA_PWiPW: INFORES_KEGG,
+    SPOKE_EDGE_TYPE_ISIN_ACTiiA: INFORES_HUMAN_PROTEIN_ATLAS,
+    SPOKE_EDGE_TYPE_ISIN_ACTiiCT: INFORES_HUMAN_PROTEIN_ATLAS,
+    SPOKE_EDGE_TYPE_PRODUCES_RpC: INFORES_KEGG
+}
+
+# Pseudocode
+# check source, sources, pubmed, pmid_list, preprint_list
+# do mapping lookup / attribution
+# if nothing found, look in default map
