@@ -1,6 +1,5 @@
 from collections import Counter, namedtuple
 from string import ascii_letters
-from typing import Dict, List, Union
 
 import neo4j
 from improving_agent import models  # TODO: replace with direct imports after fixing definitions
@@ -27,13 +26,21 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
     SPOKE_BIOLINK_NODE_MAPPINGS,
     SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS,
-    SPOKE_LABEL_COMPOUND,
+    SPOKE_LABEL_COMPOUND
+)
+from improving_agent.src.provenance import (
+    IMPROVING_AGENT_PROVENANCE_ATTR,
+    SPOKE_KP_PROVENANCE_ATTR,
+    SPOKE_PROVENANCE_FIELDS,
+    make_default_provenance_attribute,
+    make_provenance_attributes,
 )
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)
 ExtractedResult = namedtuple('ExtractedResult', ['nodes', 'edges'])
 
+# attributes
 SPOKE_GRAPH_TYPE_EDGE = 'edge'
 SPOKE_GRAPH_TYPE_NODE = 'node'
 ATTRIBUTE_MAPS = {
@@ -350,40 +357,6 @@ class BasicQuery:
         )
         return attribute
 
-    def _make_source_provenance_attribute(self, source_or_sources):
-        # each attribute needs at least two attributes
-        # 1. the src attribute with a tag that spoke is the attribute_source
-        # 2. the aggregator attribute with a tag that spoke is the attribute_source and the informationation resource
-        # improving agentshould have a third tag that has itself as the info resource and attribute_source
-        if not isinstance(source_or_sources, list):
-            source_or_sources = [source_or_sources]
-
-        for source in source_or_sources:
-            pass
-
-
-    def _make_provenance_attributes(
-        self,
-        source_info: Dict[str, Union[List[str], str, int]],
-        label_or_relation: str
-    ) -> List[Dict[str, Union[str, int]]]:
-        """Returns a list of source-provenance attributes to be attached
-        to the result node or edge
-
-        source_info (dict):
-            a collection of attributes (Neo4j properties) and their
-            values pulled from the object of interest. Keys should be
-            one of source, sources, pubmed, pmid_list, preprint_list
-        label_or_relation (str):
-            the SPOKE node label or relationship type associated with
-            the source info
-        """
-        # check source, sources, pubmed, pmid_list, preprint_list
-        # do mapping lookup / attribution
-        # if nothing found, look in default map
-
-        pass
-
     def make_result_node(self, n4j_object, spoke_curie):
         """Instantiates a reasoner-standard Node to return as part of a
         KnowledgeGraph result
@@ -456,10 +429,20 @@ class BasicQuery:
             }
 
         edge_attributes = []
+        provenance_attributes = []
         for k, v in n4j_object.items():
+            if k in SPOKE_PROVENANCE_FIELDS:
+                source_attributes = make_provenance_attributes(k, v)
+                provenance_attributes.extend(source_attributes)
             edge_attribute = self._make_result_attribute(k, v, SPOKE_GRAPH_TYPE_EDGE, edge_type)
             if edge_attribute:
                 edge_attributes.append(edge_attribute)
+
+        if not provenance_attributes:
+            provenance_attributes.append(make_default_provenance_attribute(edge_type))
+
+        provenance_attributes.extend([SPOKE_KP_PROVENANCE_ATTR, IMPROVING_AGENT_PROVENANCE_ATTR])
+        edge_attributes = provenance_attributes + edge_attributes
 
         result_edge = models.Edge(
             # TODO get correlations score for P100/cohort data
