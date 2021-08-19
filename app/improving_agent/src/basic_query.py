@@ -437,6 +437,7 @@ class BasicQuery:
             if k in SPOKE_PROVENANCE_FIELDS:
                 source_attributes = make_provenance_attributes(k, v)
                 provenance_attributes.extend(source_attributes)
+                continue
             edge_attribute = self._make_result_attribute(k, v, SPOKE_GRAPH_TYPE_EDGE, edge_type)
             if edge_attribute:
                 edge_attributes.append(edge_attribute)
