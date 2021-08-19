@@ -1,4 +1,4 @@
-bmt == 0.7.2
+bmt == 0.7.3
 boto3 ~= 1.17
 connexion[swagger-ui] >= 2.6.0; python_version>="3.6"
 flake8 ~=3.9

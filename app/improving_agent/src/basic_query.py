@@ -17,21 +17,30 @@ from improving_agent.src.psev import get_psev_weights
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_TYPE,
     BIOLINK_ASSOCIATION_RELATED_TO,
-    BIOLINK_ENTITY_CHEMICAL_SUBSTANCE,
+    BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_DRUG,
+    BIOLINK_ENTITY_SMALL_MOLECULE,
     RELATIONSHIP_ONTOLOGY_CURIE,
     SPOKE_ANY_TYPE,
     SPOKE_BIOLINK_EDGE_MAPPINGS,
     SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
     SPOKE_BIOLINK_NODE_MAPPINGS,
     SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS,
-    SPOKE_LABEL_COMPOUND,
+    SPOKE_LABEL_COMPOUND
+)
+from improving_agent.src.provenance import (
+    IMPROVING_AGENT_PROVENANCE_ATTR,
+    SPOKE_KP_PROVENANCE_ATTR,
+    SPOKE_PROVENANCE_FIELDS,
+    make_default_provenance_attribute,
+    make_provenance_attributes,
 )
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)
 ExtractedResult = namedtuple('ExtractedResult', ['nodes', 'edges'])
 
+# attributes
 SPOKE_GRAPH_TYPE_EDGE = 'edge'
 SPOKE_GRAPH_TYPE_NODE = 'node'
 ATTRIBUTE_MAPS = {
@@ -90,7 +99,11 @@ def make_qnode_filter_clause(name, query_node):
         if SPOKE_LABEL_COMPOUND in query_node.spoke_labels:
             identifiers_clause = f'({identifiers_clause} OR {name}.chembl_id IN [{",".join(query_node.spoke_identifiers)}])'
     if query_node.categories:
-        if BIOLINK_ENTITY_DRUG in query_node.categories and BIOLINK_ENTITY_CHEMICAL_SUBSTANCE not in query_node.categories:
+        if (
+            BIOLINK_ENTITY_DRUG in query_node.categories
+            and BIOLINK_ENTITY_CHEMICAL_ENTITY not in query_node.categories
+            and BIOLINK_ENTITY_SMALL_MOLECULE not in query_node.categories
+        ):
             if identifiers_clause:
                 identifiers_clause = f'{identifiers_clause} AND'
             identifiers_clause = f'{identifiers_clause} {name}.max_phase > 0'
@@ -330,18 +343,21 @@ class BasicQuery:
             )
             return
 
-        attribute_type_id = object_properties.get(property_type)
-        if not attribute_type_id:
+        attribute_mapping = object_properties.get(property_type)
+        if not attribute_mapping:
             logger.warning(
                 f'Could not find an attribute mapping for {spoke_object_type=} and {property_type=}'
             )
             return
+        attribute_type_id = attribute_mapping.biolink_type
 
         attribute = models.Attribute(
             attribute_type_id=attribute_type_id,
             original_attribute_name=property_type,
             value=property_value
         )
+        if attribute_mapping.attribute_source:  # temporary until node mappings are done
+            attribute.attribute_source = attribute_mapping.attribute_source
         return attribute
 
     def make_result_node(self, n4j_object, spoke_curie):
@@ -416,10 +432,21 @@ class BasicQuery:
             }
 
         edge_attributes = []
+        provenance_attributes = []
         for k, v in n4j_object.items():
+            if k in SPOKE_PROVENANCE_FIELDS:
+                source_attributes = make_provenance_attributes(k, v)
+                provenance_attributes.extend(source_attributes)
+                continue
             edge_attribute = self._make_result_attribute(k, v, SPOKE_GRAPH_TYPE_EDGE, edge_type)
             if edge_attribute:
                 edge_attributes.append(edge_attribute)
+
+        if not provenance_attributes:
+            provenance_attributes.append(make_default_provenance_attribute(edge_type))
+
+        provenance_attributes.extend([SPOKE_KP_PROVENANCE_ATTR, IMPROVING_AGENT_PROVENANCE_ATTR])
+        edge_attributes = provenance_attributes + edge_attributes
 
         result_edge = models.Edge(
             # TODO get correlations score for P100/cohort data
