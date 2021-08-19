@@ -34,28 +34,19 @@ SPOKE_PROVENANCE_FIELDS = [
 
 IMPROVING_AGENT_PROVENANCE_ATTR = models.Attribute(
     attribute_source=INFORES_IMPROVING_AGENT.infores_id,
-    attribute_type_id=INFORES_IMPROVING_AGENT.source_type,
+    attribute_type_id=INFORES_IMPROVING_AGENT.biolink_type,
     value_type_id=BIOLINK_ENTITY_INFORMATION_RESOURCE,
     value=INFORES_IMPROVING_AGENT.infores_id
 )
 SPOKE_KP_PROVENANCE_ATTR = models.Attribute(
     attribute_source=INFORES_SPOKE.infores_id,
-    attribute_type_id=INFORES_SPOKE.source_type,
+    attribute_type_id=INFORES_SPOKE.biolink_type,
     value_type_id=BIOLINK_ENTITY_INFORMATION_RESOURCE,
     value=INFORES_SPOKE.infores_id
 )
 
 
 def _make_source_provenance_attribute(source_or_sources):
-    # each edge needs at least two attributes
-    # 1. the src attribute with a tag that spoke is the attribute_source
-    # 2. the aggregator attribute with a tag that spoke is the attribute_source and the informationation resource
-    # improving agentshould have a third tag that has itself as the info resource and attribute_source
-
-    # attribute_source: 	infores:rtx-kg2
-    # attribute_type_id: 	biolink:aggregator_knowledge_source
-    # value_type_id: 	biolink:InformationResource
-    # value: 	infores:semmeddb
     source_attributes = []
     if not isinstance(source_or_sources, list):
         source_or_sources = [source_or_sources]
@@ -67,7 +58,7 @@ def _make_source_provenance_attribute(source_or_sources):
             continue
         attribute = models.Attribute(
             attribute_source=INFORES_SPOKE.infores_id,
-            attribute_type_id=source_infores.source_type,
+            attribute_type_id=source_infores.biolink_type,
             original_attribute_name='source',
             value_type_id=BIOLINK_ENTITY_INFORMATION_RESOURCE,
             value=source_infores.infores_id
@@ -84,7 +75,7 @@ def _make_article_provenance_attribute(
     url_prefix=''
 ):
     source_attributes = []
-    if isinstance(articles, list):
+    if not isinstance(articles, list):
         articles = [articles]
 
     for article in articles:
@@ -130,7 +121,7 @@ def make_default_provenance_attribute(spoke_type):
     source_infores = SPOKE_EDGE_DEFAULT_SOURCE[spoke_type]
     return models.Attribute(
         attribute_source=INFORES_SPOKE.infores_id,
-        attribute_type_id=source_infores.source_type,
+        attribute_type_id=source_infores.biolink_type,
         value_type_id=BIOLINK_ENTITY_INFORMATION_RESOURCE,
         value=source_infores.infores_id
     )

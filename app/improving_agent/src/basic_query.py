@@ -343,18 +343,21 @@ class BasicQuery:
             )
             return
 
-        attribute_type_id = object_properties.get(property_type)
-        if not attribute_type_id:
+        attribute_mapping = object_properties.get(property_type)
+        if not attribute_mapping:
             logger.warning(
                 f'Could not find an attribute mapping for {spoke_object_type=} and {property_type=}'
             )
             return
+        attribute_type_id = attribute_mapping.biolink_type
 
         attribute = models.Attribute(
             attribute_type_id=attribute_type_id,
             original_attribute_name=property_type,
             value=property_value
         )
+        if attribute_mapping.attribute_source:  # temporary until node mappings are done
+            attribute.attribute_source = attribute_mapping.attribute_source
         return attribute
 
     def make_result_node(self, n4j_object, spoke_curie):
