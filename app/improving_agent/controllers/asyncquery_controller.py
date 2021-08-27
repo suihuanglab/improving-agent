@@ -14,4 +14,4 @@ def asyncquery_post(request_body):  # noqa: E501
 
     :rtype: str
     """
-    return {}
+    return "Not implemented", 501

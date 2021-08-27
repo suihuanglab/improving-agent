@@ -357,6 +357,9 @@ class BasicQuery:
         )
         if attribute_mapping.attribute_source:  # temporary until node mappings are done
             attribute.attribute_source = attribute_mapping.attribute_source
+
+        if attribute_mapping.subattributes:
+            attribute.attributes = attribute_mapping.subattributes
         return attribute
 
     def make_result_node(self, n4j_object, spoke_curie):
@@ -391,7 +394,7 @@ class BasicQuery:
             if k == SPOKE_NODE_PROPERTY_SOURCE:
                 node_source = v
             node_attribute = self._make_result_attribute(
-                    k, v, SPOKE_GRAPH_TYPE_NODE, spoke_node_labels[0]
+                k, v, SPOKE_GRAPH_TYPE_NODE, spoke_node_labels[0]
             )
             if node_attribute:
                 result_node_attributes.append(node_attribute)

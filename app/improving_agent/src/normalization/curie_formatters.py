@@ -279,7 +279,7 @@ def _format_nutrient_for_spoke(curie):
 
 @register_spoke_curie_formatter(SPOKE_LABEL_ORGANISM, '^NCBITaxon:')
 def _format_organism_for_spoke(curie):
-    return curie.replace('NCBITaxon', '')
+    return curie.replace('NCBITaxon:', '')
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_PATHWAY, SPOKE_IDENTIFIER_REGEX_PATHWAY)

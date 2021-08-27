@@ -20,12 +20,12 @@ info:
       url: https://github.com/suihuanglab/improving-agent
   x-trapi:
     version: 1.2.0
-    asyncquery: true
+    asyncquery: false
     operations:
     - lookup
 servers:
-- description: dev
-  url: http://0.0.0.0:3031/api/v1.2/
+- description: prod
+  url: https://ia.healthdatascience.cloud/api/v1.2/
 tags:
 - description: Retreive the meta knowledge graph representation of this TRAPI web
     service.
