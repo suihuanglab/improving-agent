@@ -20,7 +20,6 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_DRUG,
     BIOLINK_ENTITY_SMALL_MOLECULE,
-    RELATIONSHIP_ONTOLOGY_CURIE,
     SPOKE_ANY_TYPE,
     SPOKE_BIOLINK_EDGE_MAPPINGS,
     SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
@@ -424,12 +423,9 @@ class BasicQuery:
         edge_type = n4j_object.type
         biolink_map_info = SPOKE_BIOLINK_EDGE_MAPPINGS.get(edge_type)
         if not biolink_map_info:
-            biolink_edge_data = {'predicate': BIOLINK_ASSOCIATION_RELATED_TO}
+            predicate = BIOLINK_ASSOCIATION_RELATED_TO
         else:
-            biolink_edge_data = {
-                'predicate': biolink_map_info[BIOLINK_ASSOCIATION_TYPE],
-                'relation': biolink_map_info[RELATIONSHIP_ONTOLOGY_CURIE]
-            }
+            predicate = biolink_map_info[BIOLINK_ASSOCIATION_TYPE]
 
         edge_attributes = []
         provenance_attributes = []
@@ -450,10 +446,10 @@ class BasicQuery:
 
         result_edge = models.Edge(
             # TODO get correlations score for P100/cohort data
+            predicate=predicate,
             subject=n4j_object.start_node["identifier"],
             object=n4j_object.end_node["identifier"],
-            attributes=edge_attributes,
-            **biolink_edge_data
+            attributes=edge_attributes
         )
 
         return result_edge

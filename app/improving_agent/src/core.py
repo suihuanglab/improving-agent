@@ -13,10 +13,12 @@ from improving_agent.exceptions import (
     UnsupportedTypeError
 )
 from improving_agent.models import Message, Query, QueryGraph, Response
+from improving_agent.models import Schema2 as Workflow
 from improving_agent.src.basic_query import BasicQuery
 from improving_agent.src.normalization.edge_normalization import validate_normalize_qedges
 from improving_agent.src.normalization.node_normalization import validate_normalize_qnodes
 from improving_agent.util import get_evidara_logger
+from improving_agent.workflows import SUPPORTED_WORKFLOWS
 
 logger = get_evidara_logger(__name__)
 
@@ -31,6 +33,19 @@ def deserialize_query(raw_json):
         message = raw_json['message']
     except KeyError:
         raise BadRequest('`message` must be present in Query')
+    workflows = raw_json.get('workflow')
+    if workflows:
+        if not isinstance(workflows, list):
+            workflows = [workflows]
+        for workflow in workflows:
+            try:
+                w = Workflow(**workflow)
+            except TypeError as e:
+                logger.exception(f'Could not deserialize {workflow=}. Error was {e}')
+                raise BadRequest(f'Could not deserialize {workflow=}. It may not be supported.')
+            if w.id not in SUPPORTED_WORKFLOWS:
+                raise BadRequest(f'Workflow {w.id} is not supported')
+            # TODO: collect workflows and run them
 
     max_results = raw_json.get('max_results')
     if not max_results:
