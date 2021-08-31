@@ -17,8 +17,8 @@ from improving_agent.models import Schema2 as Workflow
 from improving_agent.src.basic_query import BasicQuery
 from improving_agent.src.normalization.edge_normalization import validate_normalize_qedges
 from improving_agent.src.normalization.node_normalization import validate_normalize_qnodes
+from improving_agent.src.workflows import SUPPORTED_WORKFLOWS
 from improving_agent.util import get_evidara_logger
-from improving_agent.workflows import SUPPORTED_WORKFLOWS
 
 logger = get_evidara_logger(__name__)
 
@@ -55,7 +55,13 @@ def deserialize_query(raw_json):
     # this might seem odd, but we let connexion do type checking here
     # before we construct the query_options
     try:
-        query = Query(message=message, query_kps=query_kps, psev_context=psev_context, max_results=max_results)
+        query = Query(
+            message=message,
+            query_kps=query_kps,
+            psev_context=psev_context,
+            max_results=max_results,
+            workflow=workflows
+        )
     except TypeError as e:
         raise BadRequest(f'Could not deserialize Query on error {e}')
 
@@ -105,7 +111,7 @@ def process_query(raw_json):
         results, knowledge_graph = querier.linear_spoke_query(session)
         response_message = Message(results, query_graph, knowledge_graph)
         success_description = f'Success. Returning {len(results)} results...'
-        response = Response(response_message, description=success_description)
+        response = Response(response_message, description=success_description, workflow=query.workflow)
         logger.info(success_description)
     return response
 

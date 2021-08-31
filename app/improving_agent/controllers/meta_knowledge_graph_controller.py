@@ -2,7 +2,6 @@ from functools import cache
 
 import connexion
 import six
-from improving_agent.models import attribute
 
 from improving_agent.models.meta_knowledge_graph import MetaKnowledgeGraph  # noqa: E501
 from improving_agent.models.meta_attribute import MetaAttribute

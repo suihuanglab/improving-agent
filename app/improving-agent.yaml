@@ -1,8 +1,8 @@
 openapi: 3.0.1
 info:
-  description: imProving Agent - An NIH NCATS Translator Autonomous Reasoning Agent
+  description: imProving Agent for TRAPI 1.2 - An NIH NCATS Translator Autonomous Reasoning Agent
   version: 1.2.0
-  title: imProving Agent
+  title: imProving Agent for TRAPI 1.2
   contact:
     email: brett.smith@isbscience.org
     x-role: responsible developer
