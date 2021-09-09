@@ -17,7 +17,7 @@ class QueryConstraint(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, id=None, name=None, _not=False, operator='==', value=None, unit_id=None, unit_name=None):  # noqa: E501
+    def __init__(self, id=None, name=None, _not=False, operator=None, value=None, unit_id=None, unit_name=None):  # noqa: E501
         """QueryConstraint - a model defined in OpenAPI
 
         :param id: The id of this QueryConstraint.  # noqa: E501

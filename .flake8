@@ -1,3 +1,4 @@
 [flake8]
 max-line-length = 140
 extend-ignore = E203
+ignore=E222 improving_agent/models/meta_attribute.py
