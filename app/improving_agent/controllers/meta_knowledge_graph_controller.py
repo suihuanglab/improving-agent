@@ -16,7 +16,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     PREDICATES
 )
 from improving_agent.src.normalization.sri_node_normalizer import (
-    NODE_NORMALIZATION_CURIE_PREFIX,
+    SRI_NN_CURIE_PREFIX,
     SRI_NODE_NORMALIZER
 )
 
@@ -25,7 +25,7 @@ def _get_supported_prefixes(sri_prefixes, node_type, local_prefixes):
     sri_node_prefixes = sri_prefixes.get(node_type)
     if not sri_node_prefixes:
         return local_prefixes
-    return list(sri_node_prefixes[NODE_NORMALIZATION_CURIE_PREFIX].keys())
+    return list(sri_node_prefixes[SRI_NN_CURIE_PREFIX].keys())
 
 
 def _does_attr_already_exist(existing_attributes, new_attribute):

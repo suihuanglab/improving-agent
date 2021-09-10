@@ -8,6 +8,7 @@ BIOLINK_ASSOCIATION_TYPE = 'biolink_association_type'
 RELATIONSHIP_ONTOLOGY_CURIE = 'relationship_ontology_curie'
 
 # Nodes
+BIOLINK_ENTITY = 'biolink:Entity'
 BIOLINK_ENTITY_BIOLOGICAL_PROCESS = 'biolink:BiologicalProcess'
 BIOLINK_ENTITY_CELL = 'biolink:Cell'
 BIOLINK_ENTITY_CELLULAR_COMPONENT = 'biolink:CellularComponent'
