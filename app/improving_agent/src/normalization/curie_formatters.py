@@ -23,19 +23,23 @@ import re
 from collections import defaultdict
 
 from .sri_node_normalizer import (
-    NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS,
-    NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER
+    SRI_NN_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS,
+    SRI_NN_RESPONSE_VALUE_IDENTIFIER,
+    SRI_NN_RESPONSE_VALUE_TYPE
 )
 from improving_agent.exceptions import UnsupportedTypeError
 from improving_agent.src.biolink.spoke_biolink_constants import (
+    BIOLINK_ENTITY,
     BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_GENE,
     BIOLINK_ENTITY_GENE_FAMILY,
     BIOLINK_ENTITY_MOLECULAR_ACTIVITY,
+    BIOLINK_ENTITY_NAMED_THING,
     BIOLINK_ENTITY_ORGANISM_TAXON,
     BIOLINK_ENTITY_PATHWAY,
     BIOLINK_ENTITY_PROTEIN,
     BIOLINK_ENTITY_PHENOTYPIC_FEATURE,
+    BIOLINK_SPOKE_NODE_MAPPINGS,
     SPOKE_LABEL_ANATOMY,
     SPOKE_LABEL_ANATOMY_CELL_TYPE,
     SPOKE_LABEL_BIOLOGICAL_PROCESS,
@@ -325,7 +329,7 @@ def get_label_if_appropriate_spoke_curie(spoke_labels, curie):
             return spoke_label
 
 
-def get_spoke_identifiers_from_normalized_node(spoke_labels, normalized_node, searched_curie):
+def get_spoke_identifiers_from_normalized_node(spoke_labels, normalized_node):
     """Returns a SPOKE identifier from a node normalizer response
 
     Iterates through an SRI Node Normalizer response and attempts to
@@ -335,19 +339,33 @@ def get_spoke_identifiers_from_normalized_node(spoke_labels, normalized_node, se
     for all node types at this point in time, but to be more consistent
     we should use biolink categories here when the mapping is complete
     """
+    if not spoke_labels:
+        # get potential spoke labels from NN when a category wasn't sent
+        # along with the query
+        spoke_labels = []
+        for biolink_entity in normalized_node[SRI_NN_RESPONSE_VALUE_TYPE]:
+            if biolink_entity in (BIOLINK_ENTITY, BIOLINK_ENTITY_NAMED_THING):
+                continue
+            node_mapping = BIOLINK_SPOKE_NODE_MAPPINGS.get(biolink_entity)
+            if node_mapping:
+                mapped_spoke_labels = node_mapping.spoke_label
+                if not isinstance(mapped_spoke_labels, list):
+                    mapped_spoke_labels = [mapped_spoke_labels]
+                spoke_labels.extend(mapped_spoke_labels)
+
     node_type_configs = [NODE_NORMALIZATION_SPOKE_CURIE_FORMATTERS.get(spoke_label) for spoke_label in spoke_labels]
 
     if not node_type_configs:
         raise UnsupportedTypeError(f'Could not find a SPOKE identifer formatter func for category {",".join(spoke_labels)}')
 
     spoke_identifiers = []
-    for identifier in normalized_node[NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS]:
+    for identifier in normalized_node[SRI_NN_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS]:
         for node_type_config in node_type_configs:
             if re.match(
                     node_type_config[NODE_NORMALIZATION_KEY_REGEX],
-                    identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
+                    identifier[SRI_NN_RESPONSE_VALUE_IDENTIFIER]
             ):
                 spoke_identifiers.append(
-                    node_type_config[NODE_NORMALIZATION_KEY_FUNCTION](identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER])
+                    node_type_config[NODE_NORMALIZATION_KEY_FUNCTION](identifier[SRI_NN_RESPONSE_VALUE_IDENTIFIER])
                 )
-    return spoke_identifiers
+    return spoke_identifiers, spoke_labels
