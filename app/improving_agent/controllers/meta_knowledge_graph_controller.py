@@ -54,7 +54,7 @@ def _make_metanode(sri_curie_prefixes, node, mapping):
             meta_attr = MetaAttribute(
                 attribute_type_id=attr_mapping.biolink_type,
                 # attribute_source=attr_mapping.attribute_source,  TODO: uncomment when ready
-                original_attribute_names=label_attr
+                original_attribute_names=[label_attr]
             )
             if _does_attr_already_exist(attributes, meta_attr):
                 continue
@@ -72,7 +72,7 @@ def _get_edge_meta_attributes(spoke_edges):
             meta_attr = MetaAttribute(
                 attribute_type_id=attr_mapping.biolink_type,
                 attribute_source=attr_mapping.attribute_source,
-                original_attribute_names=edge_attr,
+                original_attribute_names=[edge_attr],
             )
             if _does_attr_already_exist(attributes, meta_attr):
                 continue
