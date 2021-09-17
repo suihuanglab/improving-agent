@@ -1,10 +1,18 @@
 import logging
-from typing import List, Union
+from typing import Dict, List, Union
 
-from improving_agent.src.config import app_config
 from .psev_client import PsevClient
+from improving_agent.models import QNode
+from improving_agent.src.biolink.spoke_biolink_constants import (
+    SPOKE_LABEL_COMPOUND,
+    SPOKE_LABEL_DISEASE
+)
+from improving_agent.src.config import app_config
 
 logger = logging.getLogger(__name__)
+
+
+SUPPORTED_PSEV_CONCEPT_TYPES = [SPOKE_LABEL_COMPOUND, SPOKE_LABEL_DISEASE]
 
 
 def get_psev_scores(concepts: List[Union[int, str]],
@@ -61,3 +69,33 @@ def get_psev_scores(concepts: List[Union[int, str]],
                 resulting_psevs[concept][identifier] = result[concept][identifier]
 
     return resulting_psevs
+
+
+def _get_supported_psev_concepts(qnode: QNode) -> List[Union[str, int]]:
+    '''Returns a list of identifiers from a single QNode that may be
+    supported as PSEVs
+    '''
+    for spoke_label in qnode.spoke_labels:
+        if spoke_label in SUPPORTED_PSEV_CONCEPT_TYPES:
+            return qnode.spoke_identifiers
+
+    return []
+
+
+def get_psev_concepts(qnodes: Dict[str, QNode]) -> List[Union[str, int]]:
+    '''Returns a list of identifiers that may have PSEV contexts. As of
+    2021-09, this is only for nodes that are identifiable as Disease
+    or Compound
+
+    Parameters
+    ----------
+    qnodes:
+        dict of QNode: Qnodes that have been normalized and given their
+        SPOKE label equivalents
+    '''
+    psev_concepts = []
+    for qnode in qnodes.values():
+        psev_concepts.extend(_get_supported_psev_concepts(qnode))
+
+    # we double quote identifiers elsewhere for Cypher compilation
+    return [i.replace("'", '') for i in psev_concepts]

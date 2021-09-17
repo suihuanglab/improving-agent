@@ -18,6 +18,7 @@ from improving_agent.models import Schema2 as Workflow
 from improving_agent.src.basic_query import BasicQuery
 from improving_agent.src.normalization.edge_normalization import validate_normalize_qedges
 from improving_agent.src.normalization.node_normalization import validate_normalize_qnodes
+from improving_agent.src.psev import get_psev_concepts
 from improving_agent.src.workflows import SUPPORTED_WORKFLOWS
 from improving_agent.util import get_evidara_logger
 
@@ -104,6 +105,9 @@ def process_query(raw_json):
 
     qnodes = validate_normalize_qnodes(query_graph.nodes)
     qedges = validate_normalize_qedges(query_graph)
+
+    psev_contexts = get_psev_concepts(qnodes)
+    query_options['psev_context'] = psev_contexts
 
     querier = BasicQuery(qnodes, qedges, query_options, query.max_results)
 

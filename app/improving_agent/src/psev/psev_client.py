@@ -24,8 +24,10 @@ class PsevClient:
         """
         if not isinstance(concepts, list) or not all(isinstance(i, str) for i in concepts):
             raise ValueError('`concepts` must be a list of str')
-        if (not isinstance(node_identifiers, list)
-                or not all(isinstance(i, str) for i in node_identifiers)):
+        if (
+            not isinstance(node_identifiers, list)
+            or not all(isinstance(i, str) for i in node_identifiers)
+        ):
             raise ValueError('`node_identifiers` must be a list of str')
         payload = {
             'token': self._api_key,
