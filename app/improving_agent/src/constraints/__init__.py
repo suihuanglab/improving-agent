@@ -89,7 +89,12 @@ def validate_constraint_support(constraint, spoke_labels):
 
 @special_constraint(BIOLINK_SLOT_HIGHEST_FDA_APPROVAL)
 def _map_fda_enum(constraint_value):
-    return FDA_APPROVAL_MAX_PHASE_MAP[constraint_value]
+    mapped_val = FDA_APPROVAL_MAX_PHASE_MAP.get(constraint_value)
+    if not mapped_val:
+        raise UnsupportedConstraint(
+            f'Can not handle "{constraint_value}" for constraint "{BIOLINK_SLOT_HIGHEST_FDA_APPROVAL}"'
+        )
+    return mapped_val
 
 
 def _get_constraint_value(constraint_id, constraint_value):
