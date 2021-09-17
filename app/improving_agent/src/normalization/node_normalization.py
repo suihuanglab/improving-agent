@@ -1,4 +1,5 @@
 from werkzeug.exceptions import BadRequest
+
 from .curie_formatters import (
     format_curie_for_sri,
     get_spoke_identifiers_from_normalized_node,
@@ -9,7 +10,7 @@ from .sri_node_normalizer import (
     SRI_NN_RESPONSE_VALUE_IDENTIFIER,
     SRI_NODE_NORMALIZER
 )
-from improving_agent.models import QNode
+from improving_agent.models import QueryConstraint, QNode
 from improving_agent.exceptions import UnmatchedIdentifierError, UnsupportedTypeError
 from improving_agent.src.biolink.biolink import get_supported_biolink_descendants, NODE
 from improving_agent.src.biolink.spoke_biolink_constants import (
@@ -17,6 +18,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_SPOKE_NODE_MAPPINGS,
     SPOKE_LABEL_GENE
 )
+from improving_agent.src.constraints import validate_constraint_support
 from improving_agent.util import get_evidara_logger
 
 QNODE_CURIE_SPOKE_IDENTIFIERS = 'spoke_identifiers'
@@ -59,11 +61,20 @@ def _deserialize_qnode(qnode_id, qnode):
     """Returns a QNode from a single deserialized QueryGraph node in a
     TRAPI request
     """
+    constraints = []
     try:
         ids = qnode.get('ids')
         categories = qnode.get('categories')
         is_set = qnode.get('is_set')
-        qnode = QNode(ids, categories, is_set)
+        req_constraints = qnode.get('constraints')
+        if req_constraints:
+            for constraint in req_constraints:
+                try:
+                    query_constraint = QueryConstraint(**constraint)
+                    constraints.append(query_constraint)
+                except TypeError:
+                    BadRequest(f'Could not deserialize constraint={constraint}')
+        qnode = QNode(ids, categories, is_set, constraints)
         setattr(qnode, 'qnode_id', qnode_id)
     except TypeError:
         raise BadRequest(f'Could not deserialize qnode={qnode}')
@@ -171,4 +182,12 @@ def validate_normalize_qnodes(qnodes):
         qnode = _assign_spoke_node_label(qnode)
         qnodes[qnode_id] = qnode
 
-    return _normalize_query_nodes_for_spoke(qnodes)
+    normalized_nodes = _normalize_query_nodes_for_spoke(qnodes)
+
+    # check constraints; we do this last because we need the SPOKE labels
+    for normalized_node in normalized_nodes.values():
+        if normalized_node.constraints:
+            for node_constraint in normalized_node.constraints:
+                validate_constraint_support(node_constraint, normalized_node.spoke_labels)
+
+    return normalized_nodes

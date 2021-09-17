@@ -38,6 +38,15 @@ class UnmatchedIdentifierError(Exception):
     pass
 
 
+class UnsupportedConstraint(Exception):
+    """Raise when the component does not support a specific constraint.
+
+    NOTE: this is required per the TRAPI implementation rules:
+    https://github.com/NCATSTranslator/ReasonerAPI/blob/master/ImplementationRules.md#qnodeconstraints
+    """
+    pass
+
+
 class UnsupportedTypeError(Exception):
     """Raise when a request specifies a category or predicate that
     imProving Agent does not support

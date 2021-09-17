@@ -4,6 +4,7 @@ from string import ascii_letters
 import neo4j
 from improving_agent import models  # TODO: replace with direct imports after fixing definitions
 from improving_agent.exceptions import MissingComponentError, NonLinearQueryError
+from improving_agent.src.constraints import get_node_constraint_cypher_clause
 from improving_agent.src.improving_agent_constants import (
     ATTRIBUTE_TYPE_PSEV_WEIGHT,
     SPOKE_NODE_PROPERTY_SOURCE
@@ -20,6 +21,8 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_DRUG,
     BIOLINK_ENTITY_SMALL_MOLECULE,
+    BIOLINK_SLOT_HIGHEST_FDA_APPROVAL,
+    MAX_PHASE_FDA_APPROVAL_MAP,
     SPOKE_ANY_TYPE,
     SPOKE_BIOLINK_EDGE_MAPPINGS,
     SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
@@ -47,6 +50,43 @@ ATTRIBUTE_MAPS = {
     SPOKE_GRAPH_TYPE_NODE: SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS
 }
 
+# what follows is (hopefully) temporary handling of "special" attributes,
+# e.g. max phase transformation to biolink's highest fda approval enums
+SPECIAL_ATTRIBUTE_HANDLERS = {}
+
+
+def register_special_attribute_handler(attribute_name):
+    def wrapper(f):
+        SPECIAL_ATTRIBUTE_HANDLERS[attribute_name] = f
+        return f
+    return wrapper
+
+
+@register_special_attribute_handler(BIOLINK_SLOT_HIGHEST_FDA_APPROVAL)
+def _map_max_phase_to_fda_approval(property_value):
+    return MAX_PHASE_FDA_APPROVAL_MAP[property_value]
+
+
+def _transform_special_attributes(slot_type, property_value):
+    '''Returns a transformed property name and value if biolink
+    compliance requires it.
+
+    Parameters
+    ----------
+    slot_type (str): the name of the property (biolink slot)
+    property_value (str, list(str), int, float): the value of the property
+
+    Returns
+    -------
+    property_value (str, list(str), int, float): the updated value, if necessary
+    '''
+    attr_transformer = SPECIAL_ATTRIBUTE_HANDLERS.get(slot_type)
+    if attr_transformer:
+        return attr_transformer(property_value)
+    return property_value
+
+
+# scoring
 IMPROVING_AGENT_SCORING_FUCNTIONS = {}
 
 
@@ -107,13 +147,23 @@ def make_qnode_filter_clause(name, query_node):
                 identifiers_clause = f'{identifiers_clause} AND'
             identifiers_clause = f'{identifiers_clause} {name}.max_phase > 0'
 
-    if labels_clause:
-        if identifiers_clause:
-            return f'({labels_clause} AND {identifiers_clause})'
-        else:
-            return labels_clause
-    if identifiers_clause:
-        return f'({identifiers_clause})'
+    constraints_clause = ''
+    if query_node.constraints:
+        constraints_clause = ' AND '.join([
+            get_node_constraint_cypher_clause(query_node, name, constraint)
+            for constraint
+            in query_node.constraints
+        ])
+
+    filter_clause = ' AND '.join([
+        clause for clause
+        in (labels_clause, identifiers_clause, constraints_clause)
+        if clause
+    ])
+
+    if filter_clause:
+        return f'({filter_clause})'
+
     return ''
 
 
@@ -349,6 +399,7 @@ class BasicQuery:
             )
             return
         attribute_type_id = attribute_mapping.biolink_type
+        property_value = _transform_special_attributes(attribute_type_id, property_value)
 
         attribute = models.Attribute(
             attribute_type_id=attribute_type_id,
