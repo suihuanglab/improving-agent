@@ -10,7 +10,7 @@ from improving_agent import models
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_ARTICLE,
     BIOLINK_ENTITY_INFORMATION_RESOURCE,
-    BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE,
+    BIOLINK_SLOT_PUBLICATIONS,
     INFORES_IMPROVING_AGENT,
     INFORES_SPOKE,
     SPOKE_EDGE_DEFAULT_SOURCE,
@@ -68,7 +68,7 @@ def _make_source_provenance_attribute(source_or_sources):
     return source_attributes
 
 
-def _make_article_provenance_attribute(
+def _make_publications_provenance_attribute(
     articles,
     attribute_name,
     value_prefix='',
@@ -81,7 +81,7 @@ def _make_article_provenance_attribute(
     for article in articles:
         attribute = models.Attribute(
             attribute_source=INFORES_SPOKE.infores_id,
-            attribute_type_id=BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE,
+            attribute_type_id=BIOLINK_SLOT_PUBLICATIONS,
             original_attribute_name=attribute_name,
             value_type_id=BIOLINK_ENTITY_ARTICLE,
             value=f'{value_prefix}{article}',
@@ -107,12 +107,12 @@ def make_provenance_attributes(
         return _make_source_provenance_attribute(field_value)
 
     if field_name in (SPOKE_PROPERTY_PUBMED, SPOKE_PROPERTY_PMID_LIST):
-        return _make_article_provenance_attribute(
+        return _make_publications_provenance_attribute(
             field_value, field_name, 'pmid:', 'https://pubmed.ncbi.nlm.nih.gov/'
         )
 
     if field_name == SPOKE_PROPERTY_PREPRINT_LIST:
-        return _make_article_provenance_attribute(field_value, field_name)
+        return _make_publications_provenance_attribute(field_value, field_name)
 
     return []
 
