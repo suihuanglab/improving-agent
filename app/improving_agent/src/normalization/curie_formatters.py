@@ -23,18 +23,23 @@ import re
 from collections import defaultdict
 
 from .sri_node_normalizer import (
-    NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS,
-    NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER
+    SRI_NN_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS,
+    SRI_NN_RESPONSE_VALUE_IDENTIFIER,
+    SRI_NN_RESPONSE_VALUE_TYPE
 )
 from improving_agent.exceptions import UnsupportedTypeError
 from improving_agent.src.biolink.spoke_biolink_constants import (
-    BIOLINK_ENTITY_CHEMICAL_SUBSTANCE,
+    BIOLINK_ENTITY,
+    BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_GENE,
+    BIOLINK_ENTITY_GENE_FAMILY,
     BIOLINK_ENTITY_MOLECULAR_ACTIVITY,
+    BIOLINK_ENTITY_NAMED_THING,
     BIOLINK_ENTITY_ORGANISM_TAXON,
     BIOLINK_ENTITY_PATHWAY,
     BIOLINK_ENTITY_PROTEIN,
     BIOLINK_ENTITY_PHENOTYPIC_FEATURE,
+    BIOLINK_SPOKE_NODE_MAPPINGS,
     SPOKE_LABEL_ANATOMY,
     SPOKE_LABEL_ANATOMY_CELL_TYPE,
     SPOKE_LABEL_BIOLOGICAL_PROCESS,
@@ -81,6 +86,7 @@ SPOKE_IDENTIFIER_REGEX_ORGANISM = '^[0-9]{2,7}$'
 SPOKE_IDENTIFIER_REGEX_PATHWAY = '[a-zA-Z0-9-+ ]+'
 SPOKE_IDENTIFIER_REGEX_PHARMACOLOGIC_CLASS = '^N[0-9]{10}$'
 SPOKE_IDENTIFIER_REGEX_PROTEIN = '[OPQ][0-9][A-Z0-9]{3}[0-9]$|[A-NR-Z][0-9]([A-Z][A-Z0-9]{2}[0-9]){1,2}$|^[0-9]{2,3}$'
+SPOKE_IDENTIFIER_REGEX_PROTEIN_DOMAIN_FAMILY = '^CL[0-9]{4}$|^PF[0-9]{5}$'
 SPOKE_IDENTIFIER_REGEX_REACTION = '^(TRANS-)?RXN([A-Z0-9]{1,4})?-[0-9]{1,5}|R[0-9]{5}|^[0-9A-Z-+.]+[RXN|SYN]$'  # not great
 SPOKE_IDENTIFIER_REGEX_SARSCOV2 = '^[0-9]{1,3}$'
 SPOKE_IDENTIFIER_REGEX_SIDE_EFFECT = '^C[0-9]{7}$'
@@ -120,17 +126,17 @@ def register_search_curie_formatter(node_type, regex):
     return wrapper
 
 
-@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_SUBSTANCE, '^CHEMBL[0-9]{1,7}$')
+@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_ENTITY, '^CHEMBL[0-9]{1,7}$')
 def _format_chembl_for_search(curie, source=None):
     return f"CHEMBL.COMPOUND:{curie}"
 
 
-@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_SUBSTANCE, '^DB[0-9]{5}$')
+@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_ENTITY, '^DB[0-9]{5}$')
 def _format_drugbank_for_search(curie, source=None):
     return f'DRUGBANK:{curie}'
 
 
-@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_SUBSTANCE, '^(C|G)[0-9]{5}$')
+@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_ENTITY, '^(C|G)[0-9]{5}$')
 def _format_kegg_compound_for_search(curie, source=None):
     return f'KEGG.COMPOUND:{curie}'
 
@@ -172,6 +178,11 @@ def _format_pathway_for_search(curie, source=None):
     return curie
 
 
+@register_search_curie_formatter(BIOLINK_ENTITY_PHENOTYPIC_FEATURE, SPOKE_IDENTIFIER_REGEX_SIDE_EFFECT)
+def _format_side_effect_for_search(curie, source=None):
+    return f'UMLS:{curie}'
+
+
 @register_search_curie_formatter(BIOLINK_ENTITY_PHENOTYPIC_FEATURE, SPOKE_IDENTIFIER_REGEX_SYMPTOM)
 def _format_symptom_for_search(curie, source=None):
     return f'MESH:{curie}'
@@ -180,6 +191,12 @@ def _format_symptom_for_search(curie, source=None):
 @register_search_curie_formatter(BIOLINK_ENTITY_PROTEIN, SPOKE_IDENTIFIER_REGEX_PROTEIN)
 def _format_protein_for_search(curie, source=None):
     return f'UniProtKB:{curie}'
+
+
+# Protein domain and protein family
+@register_search_curie_formatter(BIOLINK_ENTITY_GENE_FAMILY, SPOKE_IDENTIFIER_REGEX_PROTEIN_DOMAIN_FAMILY)
+def _format_protein_domain_family_for_search(curie, source=None):
+    return f'PFAM:{curie}'
 
 
 def format_curie_for_sri(category, curie, source=None):
@@ -266,7 +283,7 @@ def _format_nutrient_for_spoke(curie):
 
 @register_spoke_curie_formatter(SPOKE_LABEL_ORGANISM, '^NCBITaxon:')
 def _format_organism_for_spoke(curie):
-    return curie.replace('NCBITaxon', '')
+    return curie.replace('NCBITaxon:', '')
 
 
 @register_spoke_curie_formatter(SPOKE_LABEL_PATHWAY, SPOKE_IDENTIFIER_REGEX_PATHWAY)
@@ -312,7 +329,7 @@ def get_label_if_appropriate_spoke_curie(spoke_labels, curie):
             return spoke_label
 
 
-def get_spoke_identifiers_from_normalized_node(spoke_labels, normalized_node, searched_curie):
+def get_spoke_identifiers_from_normalized_node(spoke_labels, normalized_node):
     """Returns a SPOKE identifier from a node normalizer response
 
     Iterates through an SRI Node Normalizer response and attempts to
@@ -322,19 +339,33 @@ def get_spoke_identifiers_from_normalized_node(spoke_labels, normalized_node, se
     for all node types at this point in time, but to be more consistent
     we should use biolink categories here when the mapping is complete
     """
+    if not spoke_labels:
+        # get potential spoke labels from NN when a category wasn't sent
+        # along with the query
+        spoke_labels = []
+        for biolink_entity in normalized_node[SRI_NN_RESPONSE_VALUE_TYPE]:
+            if biolink_entity in (BIOLINK_ENTITY, BIOLINK_ENTITY_NAMED_THING):
+                continue
+            node_mapping = BIOLINK_SPOKE_NODE_MAPPINGS.get(biolink_entity)
+            if node_mapping:
+                mapped_spoke_labels = node_mapping.spoke_label
+                if not isinstance(mapped_spoke_labels, list):
+                    mapped_spoke_labels = [mapped_spoke_labels]
+                spoke_labels.extend(mapped_spoke_labels)
+
     node_type_configs = [NODE_NORMALIZATION_SPOKE_CURIE_FORMATTERS.get(spoke_label) for spoke_label in spoke_labels]
 
     if not node_type_configs:
         raise UnsupportedTypeError(f'Could not find a SPOKE identifer formatter func for category {",".join(spoke_labels)}')
 
     spoke_identifiers = []
-    for identifier in normalized_node[NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS]:
+    for identifier in normalized_node[SRI_NN_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS]:
         for node_type_config in node_type_configs:
             if re.match(
                     node_type_config[NODE_NORMALIZATION_KEY_REGEX],
-                    identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
+                    identifier[SRI_NN_RESPONSE_VALUE_IDENTIFIER]
             ):
                 spoke_identifiers.append(
-                    node_type_config[NODE_NORMALIZATION_KEY_FUNCTION](identifier[NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER])
+                    node_type_config[NODE_NORMALIZATION_KEY_FUNCTION](identifier[SRI_NN_RESPONSE_VALUE_IDENTIFIER])
                 )
-    return spoke_identifiers
+    return spoke_identifiers, spoke_labels

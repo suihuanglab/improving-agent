@@ -5,6 +5,7 @@ from string import ascii_letters
 import neo4j
 from improving_agent import models  # TODO: replace with direct imports after fixing definitions
 from improving_agent.exceptions import MissingComponentError, NonLinearQueryError
+from improving_agent.src.constraints import get_node_constraint_cypher_clause
 from improving_agent.src.improving_agent_constants import (
     ATTRIBUTE_TYPE_PSEV_WEIGHT,
     SPOKE_NODE_PROPERTY_SOURCE
@@ -18,21 +19,31 @@ from improving_agent.src.psev import get_psev_scores
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_TYPE,
     BIOLINK_ASSOCIATION_RELATED_TO,
-    BIOLINK_ENTITY_CHEMICAL_SUBSTANCE,
+    BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_DRUG,
-    RELATIONSHIP_ONTOLOGY_CURIE,
+    BIOLINK_ENTITY_SMALL_MOLECULE,
+    BIOLINK_SLOT_HIGHEST_FDA_APPROVAL,
+    MAX_PHASE_FDA_APPROVAL_MAP,
     SPOKE_ANY_TYPE,
     SPOKE_BIOLINK_EDGE_MAPPINGS,
     SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
     SPOKE_BIOLINK_NODE_MAPPINGS,
     SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS,
-    SPOKE_LABEL_COMPOUND,
+    SPOKE_LABEL_COMPOUND
+)
+from improving_agent.src.provenance import (
+    IMPROVING_AGENT_PROVENANCE_ATTR,
+    SPOKE_KP_PROVENANCE_ATTR,
+    SPOKE_PROVENANCE_FIELDS,
+    make_default_provenance_attribute,
+    make_provenance_attributes,
 )
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)
 ExtractedResult = namedtuple('ExtractedResult', ['nodes', 'edges'])
 
+# attributes
 SPOKE_GRAPH_TYPE_EDGE = 'edge'
 SPOKE_GRAPH_TYPE_NODE = 'node'
 ATTRIBUTE_MAPS = {
@@ -40,6 +51,43 @@ ATTRIBUTE_MAPS = {
     SPOKE_GRAPH_TYPE_NODE: SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS
 }
 
+# what follows is (hopefully) temporary handling of "special" attributes,
+# e.g. max phase transformation to biolink's highest fda approval enums
+SPECIAL_ATTRIBUTE_HANDLERS = {}
+
+
+def register_special_attribute_handler(attribute_name):
+    def wrapper(f):
+        SPECIAL_ATTRIBUTE_HANDLERS[attribute_name] = f
+        return f
+    return wrapper
+
+
+@register_special_attribute_handler(BIOLINK_SLOT_HIGHEST_FDA_APPROVAL)
+def _map_max_phase_to_fda_approval(property_value):
+    return MAX_PHASE_FDA_APPROVAL_MAP[property_value]
+
+
+def _transform_special_attributes(slot_type, property_value):
+    '''Returns a transformed property name and value if biolink
+    compliance requires it.
+
+    Parameters
+    ----------
+    slot_type (str): the name of the property (biolink slot)
+    property_value (str, list(str), int, float): the value of the property
+
+    Returns
+    -------
+    property_value (str, list(str), int, float): the updated value, if necessary
+    '''
+    attr_transformer = SPECIAL_ATTRIBUTE_HANDLERS.get(slot_type)
+    if attr_transformer:
+        return attr_transformer(property_value)
+    return property_value
+
+
+# scoring
 IMPROVING_AGENT_SCORING_FUCNTIONS = {}
 
 
@@ -91,18 +139,32 @@ def make_qnode_filter_clause(name, query_node):
         if SPOKE_LABEL_COMPOUND in query_node.spoke_labels:
             identifiers_clause = f'({identifiers_clause} OR {name}.chembl_id IN [{",".join(query_node.spoke_identifiers)}])'
     if query_node.categories:
-        if BIOLINK_ENTITY_DRUG in query_node.categories and BIOLINK_ENTITY_CHEMICAL_SUBSTANCE not in query_node.categories:
+        if (
+            BIOLINK_ENTITY_DRUG in query_node.categories
+            and BIOLINK_ENTITY_CHEMICAL_ENTITY not in query_node.categories
+            and BIOLINK_ENTITY_SMALL_MOLECULE not in query_node.categories
+        ):
             if identifiers_clause:
                 identifiers_clause = f'{identifiers_clause} AND'
             identifiers_clause = f'{identifiers_clause} {name}.max_phase > 0'
 
-    if labels_clause:
-        if identifiers_clause:
-            return f'({labels_clause} AND {identifiers_clause})'
-        else:
-            return labels_clause
-    if identifiers_clause:
-        return f'({identifiers_clause})'
+    constraints_clause = ''
+    if query_node.constraints:
+        constraints_clause = ' AND '.join([
+            get_node_constraint_cypher_clause(query_node, name, constraint)
+            for constraint
+            in query_node.constraints
+        ])
+
+    filter_clause = ' AND '.join([
+        clause for clause
+        in (labels_clause, identifiers_clause, constraints_clause)
+        if clause
+    ])
+
+    if filter_clause:
+        return f'({filter_clause})'
+
     return ''
 
 
@@ -353,18 +415,25 @@ class BasicQuery:
             )
             return
 
-        attribute_type_id = object_properties.get(property_type)
-        if not attribute_type_id:
+        attribute_mapping = object_properties.get(property_type)
+        if not attribute_mapping:
             logger.warning(
                 f'Could not find an attribute mapping for {spoke_object_type=} and {property_type=}'
             )
             return
+        attribute_type_id = attribute_mapping.biolink_type
+        property_value = _transform_special_attributes(attribute_type_id, property_value)
 
         attribute = models.Attribute(
             attribute_type_id=attribute_type_id,
             original_attribute_name=property_type,
             value=property_value
         )
+        if attribute_mapping.attribute_source:  # temporary until node mappings are done
+            attribute.attribute_source = attribute_mapping.attribute_source
+
+        if attribute_mapping.subattributes:
+            attribute.attributes = attribute_mapping.subattributes
         return attribute
 
     def make_result_node(self, n4j_object, spoke_curie):
@@ -399,7 +468,7 @@ class BasicQuery:
             if k == SPOKE_NODE_PROPERTY_SOURCE:
                 node_source = v
             node_attribute = self._make_result_attribute(
-                    k, v, SPOKE_GRAPH_TYPE_NODE, spoke_node_labels[0]
+                k, v, SPOKE_GRAPH_TYPE_NODE, spoke_node_labels[0]
             )
             if node_attribute:
                 result_node_attributes.append(node_attribute)
@@ -435,25 +504,33 @@ class BasicQuery:
         edge_type = n4j_object.type
         biolink_map_info = SPOKE_BIOLINK_EDGE_MAPPINGS.get(edge_type)
         if not biolink_map_info:
-            biolink_edge_data = {'predicate': BIOLINK_ASSOCIATION_RELATED_TO}
+            predicate = BIOLINK_ASSOCIATION_RELATED_TO
         else:
-            biolink_edge_data = {
-                'predicate': biolink_map_info[BIOLINK_ASSOCIATION_TYPE],
-                'relation': biolink_map_info[RELATIONSHIP_ONTOLOGY_CURIE]
-            }
+            predicate = biolink_map_info[BIOLINK_ASSOCIATION_TYPE]
 
         edge_attributes = []
+        provenance_attributes = []
         for k, v in n4j_object.items():
+            if k in SPOKE_PROVENANCE_FIELDS:
+                source_attributes = make_provenance_attributes(k, v)
+                provenance_attributes.extend(source_attributes)
+                continue
             edge_attribute = self._make_result_attribute(k, v, SPOKE_GRAPH_TYPE_EDGE, edge_type)
             if edge_attribute:
                 edge_attributes.append(edge_attribute)
 
+        if not provenance_attributes:
+            provenance_attributes.append(make_default_provenance_attribute(edge_type))
+
+        provenance_attributes.extend([SPOKE_KP_PROVENANCE_ATTR, IMPROVING_AGENT_PROVENANCE_ATTR])
+        edge_attributes = provenance_attributes + edge_attributes
+
         result_edge = models.Edge(
             # TODO get correlations score for P100/cohort data
+            predicate=predicate,
             subject=n4j_object.start_node["identifier"],
             object=n4j_object.end_node["identifier"],
-            attributes=edge_attributes,
-            **biolink_edge_data
+            attributes=edge_attributes
         )
 
         return result_edge

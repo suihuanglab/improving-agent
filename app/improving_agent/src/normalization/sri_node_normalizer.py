@@ -8,16 +8,17 @@ from werkzeug.utils import cached_property
 
 from improving_agent.util import get_evidara_logger
 
-NODE_NORMALIZATION_BASE_URL = "https://nodenormalization-sri.renci.org/1.1/"
-NODE_NORMALIZATION_CURIE_IDENTIFER = "curie"
-NODE_NORMALIZATION_CURIE_PREFIX = "curie_prefix"
-NODE_NORMALIZATION_CURIE_PREFIXES_ENDPOINT = "get_curie_prefixes"
-NODE_NORMALIZATION_NORMALIZED_NODES_ENDPOINT = "get_normalized_nodes"
-NODE_NORMALIZATION_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS = 'equivalent_identifiers'
-NODE_NORMALIZATION_RESPONSE_VALUE_ID = 'id'
-NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER = 'identifier'
-NODE_NORMALIZATION_SEMANTIC_TYPES_ENDPOINT = "get_semantic_types"
-NODE_NORMALIZATION_SEMANTIC_TYPE_IDENTIFIER = "semantictype"
+SRI_NN_BASE_URL = "https://nodenormalization-sri-dev.renci.org/1.1/"
+SRI_NN_CURIE_IDENTIFER = "curie"
+SRI_NN_CURIE_PREFIX = "curie_prefix"
+SRI_NN_CURIE_PREFIXES_ENDPOINT = "get_curie_prefixes"
+SRI_NN_NORMALIZED_NODES_ENDPOINT = "get_normalized_nodes"
+SRI_NN_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS = 'equivalent_identifiers'
+SRI_NN_RESPONSE_VALUE_ID = 'id'
+SRI_NN_RESPONSE_VALUE_IDENTIFIER = 'identifier'
+SRI_NN_RESPONSE_VALUE_TYPE = 'type'
+SRI_NN_SEMANTIC_TYPES_ENDPOINT = "get_semantic_types"
+SRI_NN_SEMANTIC_TYPE_IDENTIFIER = "semantictype"
 
 logger = get_evidara_logger(__name__)
 
@@ -61,9 +62,9 @@ class SriNodeNormalizer:
             return cached
 
         logger.info(f'Querying SRI to normalize {subset}')
-        payload = {NODE_NORMALIZATION_CURIE_IDENTIFER: list(subset)}
+        payload = {SRI_NN_CURIE_IDENTIFER: list(subset)}
         response = requests.get(
-            f"{NODE_NORMALIZATION_BASE_URL}/{NODE_NORMALIZATION_NORMALIZED_NODES_ENDPOINT}", params=payload
+            f"{SRI_NN_BASE_URL}/{SRI_NN_NORMALIZED_NODES_ENDPOINT}", params=payload
         )
         if response.status_code == 404:
             logger.warning(f"No results for {list(subset)} in SRI node normalizer")
@@ -107,11 +108,11 @@ class SriNodeNormalizer:
         NOTE: this endpoint will 404 if any semantic type is bad
         """
         payload = [
-            (NODE_NORMALIZATION_SEMANTIC_TYPE_IDENTIFIER, semantic_type) for semantic_type in semantic_types
+            (SRI_NN_SEMANTIC_TYPE_IDENTIFIER, semantic_type) for semantic_type in semantic_types
         ]
 
         response = requests.get(
-            f"{NODE_NORMALIZATION_BASE_URL}/{NODE_NORMALIZATION_CURIE_PREFIXES_ENDPOINT}", params=payload
+            f"{SRI_NN_BASE_URL}/{SRI_NN_CURIE_PREFIXES_ENDPOINT}", params=payload
         )
 
         if response.status_code != 200:
@@ -130,7 +131,7 @@ class SriNodeNormalizer:
         List[str]:
             list of valid semantic types
         """
-        response = requests.get(f"{NODE_NORMALIZATION_BASE_URL}/{NODE_NORMALIZATION_SEMANTIC_TYPES_ENDPOINT}")
+        response = requests.get(f"{SRI_NN_BASE_URL}/{SRI_NN_SEMANTIC_TYPES_ENDPOINT}")
         if response.status_code != 200:
             logger.error(f"Failed to get semantic types with {response.status_code} and {response.text}")
             response.raise_for_status()

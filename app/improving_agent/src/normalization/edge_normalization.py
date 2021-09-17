@@ -15,9 +15,14 @@ def _deserialize_qedge(qedge_id, qedge):
     try:
         subject = qedge['subject']
         object_ = qedge['object']
+        constraints = qedge.get('constraints')
         predicates = qedge.get('predicates')
-        relation = qedge.get('relation')
-        qedge = QEdge(predicates, relation, subject, object_)
+        qedge = QEdge(
+            predicates=predicates,
+            subject=subject,
+            object=object_,
+            constraints=constraints
+        )
         setattr(qedge, 'qedge_id', qedge_id)
     except (KeyError, TypeError):
         raise BadRequest(f'Could not deserialize query edge {qedge_id}')

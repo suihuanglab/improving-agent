@@ -1,15 +1,16 @@
 from werkzeug.exceptions import BadRequest
+
 from .curie_formatters import (
     format_curie_for_sri,
     get_spoke_identifiers_from_normalized_node,
     get_label_if_appropriate_spoke_curie,
 )
 from .sri_node_normalizer import (
-    NODE_NORMALIZATION_RESPONSE_VALUE_ID,
-    NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER,
+    SRI_NN_RESPONSE_VALUE_ID,
+    SRI_NN_RESPONSE_VALUE_IDENTIFIER,
     SRI_NODE_NORMALIZER
 )
-from improving_agent.models import QNode
+from improving_agent.models import QueryConstraint, QNode
 from improving_agent.exceptions import UnmatchedIdentifierError, UnsupportedTypeError
 from improving_agent.src.biolink.biolink import get_supported_biolink_descendants, NODE
 from improving_agent.src.biolink.spoke_biolink_constants import (
@@ -17,6 +18,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_SPOKE_NODE_MAPPINGS,
     SPOKE_LABEL_GENE
 )
+from improving_agent.src.constraints import validate_constraint_support
 from improving_agent.util import get_evidara_logger
 
 QNODE_CURIE_SPOKE_IDENTIFIERS = 'spoke_identifiers'
@@ -51,7 +53,7 @@ def normalize_spoke_nodes_for_translator(spoke_search_nodes):
             result_map[search_node.curie] = formatted_curie
         else:
             result_map[search_node.curie] = \
-                normalized_node[NODE_NORMALIZATION_RESPONSE_VALUE_ID][NODE_NORMALIZATION_RESPONSE_VALUE_IDENTIFIER]
+                normalized_node[SRI_NN_RESPONSE_VALUE_ID][SRI_NN_RESPONSE_VALUE_IDENTIFIER]
     return result_map
 
 
@@ -59,11 +61,20 @@ def _deserialize_qnode(qnode_id, qnode):
     """Returns a QNode from a single deserialized QueryGraph node in a
     TRAPI request
     """
+    constraints = []
     try:
         ids = qnode.get('ids')
         categories = qnode.get('categories')
         is_set = qnode.get('is_set')
-        qnode = QNode(ids, categories, is_set)
+        req_constraints = qnode.get('constraints')
+        if req_constraints:
+            for constraint in req_constraints:
+                try:
+                    query_constraint = QueryConstraint(**constraint)
+                    constraints.append(query_constraint)
+                except TypeError:
+                    BadRequest(f'Could not deserialize constraint={constraint}')
+        qnode = QNode(ids, categories, is_set, constraints)
         setattr(qnode, 'qnode_id', qnode_id)
     except TypeError:
         raise BadRequest(f'Could not deserialize qnode={qnode}')
@@ -96,11 +107,10 @@ def _check_and_format_qnode_curies_for_search(qnodes):
     for qnode_id, qnode in qnodes.items():
         setattr(qnode, QNODE_CURIE_SPOKE_IDENTIFIERS, [])
         if qnode.ids:
-            if not qnode.spoke_labels:
-                raise UnsupportedTypeError(
-                    'imProving Agent requires that qNodes with identifier also specify a '
-                    'biolink category'
-                )
+            # TODO: Consider axing this pre-check logic and just sending
+            # everything to SRI node normalizer. At this point (2021-09)
+            # the NN is reliable and robust and we're not trying to
+            # return results from SPOKE that aren't represented in NN
             for curie in qnode.ids:
                 matched_label = get_label_if_appropriate_spoke_curie(qnode.spoke_labels, curie)
                 if matched_label:
@@ -112,13 +122,15 @@ def _check_and_format_qnode_curies_for_search(qnodes):
                     normalized_qnodes[qnode_id] = qnode
                     continue
                 else:
-                    # Not sure this actually does anything useful if don't already recognize its pattern
-                    for category in qnode.categories:
-                        formatted_curies = format_curie_for_sri(category, curie)
-                        if isinstance(formatted_curies, str):
-                            formatted_curies = [formatted_curies]
-                        for formatted_curie in formatted_curies:
-                            formatted_search_nodes[formatted_curie] = qnode_id
+                    if qnode.categories:
+                        for category in qnode.categories:
+                            formatted_curies = format_curie_for_sri(category, curie)
+                            if isinstance(formatted_curies, str):
+                                formatted_curies = [formatted_curies]
+                            for formatted_curie in formatted_curies:
+                                formatted_search_nodes[formatted_curie] = qnode_id
+                    else:
+                        formatted_search_nodes[curie] = qnode_id
         else:
             normalized_qnodes[qnode_id] = qnode
 
@@ -138,11 +150,11 @@ def _normalize_query_nodes_for_spoke(qnodes):
             if not qnode:
                 qnode = qnodes[qnode_id]
 
-            spoke_identifiers = get_spoke_identifiers_from_normalized_node(
+            spoke_identifiers, updated_spoke_labels = get_spoke_identifiers_from_normalized_node(
                 qnode.spoke_labels,
-                normalized_node,
-                formatted_curie
+                normalized_node
             )
+            setattr(qnode, 'spoke_labels', updated_spoke_labels)
             if not spoke_identifiers:
                 continue
 
@@ -170,4 +182,12 @@ def validate_normalize_qnodes(qnodes):
         qnode = _assign_spoke_node_label(qnode)
         qnodes[qnode_id] = qnode
 
-    return _normalize_query_nodes_for_spoke(qnodes)
+    normalized_nodes = _normalize_query_nodes_for_spoke(qnodes)
+
+    # check constraints; we do this last because we need the SPOKE labels
+    for normalized_node in normalized_nodes.values():
+        if normalized_node.constraints:
+            for node_constraint in normalized_node.constraints:
+                validate_constraint_support(node_constraint, normalized_node.spoke_labels)
+
+    return normalized_nodes
