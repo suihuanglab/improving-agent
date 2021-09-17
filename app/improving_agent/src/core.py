@@ -10,6 +10,7 @@ from improving_agent.exceptions import (
     MissingComponentError,
     NonLinearQueryError,
     UnmatchedIdentifierError,
+    UnsupportedConstraint,
     UnsupportedTypeError
 )
 from improving_agent.models import Message, Query, QueryGraph, Response
@@ -119,7 +120,7 @@ def process_query(raw_json):
 def try_query(query):
     try:
         return process_query(query)
-    except (AmbiguousPredicateMappingError, BadRequest, MissingComponentError) as e:
+    except (AmbiguousPredicateMappingError, BadRequest, MissingComponentError, UnsupportedConstraint) as e:
         return Response(message=Message(), status="Bad Request", description=str(e)), 400
     except (NonLinearQueryError, UnmatchedIdentifierError, UnsupportedTypeError) as e:
         return Response(Message(), status="Query unprocessable", description=f'{str(e)}; returning empty message...'), 200

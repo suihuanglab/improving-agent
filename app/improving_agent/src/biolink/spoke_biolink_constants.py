@@ -219,6 +219,7 @@ BIOLINK_ASSOCIATION_CONDITION_ASSOCIATED_WITH_GENE = 'biolink:condition_associat
 BIOLINK_ASSOCIATION_CONTRAINDICATED_FOR = 'biolink:contraindicated_for'
 BIOLINK_ASSOCIATION_CORRELATED_WITH = 'biolink:correlated_with'
 BIOLINK_ASSOCIATION_ENABLES = 'biolink:enables'
+BIOLINK_ASSOCIATION_ENTITY_REGULATES_ENTITY = 'biolink:entity_regulates_entity'
 BIOLINK_ASSOCIATION_EXPRESSED_IN = 'biolink:expressed_in'
 BIOLINK_ASSOCIATION_EXPRESSES = 'biolink:expresses'
 BIOLINK_ASSOCIATION_EXPRESSION_DECREASED_BY = 'biolink:expression_decreased_by'
@@ -237,8 +238,6 @@ BIOLINK_ASSOCIATION_NEGATIVELY_REGULATES_ENTITY_TO_ENTITY = 'biolink:entity_nega
 BIOLINK_ASSOCIATION_PART_OF = 'biolink:part_of'
 BIOLINK_ASSOCIATION_PARTICIPATES_IN = 'biolink:participates_in'
 BIOLINK_ASSOCIATION_POSITIVELY_REGULATES_ENTITY_TO_ENTITY = 'biolink:entity_positively_regulates_entity'
-BIOLINK_ASSOCIATION_PROCESS_REGULATES_PROCESS = 'biolink:process_regulates_process'
-BIOLINK_ASSOCIATION_REGULATES_PROCESS_TO_PROCESS = 'biolink:regulates_process_to_process'
 BIOLINK_ASSOCIATION_RELATED_TO = 'biolink:related_to'
 BIOLINK_ASSOCIATION_SIMILAR_TO = 'biolink:similar_to'
 BIOLINK_ASSOCIATION_SUBCLASS_OF = 'biolink:subclass_of'
@@ -266,7 +265,7 @@ SPOKE_BIOLINK_EDGE_MAPPINGS = {
         RELATIONSHIP_ONTOLOGY_CURIE: 'RO:0003308'
     },
     SPOKE_EDGE_TYPE_AFFECTS_CamG: {
-        BIOLINK_ASSOCIATION_TYPE: BIOLINK_ASSOCIATION_PROCESS_REGULATES_PROCESS,
+        BIOLINK_ASSOCIATION_TYPE: BIOLINK_ASSOCIATION_ENTITY_REGULATES_ENTITY,
         RELATIONSHIP_ONTOLOGY_CURIE: 'RO:0002211'
     },
     SPOKE_EDGE_TYPE_ASSOCIATES_DaG: {
@@ -505,7 +504,7 @@ PREDICATES = {
         BIOLINK_ENTITY_GENE: {
             BIOLINK_ASSOCIATION_NEGATIVELY_REGULATES_ENTITY_TO_ENTITY: [SPOKE_EDGE_TYPE_DOWNREGULATES_CdG],
             BIOLINK_ASSOCIATION_POSITIVELY_REGULATES_ENTITY_TO_ENTITY: [SPOKE_EDGE_TYPE_UPREGULATES_CuG],
-            BIOLINK_ASSOCIATION_PROCESS_REGULATES_PROCESS: [SPOKE_EDGE_TYPE_AFFECTS_CamG]
+            BIOLINK_ASSOCIATION_ENTITY_REGULATES_ENTITY: [SPOKE_EDGE_TYPE_AFFECTS_CamG]
         },
         BIOLINK_ENTITY_NAMED_THING: {  # SIDE EFFECT
             BIOLINK_ASSOCIATION_CAUSES: [SPOKE_EDGE_TYPE_CAUSES_CcSE]
@@ -675,6 +674,7 @@ BIOLINK_SLOT_HAS_CONFIDENCE_LEVEL = 'biolink:has_confidence_level'
 BIOLINK_SLOT_HAS_EVIDENCE = 'biolink:has_evidence'
 BIOLINK_SLOT_HAS_QUANTITATIVE_VALUE = 'biolink:has_quantitative_value'
 BIOLINK_SLOT_HAS_TAXONOMIC_RANK = 'biolink:has_taxonomic_rank'
+BIOLINK_SLOT_HIGHEST_FDA_APPROVAL = 'biolink:highest_FDA_approval_status'
 BIOLINK_SLOT_IRI = 'biolink:iri'
 BIOLINK_SLOT_LICENSE = 'biolink:license'
 BIOLINK_SLOT_LOCATED_IN = 'biolink:located_in'
@@ -705,6 +705,7 @@ SPOKE_PROPERTY_INTERACTION = 'interaction'
 SPOKE_PROPERTY_LEVEL = 'level'
 SPOKE_PROPERTY_LICENSE = 'license'
 SPOKE_PROPERTY_LOG2FC = 'log2fc'
+SPOKE_PROPERTY_MAX_PHASE = 'max_phase'
 SPOKE_PROPERTY_NAME = 'name'
 SPOKE_PROPERTY_ODDS = 'odds'
 SPOKE_PROPERTY_PMID_LIST = 'pmid_list'
@@ -1068,7 +1069,7 @@ SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS = {
         SPOKE_PROPERTY_NAME: SpokeAttributeMapping(BIOLINK_SLOT_FULL_NAME, ''),
         SPOKE_PROPERTY_URL: SpokeAttributeMapping(BIOLINK_SLOT_IRI, ''),
         SPOKE_PROPERTY_LICENSE: SpokeAttributeMapping(BIOLINK_SLOT_LICENSE, ''),
-        'max_phase': SpokeAttributeMapping(BIOLINK_SLOT_HAS_CONFIDENCE_LEVEL, ''),
+        SPOKE_PROPERTY_MAX_PHASE: SpokeAttributeMapping(BIOLINK_SLOT_HIGHEST_FDA_APPROVAL, ''),
     },
     SPOKE_LABEL_DISEASE: {
         SPOKE_PROPERTY_IDENTIFIER: SpokeAttributeMapping(BIOLINK_SLOT_ID, ''),
@@ -1265,4 +1266,31 @@ SPOKE_EDGE_DEFAULT_SOURCE = {
     SPOKE_EDGE_TYPE_ISIN_ACTiiA: INFORES_HUMAN_PROTEIN_ATLAS,
     SPOKE_EDGE_TYPE_ISIN_ACTiiCT: INFORES_HUMAN_PROTEIN_ATLAS,
     SPOKE_EDGE_TYPE_PRODUCES_RpC: INFORES_KEGG
+}
+
+# special attribute mappings
+FDA_APPROVAL_MAX_PHASE_MAP = {
+    'Discovery & Development Phase': 0,
+    'Preclinical Research Phase': 0,
+    'FDA Clinical Research Phase': 1,
+    'FDA Review Phase 4': 4,
+    'FDA Post-Market Safety Monitoring': 4,
+    'FDA Clinical Research Phase 1': 1,
+    'FDA Clinical Research Phase 2': 2,
+    'FDA Clinical Research Phase 3': 3,
+    'FDA Clinical Research Phase 4': 4,
+    'FDA Fast Track': 4,
+    'FDA Breakthrough Therapy': 4,
+    'FDA Accelerated Approval': 4,
+    'FDA Priority Review': 4,
+    'regular approval': 4,
+    'post-approval withdrawal': 4
+}
+
+MAX_PHASE_FDA_APPROVAL_MAP = {
+    0: 'Preclinical Research Phase',
+    1: 'FDA Clinical Research Phase 1',
+    2: 'FDA Clinical Research Phase 2',
+    3: 'FDA Clinical Research Phase 3',
+    4: 'regular approval'
 }
