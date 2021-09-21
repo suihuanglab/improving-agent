@@ -43,6 +43,7 @@ class ApplicationConfig:
 
 
 def _get_aws_secret(secret_name):
+    # TODO: enable a local-prod-debug profile that passes `profile_name` as kwargs
     session = boto3.Session(region_name='us-west-2')
     sm = session.client('secretsmanager')
     secret = json.loads(sm.get_secret_value(SecretId=secret_name)['SecretString'])
@@ -51,7 +52,6 @@ def _get_aws_secret(secret_name):
 
 def _get_neo4j_creds(app_env, config):
     if app_env == APP_ENV_PROD:
-        print(config)
         secret = _get_aws_secret(config[app_env]['n4j_creds_name'])
         user, pass_ = secret['data'].split('/')
     else:
