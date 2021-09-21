@@ -5,7 +5,8 @@ import os
 import six
 
 from improving_agent import typing_utils
-from improving_agent.src.config import LOG_LOCATION
+from improving_agent.src.config import app_config
+
 
 formatter = logging.Formatter('%(asctime)s %(levelname)s %(name)s line %(lineno)d: %(message)s')
 
@@ -147,7 +148,7 @@ def _deserialize_dict(data, boxed_type):
             for k, v in six.iteritems(data)}
 
 
-def get_evidara_logger(mod_name, log_path=LOG_LOCATION):
+def get_evidara_logger(mod_name, log_path=app_config.LOG_LOCATION):
     """Returns a logging.Logger object configured except for a
     FileHandler"""
     logger = logging.getLogger(mod_name)

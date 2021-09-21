@@ -9,16 +9,17 @@ import neo4j
 from flask import g, jsonify, render_template
 
 from improving_agent import encoder
-from improving_agent.src import config
+from improving_agent.src.config import app_config
 from improving_agent.src.biolink.spoke_biolink_constants import BIOLINK_SPOKE_NODE_MAPPINGS
 from improving_agent.util import get_evidara_logger
 
 driver = neo4j.GraphDatabase.driver(
-    config.NEO4J_URI,
-    auth=(config.NEO4J_USER, config.NEO4J_PASS),
+    app_config.NEO4J_URI,
+    auth=(app_config.NEO4J_USER, app_config.NEO4J_PASS),
     max_connection_lifetime=200,
 )
 logger = get_evidara_logger(__name__)
+logger.info('Starting app with configs:\n%s', app_config)
 
 
 def get_db():
@@ -57,6 +58,7 @@ def extract_text_result(result):
     new_result['pref_name'] = result.get('pref_name')
     new_result['score'] = result.get('score')
     return new_result
+
 
 def full_text_search(tx, _search):
     r = tx.run(
