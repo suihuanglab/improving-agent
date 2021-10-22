@@ -29,7 +29,8 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
     SPOKE_BIOLINK_NODE_MAPPINGS,
     SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS,
-    SPOKE_LABEL_COMPOUND
+    SPOKE_LABEL_COMPOUND,
+    SPOKE_PROPERTY_NATIVE_SPOKE,
 )
 from improving_agent.src.provenance import (
     IMPROVING_AGENT_PROVENANCE_ATTR,
@@ -465,6 +466,8 @@ class BasicQuery:
         node_source = None
         result_node_attributes = []
         for k, v in n4j_object.items():
+            if k == SPOKE_PROPERTY_NATIVE_SPOKE:
+                continue
             if k == SPOKE_NODE_PROPERTY_SOURCE:
                 node_source = v
             node_attribute = self._make_result_attribute(
@@ -511,6 +514,8 @@ class BasicQuery:
         edge_attributes = []
         provenance_attributes = []
         for k, v in n4j_object.items():
+            if k == SPOKE_PROPERTY_NATIVE_SPOKE:
+                continue
             if k in SPOKE_PROVENANCE_FIELDS:
                 source_attributes = make_provenance_attributes(k, v)
                 provenance_attributes.extend(source_attributes)
