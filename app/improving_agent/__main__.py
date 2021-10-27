@@ -72,6 +72,14 @@ def full_text_search(tx, _search):
     return [extract_text_result(record) for record in r]
 
 
+def _check_db(tx):
+    res = tx.run('MATCH (n) RETURN n LIMIT 1;')
+    result = [r for r in res]
+    if result:
+        return True
+    return False
+
+
 @app.route("/")
 def index():
     """returns welcome home page"""
@@ -101,6 +109,29 @@ def text_search(search):
     session = get_db()
     results = session.read_transaction(full_text_search, _search)
     return jsonify({'results': results, 'search': search})
+
+
+@app.route("/api/hello")
+def check_api():
+    """Checks for a working connection to this service"""
+    return 'OK'
+
+
+@app.route("/api/hellodb")
+def check_db():
+    """Checks for a working connection to the database"""
+    session = get_db()
+    try:
+        db_okay = session.read_transaction(_check_db)
+        if db_okay is True:
+            return 'OK', 200
+        else:
+            logger.error('Connected to SPOKE, but no nodes were found')
+            return 'Error', 500
+
+    except Exception as e:
+        logger.error(f'Failed to connect to SPOKE, error was {e}')
+        return 'Error', 500
 
 
 @app.app.teardown_appcontext

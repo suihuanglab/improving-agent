@@ -8,7 +8,7 @@ from werkzeug.utils import cached_property
 
 from improving_agent.util import get_evidara_logger
 
-SRI_NN_BASE_URL = "https://nodenormalization-sri-dev.renci.org/1.1/"
+SRI_NN_BASE_URL = "https://nodenormalization-sri.renci.org/1.2/"
 SRI_NN_CURIE_IDENTIFER = "curie"
 SRI_NN_CURIE_PREFIX = "curie_prefix"
 SRI_NN_CURIE_PREFIXES_ENDPOINT = "get_curie_prefixes"
