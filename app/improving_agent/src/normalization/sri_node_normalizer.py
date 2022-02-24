@@ -13,6 +13,7 @@ SRI_NN_CURIE_IDENTIFER = "curie"
 SRI_NN_CURIE_PREFIX = "curie_prefix"
 SRI_NN_CURIE_PREFIXES_ENDPOINT = "get_curie_prefixes"
 SRI_NN_NORMALIZED_NODES_ENDPOINT = "get_normalized_nodes"
+SRI_NN_PARAM_CURIES = 'curies'
 SRI_NN_RESPONSE_VALUE_EQUIVALENT_IDENTIFIERS = 'equivalent_identifiers'
 SRI_NN_RESPONSE_VALUE_ID = 'id'
 SRI_NN_RESPONSE_VALUE_IDENTIFIER = 'identifier'
@@ -62,9 +63,9 @@ class SriNodeNormalizer:
             return cached
 
         logger.info(f'Querying SRI to normalize {subset}')
-        payload = {SRI_NN_CURIE_IDENTIFER: list(subset)}
-        response = requests.get(
-            f"{SRI_NN_BASE_URL}/{SRI_NN_NORMALIZED_NODES_ENDPOINT}", params=payload
+        data = {SRI_NN_PARAM_CURIES: list(subset)}
+        response = requests.post(
+            f"{SRI_NN_BASE_URL}/{SRI_NN_NORMALIZED_NODES_ENDPOINT}", json=data
         )
         if response.status_code == 404:
             logger.warning(f"No results for {list(subset)} in SRI node normalizer")
