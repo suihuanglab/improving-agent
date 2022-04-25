@@ -47,6 +47,28 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/AsyncQuery'
+            example: >-
+              {
+                "message": {
+                  "query_graph": {
+                    "nodes": {
+                      "n00": {
+                        "ids": ["DOID:1681"],
+                        "categories": ["biolink:Disease"]
+                      },
+                      "n01": {
+                        "categories": ["biolink:Gene"]
+                      }
+                    },
+                    "edges": {
+                      "e00": {
+                        "subject": "n00",
+                        "object": "n01"
+                      }
+                    }
+                  }
+                }
+              }
         description: Query information to be submitted
         required: true
       responses:
@@ -104,6 +126,28 @@ paths:
           application/json:
             schema:
               $ref: '#/components/schemas/Query'
+            example: >-
+              {
+                "message": {
+                  "query_graph": {
+                    "nodes": {
+                      "n00": {
+                        "ids": ["DOID:1681"],
+                        "categories": ["biolink:Disease"]
+                      },
+                      "n01": {
+                        "categories": ["biolink:Gene"]
+                      }
+                    },
+                    "edges": {
+                      "e00": {
+                        "subject": "n00",
+                        "object": "n01"
+                      }
+                    }
+                  }
+                }
+              }
         description: Query information to be submitted
         required: true
       responses:
