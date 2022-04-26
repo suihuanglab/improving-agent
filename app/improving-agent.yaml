@@ -158,7 +158,8 @@ paths:
                       }
                     }
                   }
-                }
+                },
+                "callback": "https://example.com/notimplemented"
               }
       responses:
         '200':

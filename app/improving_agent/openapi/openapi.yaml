@@ -67,7 +67,8 @@ paths:
                       }
                     }
                   }
-                }
+                },
+                "callback": "https://example.com/notimplemented"
               }
         description: Query information to be submitted
         required: true
