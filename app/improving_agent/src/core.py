@@ -9,8 +9,10 @@ from improving_agent.exceptions import (
     AmbiguousPredicateMappingError,
     MissingComponentError,
     NonLinearQueryError,
+    TemplateQuerySpecError,
     UnmatchedIdentifierError,
     UnsupportedConstraint,
+    UnsupportedKnowledgeType,
     UnsupportedTypeError
 )
 from improving_agent.models import Message, Query, QueryGraph, Response
@@ -19,6 +21,7 @@ from improving_agent.src.basic_query import BasicQuery
 from improving_agent.src.normalization.edge_normalization import validate_normalize_qedges
 from improving_agent.src.normalization.node_normalization import validate_normalize_qnodes
 from improving_agent.src.psev import get_psev_concepts
+from improving_agent.src.template_queries import match_template_queries
 from improving_agent.src.workflows import SUPPORTED_WORKFLOWS
 from improving_agent.util import get_evidara_logger
 
@@ -109,11 +112,14 @@ def process_query(raw_json):
     psev_contexts = get_psev_concepts(qnodes)
     query_options['psev_context'] = psev_contexts
 
-    querier = BasicQuery(qnodes, qedges, query_options, query.max_results)
-
     # now query SPOKE
     with get_db() as session:
-        results, knowledge_graph = querier.linear_spoke_query(session)
+        template_query = match_template_queries(qedges, qnodes)
+        if template_query:
+            querier = template_query(qnodes, qedges, query_options, query.max_results)
+        else:
+            querier = BasicQuery(qnodes, qedges, query_options, query.max_results)
+        results, knowledge_graph = querier.do_query(session)
         response_message = Message(results, query_graph, knowledge_graph)
         success_description = f'Success. Returning {len(results)} results...'
         response = Response(response_message, description=success_description, workflow=query.workflow)
@@ -124,7 +130,14 @@ def process_query(raw_json):
 def try_query(query):
     try:
         return process_query(query)
-    except (AmbiguousPredicateMappingError, BadRequest, MissingComponentError, UnsupportedConstraint) as e:
+    except (
+        AmbiguousPredicateMappingError,
+        BadRequest,
+        MissingComponentError,
+        UnsupportedConstraint,
+        UnsupportedKnowledgeType,
+        TemplateQuerySpecError
+    ) as e:
         return Response(message=Message(), status="Bad Request", description=str(e)), 400
     except (NonLinearQueryError, UnmatchedIdentifierError, UnsupportedTypeError) as e:
         return Response(Message(), status="Query unprocessable", description=f'{str(e)}; returning empty message...'), 200

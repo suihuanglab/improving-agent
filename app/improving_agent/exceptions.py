@@ -27,6 +27,13 @@ class NonLinearQueryError(Exception):
     pass
 
 
+class TemplateQuerySpecError(Exception):
+    """Raise when a template query fails because it is not specified
+    as expected
+    """
+    pass
+
+
 class UnmatchedIdentifierError(Exception):
     """Raise when a request specifies a CURIE that cannot be mapped
     to SPOKE
@@ -43,6 +50,13 @@ class UnsupportedConstraint(Exception):
 
     NOTE: this is required per the TRAPI implementation rules:
     https://github.com/NCATSTranslator/ReasonerAPI/blob/master/ImplementationRules.md#qnodeconstraints
+    """
+    pass
+
+
+class UnsupportedKnowledgeType(Exception):
+    """Raise when a qedge has a knowledge type attribute that is not
+    supported.
     """
     pass
 

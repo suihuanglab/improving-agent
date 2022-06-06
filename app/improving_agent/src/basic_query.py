@@ -357,7 +357,7 @@ class BasicQuery:
                     # conepts
                     psev_sum = 0
                     for concept in psev_scores:
-                        psev_sum += psev_scores[concept][value]
+                        psev_sum += psev_scores[concept].get(value, 0.0)
                     value = psev_sum
                 score_func = IMPROVING_AGENT_SCORING_FUCNTIONS.get(attribute_name)
                 if score_func:
@@ -600,7 +600,7 @@ class BasicQuery:
         self.results = [self.extract_result(record) for record in r]
 
     # Query
-    def linear_spoke_query(self, session):
+    def do_query(self, session):
         """Returns the SPOKE node label equivalent to `node_type`
 
         Parameters
