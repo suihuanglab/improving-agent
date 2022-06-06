@@ -1,22 +1,22 @@
 import logging
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
-from .psev_client import PsevClient
-from improving_agent.models import QNode
-from improving_agent.src.biolink.spoke_biolink_constants import (
-    SPOKE_LABEL_COMPOUND,
-    SPOKE_LABEL_DISEASE
+from improving_agent.src.biolink.spoke_biolink_constants import SPOKE_LABEL_COMPOUND
+
+from .psev_client import (
+    PsevClient,
+    PSEV_SERVICE_SUPPORTED_NODE_TYPES,
+    PSEV_SERVICE_SUPPORTED_PSEV_CONCEPT_TYPES
 )
+from improving_agent.models import QNode
 from improving_agent.src.config import app_config
 
 logger = logging.getLogger(__name__)
 
 
-SUPPORTED_PSEV_CONCEPT_TYPES = [SPOKE_LABEL_COMPOUND, SPOKE_LABEL_DISEASE]
-
-
 def get_psev_scores(concepts: List[Union[int, str]],
-                    identifiers: List[Union[int, str]]):
+                    identifiers: Optional[List[Union[int, str]]] = None,
+                    node_type: Optional[str] = None):
     """A wrapper function to call the psev-service to get psev scores
     for the requested nodes. Converts int IDs to str and vice versa upon
     return.
@@ -38,27 +38,46 @@ def get_psev_scores(concepts: List[Union[int, str]],
         else:
             raise ValueError('`concepts` must be list of str or int')
 
-    for _id in identifiers:
-        if isinstance(_id, int):
-            q_ids.append(str(_id))
-        elif isinstance(_id, str):
-            q_ids.append(_id)
-        else:
-            raise ValueError('`identifiers` must be list of str or int')
+    # psev service requires all node identifiers be str, so convert here
+    if identifiers:
+        for _id in identifiers:
+            if isinstance(_id, int):
+                q_ids.append(str(_id))
+            elif isinstance(_id, str):
+                q_ids.append(_id)
+            else:
+                raise ValueError('`identifiers` must be list of str or int')
 
+    # check that the node type is supported by PSEV service
+    if node_type and node_type not in PSEV_SERVICE_SUPPORTED_NODE_TYPES:
+        raise ValueError(f'`node_type may only be one of` {", ".join(PSEV_SERVICE_SUPPORTED_NODE_TYPES)}')
+
+    # query
     psev_client = PsevClient(app_config.PSEV_API_KEY, app_config.PSEV_SERVICE_URL)
     try:
-        result = psev_client.get_psev_scores(q_concepts, q_ids)
+        result = psev_client.get_psev_scores(q_concepts, q_ids, node_type)
     except Exception as e:
         logger.exception(
             f'Failed to retrieve PSEV values from psev service, error was: {e}'
         )
-        empty_results = {}
-        for concept in concepts:
-            for _id in identifiers:
-                empty_results[concept][_id] = 0
-        return empty_results
+        return {concept: {} for concept in concepts}
 
+    # handle the result
+    if not identifiers:  # node_type query
+        # Some node types (e.g. Gene) require that their identifiers
+        # be converted back to int from str. Handlers will need to be
+        # written accordingly to implement other node types not listed
+        # below.
+        if node_type not in [SPOKE_LABEL_COMPOUND]:
+            raise ValueError(
+                'This is a safety exception. Only some node types are '
+                'supported. Ensure that new node types do not need to be '
+                'converted back to a non-str and add them to the test '
+                'that raises this error.'
+            )
+        return result
+
+    # convert ids back to int, as necessary
     resulting_psevs = {}
     for concept in concepts:
         resulting_psevs[concept] = {}
@@ -76,7 +95,7 @@ def _get_supported_psev_concepts(qnode: QNode) -> List[Union[str, int]]:
     supported as PSEVs
     '''
     for spoke_label in qnode.spoke_labels:
-        if spoke_label in SUPPORTED_PSEV_CONCEPT_TYPES:
+        if spoke_label in PSEV_SERVICE_SUPPORTED_PSEV_CONCEPT_TYPES:
             return qnode.spoke_identifiers
 
     return []
