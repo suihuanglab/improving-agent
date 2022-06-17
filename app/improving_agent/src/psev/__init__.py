@@ -77,15 +77,16 @@ def get_psev_scores(concepts: List[Union[int, str]],
             )
         return result
 
-    # convert ids back to int, as necessary
     resulting_psevs = {}
     for concept in concepts:
+        if not result[concept]:  # no PSEV for concept
+            resulting_psevs[concept] = {identifier: 0.0 for identifier in identifiers}
+            continue
+
         resulting_psevs[concept] = {}
         for identifier in identifiers:
-            if isinstance(identifier, int):
-                resulting_psevs[concept][identifier] = result[concept][str(identifier)]
-            else:
-                resulting_psevs[concept][identifier] = result[concept][identifier]
+            # we check for strings here in case our local id is int
+            resulting_psevs[concept][identifier] = result[concept][str(identifier)]
 
     return resulting_psevs
 
