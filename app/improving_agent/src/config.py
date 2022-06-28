@@ -19,10 +19,19 @@ CONFIG_DIR = path.join(path.dirname(path.dirname(path.abspath(__file__))), 'conf
 class ApplicationConfig:
     sensitive_data = [NEO4J_PASS, PSEV_API_KEY]
 
-    def __init__(self, app_env, configs, neo4j_user, neo4j_pass, psev_api_key):
+    def __init__(
+        self,
+        app_env,
+        configs,
+        neo4j_pass,
+        neo4j_uri,
+        neo4j_user,
+        psev_api_key
+    ):
         self.APP_ENV = app_env
-        self.NEO4J_USER = neo4j_user
         self.NEO4J_PASS = neo4j_pass
+        self.NEO4J_URI = neo4j_uri
+        self.NEO4J_USER = neo4j_user
         self.PSEV_API_KEY = psev_api_key
 
         for config, value in configs['DEFAULT'].items():
@@ -78,9 +87,19 @@ config.read(path.join(CONFIG_DIR, f'{app_env}.cfg'))
 
 # neo4j configuration
 neo4j_user, neo4j_pass = _get_neo4j_creds(app_env, config)
+neo4j_uri = os.getenv(NEO4J_URI)
+if not neo4j_uri:
+    raise ValueError('No "NEO4J_URI" configured in the environment')
+
 
 # psev configuration
 psev_api_key = _get_psev_api_key(app_env, config)
 
-app_config = ApplicationConfig(app_env, config, neo4j_user, neo4j_pass,
-                               psev_api_key)
+app_config = ApplicationConfig(
+    app_env,
+    config,
+    neo4j_pass,
+    neo4j_uri,
+    neo4j_user,
+    psev_api_key
+)

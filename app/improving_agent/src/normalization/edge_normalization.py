@@ -9,17 +9,25 @@ from improving_agent.exceptions import (
 )
 from improving_agent.models import QEdge
 from improving_agent.src.biolink.biolink import EDGE, get_supported_biolink_descendants
-from improving_agent.src.biolink.spoke_biolink_constants import BIOLINK_SPOKE_EDGE_MAPPINGS, PREDICATES, SPOKE_ANY_TYPE
-
-BIOLINK_DISEASE = 'biolink:Disease'
-BIOLINK_DRUG = 'biolink:Drug'
-BIOLINK_TREATS = 'biolink:treats'
-BIOLINK_SMALL_MOL = 'biolink:SmallMolecule'
+from improving_agent.src.biolink.spoke_biolink_constants import (
+    BIOLINK_ASSOCIATION_TREATS,
+    BIOLINK_ENTITY_CHEMICAL_ENTITY,
+    BIOLINK_ENTITY_DISEASE,
+    BIOLINK_ENTITY_DRUG,
+    BIOLINK_ENTITY_SMALL_MOLECULE,
+    BIOLINK_SPOKE_EDGE_MAPPINGS,
+    PREDICATES,
+    SPOKE_ANY_TYPE,
+)
 
 KNOWLEDGE_TYPE_INFERRED = 'inferred'
 KNOWLEDGE_TYPE_KNOWN = 'known'
 SUPPORTED_KNOWLEDGE_TYPES = (KNOWLEDGE_TYPE_INFERRED, KNOWLEDGE_TYPE_KNOWN)
-SUPPORTED_INFERRED_DRUG_SUBJ = [BIOLINK_DRUG, BIOLINK_SMALL_MOL]
+SUPPORTED_INFERRED_DRUG_SUBJ = [
+    BIOLINK_ENTITY_CHEMICAL_ENTITY,
+    BIOLINK_ENTITY_DRUG,
+    BIOLINK_ENTITY_SMALL_MOLECULE
+]
 
 
 def _verify_qedge_kt_support(qedge, subj_qnode, obj_qnode):
@@ -37,7 +45,7 @@ def _verify_qedge_kt_support(qedge, subj_qnode, obj_qnode):
             f'imProving Agent only supports knowledge types: {", ".join(i for i in SUPPORTED_KNOWLEDGE_TYPES)}'
         )
     if qedge.knowledge_type == KNOWLEDGE_TYPE_INFERRED:
-        if qedge.predicates != [BIOLINK_TREATS]:
+        if qedge.predicates != [BIOLINK_ASSOCIATION_TREATS]:
             raise UnsupportedKnowledgeType(
                 'Only a single "biolink:treats" is supported for "inferred" knowledge_type'
             )
@@ -46,10 +54,10 @@ def _verify_qedge_kt_support(qedge, subj_qnode, obj_qnode):
                 'Inferred knowledge_type "biolink:treats" only supported qnode subject '
                 f'categories {", ".join(SUPPORTED_INFERRED_DRUG_SUBJ)}'
             )
-        if obj_qnode.categories != [BIOLINK_DISEASE]:
+        if obj_qnode.categories != [BIOLINK_ENTITY_DISEASE]:
             raise UnsupportedKnowledgeType(
                 'Inferred knowledge_type "biolink:treats" only supported qnode object '
-                f'categories {", ".join([BIOLINK_DISEASE])}'
+                f'categories {", ".join([BIOLINK_ENTITY_DISEASE])}'
             )
 
 

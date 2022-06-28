@@ -1,13 +1,18 @@
 from improving_agent.models import Edge, EdgeBinding, NodeBinding, Result
-from improving_agent.src.biolink.spoke_biolink_constants import SPOKE_LABEL_COMPOUND
 from improving_agent.exceptions import TemplateQuerySpecError, UnmatchedIdentifierError
 from improving_agent.src.basic_query import BasicQuery
+from improving_agent.src.biolink.spoke_biolink_constants import (
+    BIOLINK_ASSOCIATION_TREATS,
+    BIOLINK_ENTITY_CHEMICAL_ENTITY,
+    BIOLINK_ENTITY_DISEASE,
+    SPOKE_LABEL_COMPOUND,
+    SPOKE_LABEL_DISEASE,
+)
 from improving_agent.src.normalization.edge_normalization import (
-    BIOLINK_TREATS,
-    BIOLINK_DISEASE,
     KNOWLEDGE_TYPE_INFERRED,
     SUPPORTED_INFERRED_DRUG_SUBJ
 )
+from improving_agent.src.normalization.node_normalization import format_curie_for_sri
 from improving_agent.src.provenance import IMPROVING_AGENT_PROVENANCE_ATTR
 from improving_agent.src.psev import get_psev_scores
 from improving_agent.util import get_evidara_logger
@@ -21,18 +26,18 @@ CYPHER_COMPOUND_SEARCH = """
 """
 
 
-def extract_compound_result(record, querier):
+def _extract_compound_result(record, querier):
     node_info = record['c']
     identifier = node_info['identifier']
     result_node = querier.make_result_node(node_info, identifier)
     return identifier, result_node
 
 
-def compound_search(tx, identifiers, querier):
+def _compound_search(tx, identifiers, querier):
     records = tx.run(CYPHER_COMPOUND_SEARCH, identifiers=identifiers)
     result_nodes = {}
     for record in records:
-        identifier, result_node = extract_compound_result(record, querier)
+        identifier, result_node = _extract_compound_result(record, querier)
         result_nodes[identifier] = result_node
     return result_nodes
 
@@ -63,7 +68,7 @@ class DrugMayTreatDisease:
         for qedge in qedges.values():
             if (
                 qedge.knowledge_type != KNOWLEDGE_TYPE_INFERRED
-                or qedge.predicates != [BIOLINK_TREATS]
+                or qedge.predicates != [BIOLINK_ASSOCIATION_TREATS]
             ):
                 return False
         if len(qnodes) != 2:
@@ -72,7 +77,7 @@ class DrugMayTreatDisease:
                    for cat
                    in qnodes[qedge.subject].categories):
             return False
-        if qnodes[qedge.object].categories != [BIOLINK_DISEASE]:
+        if qnodes[qedge.object].categories != [BIOLINK_ENTITY_DISEASE]:
             return False
 
         return True
@@ -100,6 +105,17 @@ class DrugMayTreatDisease:
         if not compound_psev_scores:
             raise UnmatchedIdentifierError(
                 f'No ML predictions available for disease equivalent to {disease_concept}'
+            )
+
+        # get disease qnode-id
+        qnode_id_disease_node = None
+        for qnode_id, qnode in self.qnodes.items():
+            if SPOKE_LABEL_DISEASE in qnode.spoke_labels:
+                qnode_id_disease_node = qnode_id
+                break
+        if not qnode_id_disease_node:
+            raise UnmatchedIdentifierError(
+                'Could not find a supported qnode binding for template query'
             )
 
         # do lookup
@@ -136,17 +152,27 @@ class DrugMayTreatDisease:
         new_results = []
 
         node_ids = list(sorted_compound_scores.keys())
-        result_nodes = session.read_transaction(compound_search, node_ids, basic_query)
+        result_nodes = session.read_transaction(_compound_search, node_ids, basic_query)
 
-        for i, id_ in enumerate(result_nodes):
-            result_edge = self.make_result_edge(id_, disease_concept)
+        # peek at knowledge graph to find the node binding for the disease
+        if results:
+            disease_identifier = results[0].node_bindings[qnode_id_disease_node][0].id
+        else:
+            disease_identifier = self.qnodes[qnode_id_disease_node].ids[0]
+
+        for i, spoke_id in enumerate(result_nodes):
+            biolink_id = format_curie_for_sri(
+                BIOLINK_ENTITY_CHEMICAL_ENTITY,
+                spoke_id,
+            )
+            result_edge = self.make_result_edge(biolink_id, disease_identifier)
             self.knowledge_graph['edges'][f'inferred_{i}'] = result_edge
-            self.knowledge_graph['nodes'][id_] = result_nodes[id_]
+            self.knowledge_graph['nodes'][biolink_id] = result_nodes[spoke_id]
             new_results.append(Result(
-                node_bindings={self.node_id_disease: NodeBinding(disease_concept),
-                               self.node_id_compound: NodeBinding(id_)},
-                edge_bindings={self.edge_id_treats: EdgeBinding(f'inferred_{i}')},
-                score=sorted_compound_scores[id_]
+                node_bindings={self.node_id_disease: [NodeBinding(disease_identifier)],
+                               self.node_id_compound: [NodeBinding(biolink_id)]},
+                edge_bindings={self.edge_id_treats: [EdgeBinding(f'inferred_{i}')]},
+                score=sorted_compound_scores[spoke_id] * 10000
             ))
 
         results = sorted(results + new_results, key=lambda x: x.score, reverse=True)
