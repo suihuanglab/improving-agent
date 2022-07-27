@@ -50,7 +50,7 @@ def validate_constraint_support(constraint, spoke_labels):
 
     Parameters
     ----------
-    constraint (models.QueryConstraint): single constraint on a QNode
+    constraint (models.AttributeConstraint): single constraint on a QNode
     spoke_labels (list of str): list of spoke labels attached to a QNode
     '''
     if constraint.unit_id is not None or constraint.unit_name is not None:
@@ -130,7 +130,7 @@ def get_node_constraint_cypher_clause(qnode, name, constraint):
     ----------
     qnode (models.QNode): a single QNode from the query graph
     name (str): Cypher alias for a given query part
-    constraint (models.QueryConstraint): a constraint on `qnode`
+    constraint (models.AttributeConstraint): a constraint on `qnode`
 
     TODO: consider moving to a dedicated Cypher compiler module
     '''

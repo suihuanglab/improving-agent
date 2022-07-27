@@ -8,7 +8,7 @@ import boto3
 APP_ENV_LOCAL = 'local'
 APP_ENV_PROD = 'prod'
 NEO4J_PASS = 'NEO4J_PASS'
-NEO4J_URI = 'NEO4J_URI'
+NEO4J_SPOKE_URI = 'NEO4J_SPOKE_URI'
 NEO4J_USER = 'NEO4J_USER'
 PSEV_API_KEY = 'PSEV_API_KEY'
 
@@ -87,9 +87,9 @@ config.read(path.join(CONFIG_DIR, f'{app_env}.cfg'))
 
 # neo4j configuration
 neo4j_user, neo4j_pass = _get_neo4j_creds(app_env, config)
-neo4j_uri = os.getenv(NEO4J_URI)
+neo4j_uri = os.getenv(NEO4J_SPOKE_URI)
 if not neo4j_uri:
-    raise ValueError('No "NEO4J_URI" configured in the environment')
+    raise ValueError('No "NEO4J_SPOKE_URI" configured in the environment')
 
 
 # psev configuration

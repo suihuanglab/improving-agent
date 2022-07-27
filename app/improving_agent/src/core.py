@@ -2,7 +2,7 @@
 # interactions
 from datetime import datetime
 
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, NotImplemented
 
 from improving_agent.__main__ import get_db
 from improving_agent.exceptions import (
@@ -16,7 +16,7 @@ from improving_agent.exceptions import (
     UnsupportedTypeError
 )
 from improving_agent.models import Message, Query, QueryGraph, Response
-from improving_agent.models import Schema2 as Workflow
+from improving_agent.models import Schema1 as Workflow
 from improving_agent.src.basic_query import BasicQuery
 from improving_agent.src.normalization.edge_normalization import validate_normalize_qedges
 from improving_agent.src.normalization.node_normalization import validate_normalize_qnodes
@@ -141,6 +141,8 @@ def try_query(query):
         return Response(message=Message(), status="Bad Request", description=str(e)), 400
     except (NonLinearQueryError, UnmatchedIdentifierError, UnsupportedTypeError) as e:
         return Response(Message(), status="Query unprocessable", description=f'{str(e)}; returning empty message...'), 200
+    except NotImplemented as e:
+        return Response(message=Message(), status="Not Implemented", description=str(e)), NotImplemented.code
     except Exception as e:
         logger.exception(str(e))
         timestamp = datetime.now().isoformat()

@@ -21,6 +21,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_RELATED_TO,
     BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_DRUG,
+    BIOLINK_ENTITY_GENE,
     BIOLINK_ENTITY_SMALL_MOLECULE,
     BIOLINK_SLOT_HIGHEST_FDA_APPROVAL,
     MAX_PHASE_FDA_APPROVAL_MAP,
@@ -51,6 +52,13 @@ ATTRIBUTE_MAPS = {
     SPOKE_GRAPH_TYPE_EDGE: SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
     SPOKE_GRAPH_TYPE_NODE: SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS
 }
+
+# grouped constants
+SUPPORTED_COMPOUND_CATEGORIES = [
+    BIOLINK_ENTITY_CHEMICAL_ENTITY,
+    BIOLINK_ENTITY_DRUG,
+    BIOLINK_ENTITY_SMALL_MOLECULE,
+]
 
 # what follows is (hopefully) temporary handling of "special" attributes,
 # e.g. max phase transformation to biolink's highest fda approval enums
@@ -134,11 +142,12 @@ def make_qnode_filter_clause(name, query_node):
 
     identifiers_clause = ''
     if query_node.spoke_identifiers:
-        identifiers_clause = f'{name}.identifier IN [{",".join(query_node.spoke_identifiers)}]'
+        spoke_search_ids = list(query_node.spoke_identifiers.keys())
+        identifiers_clause = f'{name}.identifier IN [{",".join(spoke_search_ids)}]'
         # TODO: this will quickly become untenable as we add better querying
         # and we'll need specific funcs; see also drug below
         if SPOKE_LABEL_COMPOUND in query_node.spoke_labels:
-            identifiers_clause = f'({identifiers_clause} OR {name}.chembl_id IN [{",".join(query_node.spoke_identifiers)}])'
+            identifiers_clause = f'({identifiers_clause} OR {name}.chembl_id IN [{",".join(spoke_search_ids)}])'
     if query_node.categories:
         if (
             BIOLINK_ENTITY_DRUG in query_node.categories
@@ -433,8 +442,8 @@ class BasicQuery:
         if attribute_mapping.attribute_source:  # temporary until node mappings are done
             attribute.attribute_source = attribute_mapping.attribute_source
 
-        if attribute_mapping.subattributes:
-            attribute.attributes = attribute_mapping.subattributes
+        if attribute_mapping.attributes:
+            attribute.attributes = attribute_mapping.attributes
         return attribute
 
     def make_result_node(self, n4j_object, spoke_curie):
@@ -540,6 +549,34 @@ class BasicQuery:
 
         return result_edge
 
+    def find_query_id(self, query_name, spoke_curie, result_node):
+        qnode_id = self.query_mapping["nodes"][query_name]
+        qnode = self.qnodes[qnode_id]
+        if not qnode.ids:
+            return None
+
+        query_id = None
+        if any(i in result_node.categories for i in SUPPORTED_COMPOUND_CATEGORIES):
+            drugbank_id, chembl_id = None, None
+            for attribute in result_node.attributes:
+                if attribute.original_attribute_name == 'drugbank_id':
+                    drugbank_id = attribute.value
+                    continue
+                if attribute.original_attribute_name == 'chembl_id':
+                    chembl_id = attribute.value
+            for identifier in [spoke_curie, drugbank_id, chembl_id]:
+                query_id = qnode.spoke_identifiers.get(f"'{identifier}'")
+                if query_id:
+                    break
+
+        elif BIOLINK_ENTITY_GENE in result_node.categories:
+            # don't double quote
+            query_id = qnode.spoke_identifiers.get(f"{spoke_curie}")
+        else:
+            query_id = qnode.spoke_identifiers.get(f"'{spoke_curie}'")
+
+        return query_id
+
     def extract_result(self, n4j_result):
         """Constructs a reasoner-standard result from the result of a neo4j
         query
@@ -564,7 +601,13 @@ class BasicQuery:
                 spoke_curie = n4j_result[name]['identifier']
                 result_node = self.make_result_node(n4j_result[name], spoke_curie)
                 self.knowledge_graph['nodes'][spoke_curie] = result_node
-                node_bindings[self.query_mapping['nodes'][name]] = models.NodeBinding(spoke_curie)
+
+                # get query_id for mapping this node back to a specific
+                # CURIE on a QNode's ids
+                query_id = self.find_query_id(name, spoke_curie, result_node)
+                node_bindings[self.query_mapping['nodes'][name]] = models.NodeBinding(
+                    spoke_curie, query_id
+                )
 
             else:
                 # these are ints, but we want them as strings for TRAPI spec
@@ -590,7 +633,10 @@ class BasicQuery:
         for result in self.results:
             new_node_bindings = {}
             for qnode, node in result.node_bindings.items():
-                new_node_bindings[qnode] = [models.NodeBinding(node_search_results[node.id])]
+                normalized_node_id = node_search_results[node.id]
+                if node.query_id == normalized_node_id:
+                    node.query_id = None
+                new_node_bindings[qnode] = [models.NodeBinding(normalized_node_id, node.query_id)]
             new_results.append(models.Result(new_node_bindings, result.edge_bindings))
 
         self.results = new_results
