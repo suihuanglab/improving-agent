@@ -11,12 +11,17 @@ services:
   web:
     build: app/
     environment:
-      APP_ENV: "${IA_APP_ENV}"
+      APP_ENV_IA: "${APP_ENV_IA}"
+      AWS_REGION: "${AWS_REGION}"
       AWS_SHARED_CREDENTIALS_FILE: '/.aws/credentials'
-      PSEV_API_KEY: "${PSEV_API_KEY}"
+      NEO4J_SPOKE_HOSTNAME: "${NEO4J_SPOKE_HOSTNAME}"
+      NEO4J_SPOKE_PASS: "${NEO4J_SPOKE_PASS}"
+      NEO4J_SECRETS_NAME: "${NEO4J_SECRETS_NAME}"
       NEO4J_SPOKE_USER: "${NEO4J_SPOKE_USER}"
-      NEO4J_SPOKE_PASSWORD: "${NEO4J_SPOKE_PASSWORD}"
-      NEO4J_SPOKE_URI: "${NEO4J_SPOKE_URI}"
+      PSEV_API_KEY: "${PSEV_API_KEY}"
+      PSEV_SECRETS_NAME: "${PSEV_SECRETS_NAME}"
+      PSEV_SERVICE_HOSTNAME: "${PSEV_SERVICE_HOSTNAME}"
+
     networks:
       spoke-components:
         aliases:
