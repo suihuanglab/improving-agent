@@ -340,8 +340,7 @@ def get_spoke_identifiers_from_normalized_node(spoke_labels, normalized_node):
     we should use biolink categories here when the mapping is complete
     """
     if not spoke_labels:
-        # get potential spoke labels from NN when a category wasn't sent
-        # along with the query
+        # get potential spoke labels from NN
         spoke_labels = []
         for biolink_entity in normalized_node[SRI_NN_RESPONSE_VALUE_TYPE]:
             if biolink_entity in (BIOLINK_ENTITY, BIOLINK_ENTITY_NAMED_THING):

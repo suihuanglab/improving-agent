@@ -71,6 +71,8 @@ class MetaNode(Model):
         """
         if id_prefixes is None:
             raise ValueError("Invalid value for `id_prefixes`, must not be `None`")  # noqa: E501
+        if id_prefixes is not None and len(id_prefixes) < 1:
+            raise ValueError("Invalid value for `id_prefixes`, number of items must be greater than or equal to `1`")  # noqa: E501
 
         self._id_prefixes = id_prefixes
 

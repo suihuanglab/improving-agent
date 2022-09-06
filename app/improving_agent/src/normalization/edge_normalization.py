@@ -1,6 +1,6 @@
 from collections import defaultdict
 
-from werkzeug.exceptions import BadRequest
+from werkzeug.exceptions import BadRequest, NotImplemented
 
 from improving_agent.exceptions import (
     MissingComponentError,
@@ -16,13 +16,14 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_DRUG,
     BIOLINK_ENTITY_SMALL_MOLECULE,
     BIOLINK_SPOKE_EDGE_MAPPINGS,
+    KNOWLEDGE_TYPE_INFERRED,
+    KNOWLEDGE_TYPE_LOOKUP,
     PREDICATES,
     SPOKE_ANY_TYPE,
 )
 
-KNOWLEDGE_TYPE_INFERRED = 'inferred'
-KNOWLEDGE_TYPE_KNOWN = 'known'
-SUPPORTED_KNOWLEDGE_TYPES = (KNOWLEDGE_TYPE_INFERRED, KNOWLEDGE_TYPE_KNOWN)
+
+SUPPORTED_KNOWLEDGE_TYPES = (KNOWLEDGE_TYPE_INFERRED, KNOWLEDGE_TYPE_LOOKUP)
 SUPPORTED_INFERRED_DRUG_SUBJ = [
     BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_DRUG,
@@ -38,8 +39,8 @@ def _verify_qedge_kt_support(qedge, subj_qnode, obj_qnode):
     sense to move this function to a different module and refactor it
     accordingly.
     """
-    if qedge.knowledge_type is None or qedge.knowledge_type == KNOWLEDGE_TYPE_KNOWN:
-        return None
+    if qedge.knowledge_type is None or qedge.knowledge_type == KNOWLEDGE_TYPE_LOOKUP:
+        return
     if qedge.knowledge_type not in SUPPORTED_KNOWLEDGE_TYPES:
         raise UnsupportedKnowledgeType(
             f'imProving Agent only supports knowledge types: {", ".join(i for i in SUPPORTED_KNOWLEDGE_TYPES)}'
@@ -65,17 +66,23 @@ def _deserialize_qedge(qedge_id, qedge):
     try:
         subject = qedge['subject']
         object_ = qedge['object']
-        constraints = qedge.get('constraints')
-        predicates = qedge.get('predicates')
+
+        constraints = qedge.get('attribute_constraints')
         knowledge_type = qedge.get('knowledge_type')
+        predicates = qedge.get('predicates')
+        qualifiers = qedge.get('qualifier_constraints')
+
+        if qualifiers:
+            raise NotImplemented('Qualifier constraints are not supported by imProving Agent.')
+
         qedge = QEdge(
+            attribute_constraints=constraints,
+            knowledge_type=knowledge_type,
             predicates=predicates,
-            subject=subject,
             object=object_,
-            constraints=constraints
+            subject=subject,
         )
         setattr(qedge, 'qedge_id', qedge_id)
-        setattr(qedge, 'knowledge_type', knowledge_type)
 
     except (KeyError, TypeError):
         raise BadRequest(f'Could not deserialize query edge {qedge_id}')

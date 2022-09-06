@@ -1,5 +1,5 @@
 from collections import defaultdict, namedtuple
-from improving_agent.models import SubAttribute
+from improving_agent.models import Attribute
 # special any type
 SPOKE_ANY_TYPE = '*'  # TODO make this work for edges
 
@@ -649,7 +649,7 @@ BIOLINK_SPOKE_EDGE_MAPPINGS[BIOLINK_ASSOCIATION_RELATED_TO] = [SPOKE_ANY_TYPE]
 Infores = namedtuple('Infores', ['infores_id', 'biolink_type'])
 SpokeAttributeMapping = namedtuple(
     'SpokeAttributeMapping',
-    ['biolink_type', 'attribute_source', 'subattributes'],
+    ['biolink_type', 'attribute_source', 'attributes'],
     defaults=[None]
 )
 
@@ -753,14 +753,14 @@ INFORES_UBERON = Infores('infores:uberon', BL_ATTR_ORIGINAL_KNOWLEDGE_SOURCE)
 INFORES_UNIPROT = Infores('infores:uniprot', BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE)
 
 SARS_CoV_2_SUBATTRIBUTES = [
-    SubAttribute(
+    Attribute(
         attribute_source=INFORES_SPOKE.infores_id,
         attribute_type_id=BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE,
         original_attribute_name=SPOKE_PROPERTY_PUBMED,
         value_type_id=BIOLINK_ENTITY_INFORMATION_RESOURCE,
         value=INFORES_SPOKE.infores_id,
     ),
-    SubAttribute(
+    Attribute(
         attribute_source=INFORES_SPOKE.infores_id,
         attribute_type_id=BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE,
         original_attribute_name=SPOKE_PROPERTY_PUBMED,
@@ -1317,4 +1317,16 @@ MAX_PHASE_FDA_APPROVAL_MAP = {
     2: 'FDA Clinical Research Phase 2',
     3: 'FDA Clinical Research Phase 3',
     4: 'regular approval'
+}
+
+
+# knowledge types
+KNOWLEDGE_TYPE_INFERRED = 'inferred'
+KNOWLEDGE_TYPE_LOOKUP = 'lookup'
+
+# this could be added to the predicate config above, but
+# we hope to retire that soon. Given the limited support, really a
+# special case, we just define the one instance here
+BIOLINK_ASSOCIATION_KNOWLEDGE_TYPE_MAP = {
+    BIOLINK_ASSOCIATION_TREATS: [KNOWLEDGE_TYPE_INFERRED, KNOWLEDGE_TYPE_LOOKUP]
 }

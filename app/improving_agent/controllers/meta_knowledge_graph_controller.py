@@ -7,13 +7,13 @@ from improving_agent.models.meta_knowledge_graph import MetaKnowledgeGraph  # no
 from improving_agent.models.meta_attribute import MetaAttribute
 from improving_agent.models.meta_edge import MetaEdge
 from improving_agent.models.meta_node import MetaNode
-from improving_agent import util
 from improving_agent.src.biolink.spoke_biolink_constants import (
+    BIOLINK_ASSOCIATION_KNOWLEDGE_TYPE_MAP,
     BIOLINK_ENTITY_NAMED_THING,
     BIOLINK_SPOKE_NODE_MAPPINGS,
     SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
     SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS,
-    PREDICATES
+    PREDICATES,
 )
 from improving_agent.src.normalization.sri_node_normalizer import (
     SRI_NN_CURIE_PREFIX,
@@ -94,11 +94,13 @@ def _make_meta_kg():
         for biolink_object, biolink_predicate_map in biolink_objects.items():
             for predicate, spoke_edges in biolink_predicate_map.items():
                 attributes = _get_edge_meta_attributes(spoke_edges)
+                knowledge_types = BIOLINK_ASSOCIATION_KNOWLEDGE_TYPE_MAP.get(predicate)
                 edges.append(MetaEdge(
                     subject=biolink_subject,
                     object=biolink_object,
                     predicate=predicate,
-                    attributes=attributes
+                    attributes=attributes,
+                    knowledge_types=knowledge_types,
                 ))
 
     return MetaKnowledgeGraph(nodes=nodes, edges=edges)

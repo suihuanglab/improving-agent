@@ -14,8 +14,11 @@ from improving_agent.src.biolink.spoke_biolink_constants import BIOLINK_SPOKE_NO
 from improving_agent.util import get_evidara_logger
 
 driver = neo4j.GraphDatabase.driver(
-    app_config.NEO4J_URI,
-    auth=(app_config.NEO4J_USER, app_config.NEO4J_PASS),
+    app_config.NEO4J_SPOKE_URI,
+    auth=(
+        app_config.NEO4J_SPOKE_USER,
+        app_config.NEO4J_SPOKE_PASS,
+    ),
     max_connection_lifetime=200,
 )
 logger = get_evidara_logger(__name__)

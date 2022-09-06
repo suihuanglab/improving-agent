@@ -51,22 +51,6 @@ class MetaAttribute(Model):
         self._constraint_use = constraint_use
         self._constraint_name = constraint_name
 
-    def __eq__(self, other):
-        if not isinstance(other, MetaAttribute):
-            return False
-
-        if all([
-            self._attribute_type_id ==         other.attribute_type_id,
-            self._attribute_source ==          other.attribute_source,
-            self._original_attribute_names ==  other.original_attribute_names,
-            self._constraint_use ==            other.constraint_use,
-            self._constraint_name ==           other.constraint_name,
-        ]):
-            return True
-
-        else:
-            return False
-
     @classmethod
     def from_dict(cls, dikt) -> 'MetaAttribute':
         """Returns the dict as a model
@@ -146,6 +130,8 @@ class MetaAttribute(Model):
         :param original_attribute_names: The original_attribute_names of this MetaAttribute.
         :type original_attribute_names: List[str]
         """
+        if original_attribute_names is not None and len(original_attribute_names) < 1:
+            raise ValueError("Invalid value for `original_attribute_names`, number of items must be greater than or equal to `1`")  # noqa: E501
 
         self._original_attribute_names = original_attribute_names
 

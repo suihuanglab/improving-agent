@@ -10,6 +10,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
 )
 
 PSEV_SERVICE_CONCEPTS = 'concepts'
+PSEV_SERVICE_HEADER_X_API_KEY = 'X-API-KEY'
 PSEV_SERVICE_IDENTIFIERS = 'node_identifiers'
 PSEV_SERVICE_MORE_AVAILABLE = 'more_available'
 PSEV_SERVICE_NODE_TYPE = 'node_type'
@@ -24,8 +25,15 @@ class PsevClient:
         self._api_key = api_key
         self._service_url = '/'.join([service_url, PSEV_SERVICE_PSEV_ENDPOINT])
 
-    def _call(self, url, params, req_body):
-        r = requests.post(url, params=params, json=req_body)
+    def _call(
+        self,
+        url,
+        params,
+        req_body,
+        headers={},
+    ):
+        headers = {**headers, PSEV_SERVICE_HEADER_X_API_KEY: self._api_key}
+        r = requests.post(url, headers=headers, params=params, json=req_body)
         try:
             r.raise_for_status()
         except requests.exceptions.HTTPError as e:
@@ -45,7 +53,6 @@ class PsevClient:
 
         params = {
             PSEV_SERVICE_PAGE: page,
-            'token': self._api_key,
         }
         req_body = {
             PSEV_SERVICE_IDENTIFIERS: node_identifiers,
