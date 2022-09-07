@@ -60,7 +60,7 @@ pipeline {
         stage('Deploy to AWS EKS Blue') {
             steps {
                 sshagent (credentials: ['labshare-svc']) {
-                   sh 'git clone git@github.com:Sphinx-Automation/translator-ops.git'
+                   sh 'git clone -b OM-7177 git@github.com:Sphinx-Automation/translator-ops.git'
                 }
                 dir('translator-ops/ops/improving-agent/improving-agent/') {
                     configFileProvider([
