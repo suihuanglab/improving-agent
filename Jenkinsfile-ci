@@ -65,6 +65,7 @@ pipeline {
                 dir('translator-ops/ops/improving-agent/improving-agent/') {
                     configFileProvider([
                         configFile(fileId: 'values-ci.yaml', targetLocation: 'values-ncats.yaml'),
+                        configFile(fileId: 'config.py', targetLocation: 'configs/config.py'),
                     ]){
                         withAWS(credentials:'aws-ifx-deploy') {
                             sh '''
