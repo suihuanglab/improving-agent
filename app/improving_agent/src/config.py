@@ -24,8 +24,8 @@ CONFIG_DIR = path.join(path.dirname(path.dirname(path.abspath(__file__))), 'conf
 
 class ApplicationConfig:
     sensitive_data = [
-        # ENV_VAR_NEO4J_SPOKE_PASS,
-        # ENV_VAR_PSEV_API_KEY,
+        ENV_VAR_NEO4J_SPOKE_PASS,
+        ENV_VAR_PSEV_API_KEY,
     ]
 
     def __init__(
@@ -43,11 +43,7 @@ class ApplicationConfig:
         self.NEO4J_SPOKE_USER = neo4j_spoke_user
         self.NEO4J_SPOKE_URI = neo4j_spoke_uri
         self.PSEV_API_KEY = psev_api_key
-        if app_env in (APP_ENV_DEV, APP_ENV_LOCAL):
-            psev_port = '80'
-        else:
-            psev_port = '3080'
-        self.PSEV_SERVICE_URL = f'http://{psev_service_hostname}:{psev_port}'
+        self.PSEV_SERVICE_URL = f'http://{psev_service_hostname}:80'
 
         for config, value in configs['DEFAULT'].items():
             setattr(self, config.upper(), value)
