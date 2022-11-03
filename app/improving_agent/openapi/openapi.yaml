@@ -28,8 +28,17 @@ info:
     rate_limit: 20
     test_data_location: https://github.com/suihuanglab/improving-agent/tree/main/test-data
 servers:
-- description: development
-  url: https://ia.healthdatascience.cloud/api/v1.3/
+- url: https://ia.transltr.io/api/v1.3/
+  description: ITRB Production server
+  x-maturity: production
+- url: https://ia.test.transltr.io/api/v1.3/
+  description: ITRB Test server
+  x-maturity: testing
+- url: https://ia.ci.transltr.io/api/v1.3/
+  description: ITRB CI server
+  x-maturity: staging
+- url: https://ia.healthdatascience.cloud/api/v1.3/
+  description: development
   x-maturity: development
 tags:
 - description: "Retreive the meta knowledge graph representation of this TRAPI web\
