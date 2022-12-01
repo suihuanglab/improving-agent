@@ -27,6 +27,7 @@ info:
       - lookup
     batch_size_limit: 200
     rate_limit: 20
+    test_data_location: https://github.com/suihuanglab/improving-agent/blob/main/test-data/test-data.json
 servers:
   - url: https://ia.transltr.io/api/v1.3/
     description: ITRB Production server
