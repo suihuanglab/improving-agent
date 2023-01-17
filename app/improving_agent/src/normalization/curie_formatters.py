@@ -30,7 +30,6 @@ from .sri_node_normalizer import (
 from improving_agent.exceptions import UnsupportedTypeError
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY,
-    BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_GENE,
     BIOLINK_ENTITY_GENE_FAMILY,
     BIOLINK_ENTITY_MOLECULAR_ACTIVITY,
@@ -39,6 +38,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_PATHWAY,
     BIOLINK_ENTITY_PROTEIN,
     BIOLINK_ENTITY_PHENOTYPIC_FEATURE,
+    BIOLINK_ENTITY_SMALL_MOLECULE,
     BIOLINK_SPOKE_NODE_MAPPINGS,
     SPOKE_LABEL_ANATOMY,
     SPOKE_LABEL_ANATOMY_CELL_TYPE,
@@ -126,17 +126,17 @@ def register_search_curie_formatter(node_type, regex):
     return wrapper
 
 
-@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_ENTITY, '^CHEMBL[0-9]{1,7}$')
+@register_search_curie_formatter(BIOLINK_ENTITY_SMALL_MOLECULE, '^CHEMBL[0-9]{1,7}$')
 def _format_chembl_for_search(curie, source=None):
     return f"CHEMBL.COMPOUND:{curie}"
 
 
-@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_ENTITY, '^DB[0-9]{5}$')
+@register_search_curie_formatter(BIOLINK_ENTITY_SMALL_MOLECULE, '^DB[0-9]{5}$')
 def _format_drugbank_for_search(curie, source=None):
     return f'DRUGBANK:{curie}'
 
 
-@register_search_curie_formatter(BIOLINK_ENTITY_CHEMICAL_ENTITY, '^(C|G)[0-9]{5}$')
+@register_search_curie_formatter(BIOLINK_ENTITY_SMALL_MOLECULE, '^(C|G)[0-9]{5}$')
 def _format_kegg_compound_for_search(curie, source=None):
     return f'KEGG.COMPOUND:{curie}'
 

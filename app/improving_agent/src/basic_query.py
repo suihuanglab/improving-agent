@@ -5,6 +5,24 @@ from string import ascii_letters
 import neo4j
 from improving_agent import models  # TODO: replace with direct imports after fixing definitions
 from improving_agent.exceptions import MissingComponentError, NonLinearQueryError
+from improving_agent.src.biolink.spoke_biolink_constants import (
+    BIOLINK_ASSOCIATION_TYPE,
+    BIOLINK_ASSOCIATION_RELATED_TO,
+    BIOLINK_ENTITY_CHEMICAL_ENTITY,
+    BIOLINK_ENTITY_DRUG,
+    BIOLINK_ENTITY_GENE,
+    BIOLINK_ENTITY_SMALL_MOLECULE,
+    BIOLINK_SLOT_HIGHEST_FDA_APPROVAL,
+    MAX_PHASE_FDA_APPROVAL_MAP,
+    QUALIFIERS,
+    SPOKE_ANY_TYPE,
+    SPOKE_BIOLINK_EDGE_MAPPINGS,
+    SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
+    SPOKE_BIOLINK_NODE_MAPPINGS,
+    SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS,
+    SPOKE_LABEL_COMPOUND,
+    SPOKE_PROPERTY_NATIVE_SPOKE,
+)
 from improving_agent.src.constraints import get_node_constraint_cypher_clause
 from improving_agent.src.improving_agent_constants import (
     ATTRIBUTE_TYPE_PSEV_WEIGHT,
@@ -15,24 +33,6 @@ from improving_agent.src.kps.cohd import annotate_edges_with_cohd
 # from improving_agent.src.kps.text_miner import TextMinerClient
 from improving_agent.src.normalization import SearchNode
 from improving_agent.src.normalization.node_normalization import normalize_spoke_nodes_for_translator
-from improving_agent.src.psev import get_psev_scores
-from improving_agent.src.biolink.spoke_biolink_constants import (
-    BIOLINK_ASSOCIATION_TYPE,
-    BIOLINK_ASSOCIATION_RELATED_TO,
-    BIOLINK_ENTITY_CHEMICAL_ENTITY,
-    BIOLINK_ENTITY_DRUG,
-    BIOLINK_ENTITY_GENE,
-    BIOLINK_ENTITY_SMALL_MOLECULE,
-    BIOLINK_SLOT_HIGHEST_FDA_APPROVAL,
-    MAX_PHASE_FDA_APPROVAL_MAP,
-    SPOKE_ANY_TYPE,
-    SPOKE_BIOLINK_EDGE_MAPPINGS,
-    SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
-    SPOKE_BIOLINK_NODE_MAPPINGS,
-    SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS,
-    SPOKE_LABEL_COMPOUND,
-    SPOKE_PROPERTY_NATIVE_SPOKE,
-)
 from improving_agent.src.provenance import (
     IMPROVING_AGENT_PROVENANCE_ATTR,
     SPOKE_KP_PROVENANCE_ATTR,
@@ -40,6 +40,8 @@ from improving_agent.src.provenance import (
     make_default_provenance_attribute,
     make_provenance_attributes,
 )
+from improving_agent.src.psev import get_psev_scores
+from improving_agent.src.result_handling import get_edge_qualifiers
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)
@@ -176,7 +178,6 @@ def make_qnode_filter_clause(name, query_node):
         return f'({filter_clause})'
 
     return ''
-
 
 def make_qedge_cypher_repr(name, query_edge):
     edge_repr = f'[{name}'
@@ -518,6 +519,9 @@ class BasicQuery:
         if not biolink_map_info:
             predicate = BIOLINK_ASSOCIATION_RELATED_TO
         else:
+            qualifiers = biolink_map_info.get(QUALIFIERS)
+            if qualifiers:
+                qualifiers = get_edge_qualifiers(qualifiers)
             predicate = biolink_map_info[BIOLINK_ASSOCIATION_TYPE]
 
         edge_attributes = []
@@ -540,11 +544,11 @@ class BasicQuery:
         edge_attributes = provenance_attributes + edge_attributes
 
         result_edge = models.Edge(
-            # TODO get correlations score for P100/cohort data
-            predicate=predicate,
-            subject=n4j_object.start_node["identifier"],
+            attributes=edge_attributes,
             object=n4j_object.end_node["identifier"],
-            attributes=edge_attributes
+            predicate=predicate,
+            qualifiers=qualifiers,
+            subject=n4j_object.start_node["identifier"],
         )
 
         return result_edge

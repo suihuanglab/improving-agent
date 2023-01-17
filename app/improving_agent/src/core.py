@@ -13,6 +13,7 @@ from improving_agent.exceptions import (
     UnmatchedIdentifierError,
     UnsupportedConstraint,
     UnsupportedKnowledgeType,
+    UnsupportedQualifier,
     UnsupportedTypeError
 )
 from improving_agent.models import Message, Query, QueryGraph, Response
@@ -116,7 +117,9 @@ def process_query(raw_json):
     with get_db() as session:
         template_query = match_template_queries(qedges, qnodes)
         if template_query:
-            querier = template_query(qnodes, qedges, query_options, query.max_results)
+            # decrease max result count
+            max_results = query.max_results if query.max_results < 300 else 300
+            querier = template_query(qnodes, qedges, query_options, max_results)
         else:
             querier = BasicQuery(qnodes, qedges, query_options, query.max_results)
         results, knowledge_graph = querier.do_query(session)
@@ -139,7 +142,12 @@ def try_query(query):
         TemplateQuerySpecError
     ) as e:
         return Response(message=Message(), status="Bad Request", description=str(e)), 400
-    except (NonLinearQueryError, UnmatchedIdentifierError, UnsupportedTypeError) as e:
+    except (
+        NonLinearQueryError,
+        UnmatchedIdentifierError,
+        UnsupportedQualifier,
+        UnsupportedTypeError,
+    ) as e:
         return Response(Message(), status="Query unprocessable", description=f'{str(e)}; returning empty message...'), 200
     except NotImplemented as e:
         return Response(message=Message(), status="Not Implemented", description=str(e)), NotImplemented.code

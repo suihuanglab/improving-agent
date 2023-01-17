@@ -9,7 +9,7 @@ from .spoke_biolink_constants import (
     BIOLINK_SPOKE_NODE_MAPPINGS,
 )
 
-BMT = Toolkit('https://raw.githubusercontent.com/biolink/biolink-model/ce02f08843b50b5f1c4f6d95c91eec6027960969/biolink-model.yaml')  # NOQA biolink 2.2.7
+BMT = Toolkit('https://raw.githubusercontent.com/biolink/biolink-model/67fec603ecbf2759064cd36566d23b4f6aaed4ff/biolink-model.yaml')  # NOQA biolink 3.1.2
 
 EDGE = 'edge'
 NODE = 'node'
@@ -19,28 +19,32 @@ BIOLINK_SPOKE_MAPPINGS = {
     NODE: BIOLINK_SPOKE_NODE_MAPPINGS
 }
 
-BIOLINK_MODEL_ELEMENT_URI_MAPPINGS = {
-    EDGE: 'slot_uri',
-    NODE: 'class_uri'
-}
+
+def _format_uri(element_name, entity_type):
+    if entity_type == NODE:
+        return f'biolink:{element_name.title().replace(" ", "")}'
+    return f'biolink:{element_name.replace(" ", "_")}'
 
 
 @cache
-def _get_entity_descendents(entity, entity_type):
+def _get_entity_descendents(entity, entity_type, mapped_only=True):
     mappings = BIOLINK_SPOKE_MAPPINGS.get(entity_type)
     if mappings is None:
         raise ValueError(
             f'`entity_type` must be one of {list(BIOLINK_SPOKE_MAPPINGS.keys())}, got {entity_type=}'
         )
-    uri_attr = BIOLINK_MODEL_ELEMENT_URI_MAPPINGS[entity_type]
 
     _supported_descendants = set()
     search_entities = BMT.get_descendants(entity)
     for descendant in search_entities:
         biolink_element = BMT.get_element(descendant)
-        element_uri = getattr(biolink_element, uri_attr)
-        if element_uri in mappings:
-            _supported_descendants.add(element_uri)
+        element_name = _format_uri(biolink_element.name, entity_type)
+        if mapped_only is True:
+            if element_name in mappings:
+                _supported_descendants.add(element_name)
+            continue
+        _supported_descendants.add(element_name)
+
     return _supported_descendants
 
 
@@ -53,7 +57,11 @@ def _check_for_wildcard(entities, entity_type):
             return BIOLINK_ASSOCIATION_RELATED_TO
 
 
-def get_supported_biolink_descendants(entities, entity_type):
+def get_supported_biolink_descendants(
+    entities,
+    entity_type,
+    mapped_only=True,
+):
     """Returns a set of str biolink class URIs that are supported for
     lookup in SPOKE
     """
@@ -63,7 +71,11 @@ def get_supported_biolink_descendants(entities, entity_type):
 
     supported_descendants = set()
     for entity in entities:
-        valid_entity_descendants = _get_entity_descendents(entity, entity_type)
+        valid_entity_descendants = _get_entity_descendents(
+            entity,
+            entity_type,
+            mapped_only,
+        )
         supported_descendants = supported_descendants.union(valid_entity_descendants)
     return supported_descendants
 

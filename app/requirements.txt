@@ -1,13 +1,12 @@
-bmt == 0.7.4
+bmt == 0.10.0
 boto3 ~= 1.17
-connexion[swagger-ui] >= 2.6.0; python_version>="3.6"
-flake8 ~=3.9
-fuzzywuzzy ~= 0.18
+connexion[swagger-ui] ~= 2.14; python_version>="3.6"
+flake8 ~=6.0
 neo4j ~= 4.2
 numpy ~= 1.18.1
-python_dateutil >= 2.6.0
-python-Levenshtein ~= 0.12
+python_dateutil ~= 2.8
 requests ~= 2.23
-setuptools >= 21.0.0
-swagger-ui-bundle >= 0.0.2
-uwsgi ~= 2.0.19.1
+setuptools ~= 65.7
+thefuzz[speedup] ~= 0.19
+swagger-ui-bundle >= 0.0.9
+uwsgi ~= 2.0

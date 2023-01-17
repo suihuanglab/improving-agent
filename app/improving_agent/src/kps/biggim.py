@@ -1,4 +1,4 @@
-from fuzzywuzzy.process import extractOne
+from thefuzz.process import extractOne
 
 from .biggim_client import BIG_GIM_CLIENT
 from improving_agent.models import Attribute

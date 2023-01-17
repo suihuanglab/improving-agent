@@ -5,6 +5,7 @@ from werkzeug.exceptions import BadRequest, NotImplemented
 from improving_agent.exceptions import (
     MissingComponentError,
     UnsupportedKnowledgeType,
+    UnsupportedQualifier,
     UnsupportedTypeError
 )
 from improving_agent.models import QEdge
@@ -16,10 +17,15 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_DRUG,
     BIOLINK_ENTITY_SMALL_MOLECULE,
     BIOLINK_SPOKE_EDGE_MAPPINGS,
+    BL_QUALIFIER_TYPE_OBJECT_ASPECT,
+    BL_QUALIFIER_TYPE_OBJECT_DIRECTION,
+    BL_QUALIFIER_TYPE_QUALIFIED_PREDICATE,
     KNOWLEDGE_TYPE_INFERRED,
     KNOWLEDGE_TYPE_LOOKUP,
     PREDICATES,
+    QUALIFIERS,
     SPOKE_ANY_TYPE,
+    SPOKE_BIOLINK_EDGE_MAPPINGS,
 )
 
 
@@ -72,15 +78,13 @@ def _deserialize_qedge(qedge_id, qedge):
         predicates = qedge.get('predicates')
         qualifiers = qedge.get('qualifier_constraints')
 
-        if qualifiers:
-            raise NotImplemented('Qualifier constraints are not supported by imProving Agent.')
-
         qedge = QEdge(
             attribute_constraints=constraints,
             knowledge_type=knowledge_type,
             predicates=predicates,
             object=object_,
             subject=subject,
+            qualifier_constraints=qualifiers,
         )
         setattr(qedge, 'qedge_id', qedge_id)
 
@@ -140,15 +144,98 @@ def _get_subject_object_qnodes(query_graph, qedge):
     return subject_node, object_node
 
 
+def _are_qualifiers_compatible(qedge, spoke_edge):
+    query_qualifiers = qedge.qualifier_constraints
+    if not query_qualifiers:
+        return True
+
+    spoke_edge_qualifiers = SPOKE_BIOLINK_EDGE_MAPPINGS[spoke_edge].get(QUALIFIERS)
+    if not spoke_edge_qualifiers:
+        return False
+
+    for qualifier_set in query_qualifiers:
+        query_data = {
+            'aspects': [],
+            'directions': [],
+            'qualified_predicates': [],
+        }
+        for qualifier in qualifier_set['qualifier_set']:
+            qualifier_type = qualifier['qualifier_type_id']
+            if qualifier_type == BL_QUALIFIER_TYPE_OBJECT_ASPECT:
+                query_data['aspects'].append(qualifier['qualifier_value'])
+            elif qualifier_type == BL_QUALIFIER_TYPE_OBJECT_DIRECTION:
+                query_data['directions'].append(qualifier['qualifier_value'])
+            elif qualifier_type == BL_QUALIFIER_TYPE_QUALIFIED_PREDICATE:
+                query_data['qualified_predicates'].append(qualifier['qualifier_value'])
+            else:
+                raise UnsupportedQualifier(
+                    'imProving Agent does not support '
+                    f'qualifier_type_id={qualifier_type}'
+                )
+
+        if query_data['directions'] and not query_data['aspects']:
+            raise UnsupportedQualifier(
+                'imProving Agent does not support qualifier directions '
+                'without a qualifier aspect'
+            )
+
+    if not all(
+        aspect in spoke_edge_qualifiers[BL_QUALIFIER_TYPE_OBJECT_ASPECT]
+        for aspect
+        in query_data['aspects']
+    ):
+        return False
+    if not all(
+        direction in spoke_edge_qualifiers[BL_QUALIFIER_TYPE_OBJECT_DIRECTION]
+        for direction
+        in query_data['directions']
+    ):
+        return False
+    if query_data['qualified_predicates']:
+        if not all(
+            predicate in spoke_edge_qualifiers[BL_QUALIFIER_TYPE_QUALIFIED_PREDICATE]
+            for predicate
+            in query_data['qualified_predicates']
+        ):
+            return False
+
+    return True
+
+
+def _get_compatible_spoke_edges(qedge):
+    compatible_edges = []
+    print(qedge.predicates)
+    compatible_predicates = get_supported_biolink_descendants(qedge.predicates, EDGE)
+    print(compatible_predicates)
+    for predicate in compatible_predicates:
+        spoke_edge_mappings = BIOLINK_SPOKE_EDGE_MAPPINGS.get(predicate)
+        if not spoke_edge_mappings:
+            raise UnsupportedTypeError(f'imProving Agent does not currently accept predicates of type {predicate}')
+
+        for spoke_edge_type in spoke_edge_mappings:
+            if _are_qualifiers_compatible(qedge, spoke_edge_type):
+                compatible_edges.append(spoke_edge_type)
+
+    if not compatible_edges:
+        raise UnsupportedTypeError(
+            'imProving Agent could not match this combination of predicates '
+            'and (if present) qualifier constraints'
+        )
+
+    return compatible_edges
+
+
 def _assign_spoke_edge_types(qedge):
     spoke_edge_types = []
+    if qedge.qualifier_constraints:
+        if not qedge.predicates:
+            raise MissingComponentError(
+                'imProving Agent requires that queries with constraints '
+                'include predicates for validation '
+            )
+
     if qedge.predicates:
-        compatible_predicates = get_supported_biolink_descendants(qedge.predicates, EDGE)
-        for predicate in compatible_predicates:
-            spoke_edge_mappings = BIOLINK_SPOKE_EDGE_MAPPINGS.get(predicate)
-            if not spoke_edge_mappings:
-                raise UnsupportedTypeError(f'imProving Agent does not currently accept predicates of type {predicate}')
-            spoke_edge_types.extend(spoke_edge_mappings)
+        spoke_edge_types.extend(_get_compatible_spoke_edges(qedge))
         if not spoke_edge_types:
             raise UnsupportedTypeError(
                 f'imProving Agent does not currently accept predicates of type {qedge.predicates}'
