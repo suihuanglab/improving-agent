@@ -204,9 +204,7 @@ def _are_qualifiers_compatible(qedge, spoke_edge):
 
 def _get_compatible_spoke_edges(qedge):
     compatible_edges = []
-    print(qedge.predicates)
     compatible_predicates = get_supported_biolink_descendants(qedge.predicates, EDGE)
-    print(compatible_predicates)
     for predicate in compatible_predicates:
         spoke_edge_mappings = BIOLINK_SPOKE_EDGE_MAPPINGS.get(predicate)
         if not spoke_edge_mappings:
