@@ -61,6 +61,14 @@ class UnsupportedKnowledgeType(Exception):
     pass
 
 
+class UnsupportedQualifier(Exception):
+    """Raise when a qualifier or combination thereof is not supported
+
+    This should result in a 200 with an empty message
+    """
+    pass
+
+
 class UnsupportedTypeError(Exception):
     """Raise when a request specifies a category or predicate that
     imProving Agent does not support

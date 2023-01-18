@@ -9,7 +9,6 @@ This example uses the [Connexion](https://github.com/zalando/connexion) library 
 Python 3.7+
 neo4j 1.7.0+
 numpy 1.18+
-fuzzywuzzy 0.18+
 requests 2.23+
 
 
