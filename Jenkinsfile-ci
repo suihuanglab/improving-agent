@@ -50,7 +50,9 @@ pipeline {
             steps {
                 script {
                     docker.build(env.DOCKER_REPO_NAME, "--no-cache ./app")
-                    sh 'docker login -u AWS -p $(aws ecr get-login-password --region us-east-1) 853771734544.dkr.ecr.us-east-1.amazonaws.com'
+                    sh '''
+                    docker login -u AWS -p $(aws ecr get-login-password --region us-east-1) 853771734544.dkr.ecr.us-east-1.amazonaws.com
+                    '''
                     docker.image(env.DOCKER_REPO_NAME).push("${BUILD_VERSION}")
                 }
             }
@@ -68,7 +70,6 @@ pipeline {
                         sh '''
                         aws --region ${AWS_REGION} eks update-kubeconfig --name ${KUBERNETES_BLUE_CLUSTER_NAME}
                         /bin/bash prepare.sh
-                        cd translator-ops/ops/improving-agent/improving-agent/
                         /bin/bash deploy.sh
                         '''
                     }
