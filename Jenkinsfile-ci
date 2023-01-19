@@ -44,8 +44,7 @@ pipeline {
                     env.BUILD = 'true'
                 }
             }
-        }
-        
+        } 
         stage('Build Docker') {
            when { expression { return env.BUILD == 'true' }}
             steps {
