@@ -15,7 +15,7 @@ pipeline {
         pollSCM('H/5 * * * *')
     }
     environment {
-        DOCKER_REPO_NAME = "translator-improving-agent"
+        DOCKER_REPO_NAME = "853771734544.dkr.ecr.us-east-1.amazonaws.com/translator-improving-agent"
         KUBERNETES_BLUE_CLUSTER_NAME = "translator-eks-ci-blue-cluster"
     }
     stages {
@@ -44,36 +44,43 @@ pipeline {
                     env.BUILD = 'true'
                 }
             }
-        }
-        
+        } 
         stage('Build Docker') {
            when { expression { return env.BUILD == 'true' }}
             steps {
                 script {
                     docker.build(env.DOCKER_REPO_NAME, "--no-cache ./app")
-                    docker.withRegistry('https://853771734544.dkr.ecr.us-east-1.amazonaws.com', 'ecr:us-east-1:aws-ifx-deploy') {
-                        docker.image(env.DOCKER_REPO_NAME).push("${BUILD_VERSION}")
-                    }
+                    sh '''
+                    docker login -u AWS -p $(aws ecr get-login-password --region us-east-1) 853771734544.dkr.ecr.us-east-1.amazonaws.com
+                    '''
+                    docker.image(env.DOCKER_REPO_NAME).push("${BUILD_VERSION}")
                 }
             }
         }
         stage('Deploy to AWS EKS Blue') {
+            agent {
+                label 'translator && ci && deploy'
+            }
             steps {
-                sshagent (credentials: ['labshare-svc']) {
-                   sh 'git clone git@github.com:Sphinx-Automation/translator-ops.git'
-                }
-                dir('translator-ops/ops/improving-agent/improving-agent/') {
-                    configFileProvider([
-                        configFile(fileId: 'values-ci.yaml', targetLocation: 'values-ncats.yaml'),
-                    ]){
-                        withAWS(credentials:'aws-ifx-deploy') {
-                            sh '''
-                            aws --region ${AWS_REGION} eks update-kubeconfig --name ${KUBERNETES_BLUE_CLUSTER_NAME}
-                            /bin/bash deploy.sh
-                            '''
-                        }
+                configFileProvider([
+                    configFile(fileId: 'values-ci.yaml', targetLocation: 'values-ncats.yaml'),
+                    configFile(fileId: 'prepare.sh', targetLocation: 'prepare.sh')
+                ]){
+                    script {
+                        sh '''
+                        aws --region ${AWS_REGION} eks update-kubeconfig --name ${KUBERNETES_BLUE_CLUSTER_NAME}
+                        /bin/bash prepare.sh 
+                        cd translator-ops/ops/improving-agent/improving-agent/
+                        /bin/bash deploy.sh
+                        '''
                     }
-                }  
+                }
+            }
+            post {
+                always {
+                    echo " Clean up the workspace in deploy node!"
+                    cleanWs()
+                }
             }
         }
     }
