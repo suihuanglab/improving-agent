@@ -1,6 +1,8 @@
+from .compound_may_affect_gene import CompoundAffectsGene
 from .drug_may_treat_disease import DrugMayTreatDisease
 
 TEMPLATE_QUERIES = [
+    CompoundAffectsGene,
     DrugMayTreatDisease,
 ]
 

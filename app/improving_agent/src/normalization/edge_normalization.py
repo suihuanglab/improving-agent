@@ -11,10 +11,12 @@ from improving_agent.exceptions import (
 from improving_agent.models import QEdge
 from improving_agent.src.biolink.biolink import EDGE, get_supported_biolink_descendants
 from improving_agent.src.biolink.spoke_biolink_constants import (
+    BIOLINK_ASSOCIATION_AFFECTS,
     BIOLINK_ASSOCIATION_TREATS,
     BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_DISEASE,
     BIOLINK_ENTITY_DRUG,
+    BIOLINK_ENTITY_GENE,
     BIOLINK_ENTITY_SMALL_MOLECULE,
     BIOLINK_SPOKE_EDGE_MAPPINGS,
     BL_QUALIFIER_TYPE_OBJECT_ASPECT,
@@ -36,6 +38,17 @@ SUPPORTED_INFERRED_DRUG_SUBJ = [
     BIOLINK_ENTITY_SMALL_MOLECULE
 ]
 
+SUPPORTED_INFERRED_PRED_SUBJ_OBJ_MAP = {
+    BIOLINK_ASSOCIATION_AFFECTS: {
+        'subject': [BIOLINK_ENTITY_CHEMICAL_ENTITY],
+        'object': [BIOLINK_ENTITY_GENE],
+    },
+    BIOLINK_ASSOCIATION_TREATS: {
+        'subject': SUPPORTED_INFERRED_DRUG_SUBJ,
+        'object': [BIOLINK_ENTITY_DISEASE],
+    }
+}
+
 
 def _verify_qedge_kt_support(qedge, subj_qnode, obj_qnode):
     """Raises if the requested knowledge_type on the edge is not
@@ -52,19 +65,21 @@ def _verify_qedge_kt_support(qedge, subj_qnode, obj_qnode):
             f'imProving Agent only supports knowledge types: {", ".join(i for i in SUPPORTED_KNOWLEDGE_TYPES)}'
         )
     if qedge.knowledge_type == KNOWLEDGE_TYPE_INFERRED:
-        if qedge.predicates != [BIOLINK_ASSOCIATION_TREATS]:
+        if len(qedge.predicates) > 1:
+            raise UnsupportedKnowledgeType('"inferred" knowledge_type queries only allow one predicate')
+        predicate = qedge.predicates[0]
+        supported_node_types = SUPPORTED_INFERRED_PRED_SUBJ_OBJ_MAP.get(predicate)
+        if not supported_node_types:
             raise UnsupportedKnowledgeType(
-                'Only a single "biolink:treats" is supported for "inferred" knowledge_type'
+                'Only "biolink:affects" or "biolink:treats" are allowed for "inferred" queries'
             )
-        if not all(cat in SUPPORTED_INFERRED_DRUG_SUBJ for cat in subj_qnode.categories):
+        if not all(cat in supported_node_types['subject'] for cat in subj_qnode.categories):
             raise UnsupportedKnowledgeType(
-                'Inferred knowledge_type "biolink:treats" only supported qnode subject '
-                f'categories {", ".join(SUPPORTED_INFERRED_DRUG_SUBJ)}'
+                f'Unsupported qnode subject for "inferred" predicate "{predicate}"'
             )
-        if obj_qnode.categories != [BIOLINK_ENTITY_DISEASE]:
+        if not all(cat in supported_node_types['object'] for cat in obj_qnode.categories):
             raise UnsupportedKnowledgeType(
-                'Inferred knowledge_type "biolink:treats" only supported qnode object '
-                f'categories {", ".join([BIOLINK_ENTITY_DISEASE])}'
+                f'Unsupported qnode object for "inferred" predicate "{predicate}"'
             )
 
 
