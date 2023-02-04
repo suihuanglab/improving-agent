@@ -1,3 +1,4 @@
+from .template_query_base import template_matches_inferred_one_hop, TemplateQueryBase
 from improving_agent.models import Edge, EdgeBinding, NodeBinding, Result
 from improving_agent.exceptions import TemplateQuerySpecError, UnmatchedIdentifierError
 from improving_agent.src.basic_query import BasicQuery
@@ -8,10 +9,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     SPOKE_LABEL_COMPOUND,
     SPOKE_LABEL_DISEASE,
 )
-from improving_agent.src.normalization.edge_normalization import (
-    KNOWLEDGE_TYPE_INFERRED,
-    SUPPORTED_INFERRED_DRUG_SUBJ
-)
+from improving_agent.src.normalization.edge_normalization import SUPPORTED_INFERRED_DRUG_SUBJ
 from improving_agent.src.normalization.node_normalization import format_curie_for_sri
 from improving_agent.src.provenance import IMPROVING_AGENT_PROVENANCE_ATTR
 from improving_agent.src.psev import get_psev_scores
@@ -42,7 +40,7 @@ def _compound_search(tx, identifiers, querier):
     return result_nodes
 
 
-class DrugMayTreatDisease:
+class DrugMayTreatDisease(TemplateQueryBase):
     template_query_name = 'Drug -- may treat -- Disease'
 
     # TODO: abstract if possible once other templates are known
@@ -63,24 +61,13 @@ class DrugMayTreatDisease:
 
     @staticmethod
     def matches_template(qedges, qnodes):
-        if len(qedges) > 1:
-            return False
-        for qedge in qedges.values():
-            if (
-                qedge.knowledge_type != KNOWLEDGE_TYPE_INFERRED
-                or qedge.predicates != [BIOLINK_ASSOCIATION_TREATS]
-            ):
-                return False
-        if len(qnodes) != 2:
-            return False
-        if not all(cat in SUPPORTED_INFERRED_DRUG_SUBJ
-                   for cat
-                   in qnodes[qedge.subject].categories):
-            return False
-        if qnodes[qedge.object].categories != [BIOLINK_ENTITY_DISEASE]:
-            return False
-
-        return True
+        return template_matches_inferred_one_hop(
+            qedges,
+            qnodes,
+            SUPPORTED_INFERRED_DRUG_SUBJ,
+            [BIOLINK_ENTITY_DISEASE],
+            [BIOLINK_ASSOCIATION_TREATS],
+        )
 
     def make_result_edge(self, subj_id, obj_id):
         return Edge(
