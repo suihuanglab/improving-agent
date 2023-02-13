@@ -496,7 +496,7 @@ class BasicQuery:
         self.result_nodes_spoke_identifiers.add(spoke_curie)  # for PSEV retrieval
 
         # for normalization
-        search_node = SearchNode(result_node.categories[0], spoke_curie, node_source)  
+        search_node = SearchNode(result_node.categories[0], spoke_curie, node_source)
         self.nodes_to_normalize.add(search_node)
         return result_node
 

@@ -4,13 +4,16 @@ from improving_agent.exceptions import TemplateQuerySpecError, UnmatchedIdentifi
 from improving_agent.src.basic_query import BasicQuery
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_TREATS,
-    BIOLINK_ENTITY_CHEMICAL_ENTITY,
+    BIOLINK_ENTITY_SMALL_MOLECULE,
     BIOLINK_ENTITY_DISEASE,
     SPOKE_LABEL_COMPOUND,
     SPOKE_LABEL_DISEASE,
 )
 from improving_agent.src.normalization.edge_normalization import SUPPORTED_INFERRED_DRUG_SUBJ
-from improving_agent.src.normalization.node_normalization import format_curie_for_sri
+from improving_agent.src.normalization.node_normalization import (
+    format_curie_for_sri,
+    normalize_spoke_nodes_for_translator,
+)
 from improving_agent.src.provenance import IMPROVING_AGENT_PROVENANCE_ATTR
 from improving_agent.src.psev import get_psev_scores
 from improving_agent.util import get_evidara_logger
@@ -23,8 +26,14 @@ CYPHER_COMPOUND_SEARCH = """
     RETURN c
 """
 
+CYPHER_DISEASE_SEARCH = """
+    MATCH (c:Disease)
+    WHERE c.identifier in $identifiers
+    RETURN c
+"""
 
-def _extract_compound_result(record, querier):
+
+def _extract_node_result(record, querier):
     node_info = record['c']
     identifier = node_info['identifier']
     result_node = querier.make_result_node(node_info, identifier)
@@ -35,7 +44,16 @@ def _compound_search(tx, identifiers, querier):
     records = tx.run(CYPHER_COMPOUND_SEARCH, identifiers=identifiers)
     result_nodes = {}
     for record in records:
-        identifier, result_node = _extract_compound_result(record, querier)
+        identifier, result_node = _extract_node_result(record, querier)
+        result_nodes[identifier] = result_node
+    return result_nodes
+
+
+def _disease_search(tx, identifiers, querier):
+    records = tx.run(CYPHER_DISEASE_SEARCH, identifiers=identifiers)
+    result_nodes = {}
+    for record in records:
+        identifier, result_node = _extract_node_result(record, querier)
         result_nodes[identifier] = result_node
     return result_nodes
 
@@ -138,18 +156,28 @@ class DrugMayTreatDisease(TemplateQueryBase):
         self.knowledge_graph = knowledge_graph
         new_results = []
 
-        node_ids = list(sorted_compound_scores.keys())
-        result_nodes = session.read_transaction(_compound_search, node_ids, basic_query)
-
         # peek at knowledge graph to find the node binding for the disease
         if results:
             disease_identifier = results[0].node_bindings[qnode_id_disease_node][0].id
         else:
-            disease_identifier = self.qnodes[qnode_id_disease_node].ids[0]
+            # no results, manually add the disease node to the kg
+            disease_spoke_ids = [
+                _id.strip("'")  # we add extra parentheses elsewhere for search
+                for _id
+                in list(self.qnodes[qnode_id_disease_node].spoke_identifiers.keys())
+            ]
+            disease_nodes = session.read_transaction(_disease_search, disease_spoke_ids, basic_query)
+            _disease_id, result_node = next(iter(disease_nodes.items()))
+            nn_results = normalize_spoke_nodes_for_translator(basic_query.nodes_to_normalize)
+            disease_identifier = nn_results[_disease_id]
+            self.knowledge_graph['nodes'][disease_identifier] = result_node
+
+        node_ids = list(sorted_compound_scores.keys())
+        result_nodes = session.read_transaction(_compound_search, node_ids, basic_query)
 
         for i, spoke_id in enumerate(result_nodes):
             biolink_id = format_curie_for_sri(
-                BIOLINK_ENTITY_CHEMICAL_ENTITY,
+                BIOLINK_ENTITY_SMALL_MOLECULE,
                 spoke_id,
             )
             result_edge = self.make_result_edge(biolink_id, disease_identifier)
