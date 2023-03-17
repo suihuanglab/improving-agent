@@ -14,7 +14,7 @@ from improving_agent.src.normalization.node_normalization import (
     format_curie_for_sri,
     normalize_spoke_nodes_for_translator,
 )
-from improving_agent.src.provenance import IMPROVING_AGENT_PROVENANCE_ATTR
+from improving_agent.src.provenance import IMPROVING_AGENT_PRIMARY_PROVENANCE_ATTR
 from improving_agent.src.psev import get_psev_scores
 from improving_agent.util import get_evidara_logger
 
@@ -92,7 +92,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
             predicate='biolink:treats',
             subject=subj_id,
             object=obj_id,
-            attributes=[IMPROVING_AGENT_PROVENANCE_ATTR]
+            attributes=[IMPROVING_AGENT_PRIMARY_PROVENANCE_ATTR]
         )
 
     def do_query(self, session):
