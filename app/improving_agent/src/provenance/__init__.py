@@ -8,6 +8,7 @@ from typing import Dict, List, Union
 
 from improving_agent import models
 from improving_agent.src.biolink.spoke_biolink_constants import (
+    BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE,
     BIOLINK_ENTITY_ARTICLE,
     BIOLINK_ENTITY_INFORMATION_RESOURCE,
     BIOLINK_SLOT_PUBLICATIONS,
@@ -32,6 +33,12 @@ SPOKE_PROVENANCE_FIELDS = [
     SPOKE_PROPERTY_SOURCES
 ]
 
+IMPROVING_AGENT_PRIMARY_PROVENANCE_ATTR = models.Attribute(
+    attribute_source=INFORES_IMPROVING_AGENT.infores_id,
+    attribute_type_id=BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE,
+    value_type_id=BIOLINK_ENTITY_INFORMATION_RESOURCE,
+    value=INFORES_IMPROVING_AGENT.infores_id
+)
 IMPROVING_AGENT_PROVENANCE_ATTR = models.Attribute(
     attribute_source=INFORES_IMPROVING_AGENT.infores_id,
     attribute_type_id=INFORES_IMPROVING_AGENT.biolink_type,
