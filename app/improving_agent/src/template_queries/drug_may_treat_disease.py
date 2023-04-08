@@ -16,6 +16,7 @@ from improving_agent.src.normalization.node_normalization import (
 )
 from improving_agent.src.provenance import IMPROVING_AGENT_PRIMARY_PROVENANCE_ATTR
 from improving_agent.src.psev import get_psev_scores
+from improving_agent.src.scoring.scoring_utils import normalize_results_scores
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)
@@ -130,7 +131,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
             self.query_options,
             self.max_results
         )
-        results, knowledge_graph = basic_query.do_query(session)
+        results, knowledge_graph = basic_query.do_query(session, norm_scores=False)
 
         # sort compound_psev_scores
         count_to_get = self.max_results - len(results)
@@ -189,6 +190,8 @@ class DrugMayTreatDisease(TemplateQueryBase):
                 edge_bindings={self.edge_id_treats: [EdgeBinding(f'inferred_{i}')]},
                 score=sorted_compound_scores[spoke_id] * 10000
             ))
+        results.extend(new_results)
+        results = normalize_results_scores(results)
 
-        results = sorted(results + new_results, key=lambda x: x.score, reverse=True)
+        results = sorted(results, key=lambda x: x.score, reverse=True)
         return results, self.knowledge_graph

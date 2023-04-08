@@ -65,7 +65,7 @@ class SriNodeNormalizer:
         logger.info(f'Querying SRI to normalize {subset}')
         data = {SRI_NN_PARAM_CURIES: list(subset)}
         response = requests.post(
-            f"{SRI_NN_BASE_URL}/{SRI_NN_NORMALIZED_NODES_ENDPOINT}", json=data
+            f"{SRI_NN_BASE_URL}{SRI_NN_NORMALIZED_NODES_ENDPOINT}", json=data
         )
         if response.status_code == 404:
             logger.warning(f"No results for {list(subset)} in SRI node normalizer")
@@ -113,7 +113,7 @@ class SriNodeNormalizer:
         ]
 
         response = requests.get(
-            f"{SRI_NN_BASE_URL}/{SRI_NN_CURIE_PREFIXES_ENDPOINT}", params=payload
+            f"{SRI_NN_BASE_URL}{SRI_NN_CURIE_PREFIXES_ENDPOINT}", params=payload
         )
 
         if response.status_code != 200:
@@ -132,7 +132,7 @@ class SriNodeNormalizer:
         List[str]:
             list of valid semantic types
         """
-        response = requests.get(f"{SRI_NN_BASE_URL}/{SRI_NN_SEMANTIC_TYPES_ENDPOINT}")
+        response = requests.get(f"{SRI_NN_BASE_URL}{SRI_NN_SEMANTIC_TYPES_ENDPOINT}")
         if response.status_code != 200:
             logger.error(f"Failed to get semantic types with {response.status_code} and {response.text}")
             response.raise_for_status()

@@ -4,7 +4,7 @@ is known in the other two.
 """
 from copy import deepcopy
 from random import randint
-from typing import Any, Literal
+from typing import Any
 
 from .template_query_base import template_matches_inferred_one_hop, TemplateQueryBase
 from improving_agent.models.q_edge import QEdge
@@ -26,6 +26,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     SPOKE_EDGE_TYPE_UPREGULATES_KGuG,
     SPOKE_EDGE_TYPE_UPREGULATES_OGuG,
 )
+from improving_agent.src.scoring.scoring_utils import normalize_results_scores
 from improving_agent.util import get_evidara_logger
 
 
@@ -183,7 +184,7 @@ class CompoundAffectsGene(TemplateQueryBase):
             self.query_options,
             self.max_results,
         )
-        results, knowledge_graph = one_hop_query.do_query(session)
+        results, knowledge_graph = one_hop_query.do_query(session, norm_scores=False)
 
         count_to_get = self.max_results - len(results)
         if count_to_get == 0:
@@ -255,7 +256,7 @@ class CompoundAffectsGene(TemplateQueryBase):
                 query_options=self.query_options,
                 n_results=count_to_get,
             )
-            _results, _knowledge_graph = two_hop_querier.do_query(session)
+            _results, _knowledge_graph = two_hop_querier.do_query(session, norm_scores=False)
             result_sets.append((_results, _knowledge_graph))
 
         # resolve the kgs
@@ -288,6 +289,7 @@ class CompoundAffectsGene(TemplateQueryBase):
                     two_hop_knowledge_graph['nodes'][node.id] = _nodes[node.id]
 
         results.extend(two_hop_results)
+        results = normalize_results_scores(results)
         knowledge_graph['nodes'] |= two_hop_knowledge_graph['nodes']
         knowledge_graph['edges'] |= two_hop_knowledge_graph['edges']
 

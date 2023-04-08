@@ -40,7 +40,19 @@ def normalize_spoke_nodes_for_translator(spoke_search_nodes):
         for search_node
         in spoke_search_nodes
     }
-    search_results = SRI_NODE_NORMALIZER.get_normalized_nodes(list(formatted_curie_node_map.keys()))
+    search_curies = list(formatted_curie_node_map.keys())
+    search_results = {}
+
+    # chunk per SRI guidance
+    chunk_size = 1000
+    start = 0
+    end = start + chunk_size
+    while start <= len(search_curies):
+        search_chunk = search_curies[start:end]
+        search_results = {**search_results, **SRI_NODE_NORMALIZER.get_normalized_nodes(search_chunk)}
+        start += chunk_size
+        end += chunk_size
+
     result_map = {}
     for formatted_curie, search_node in formatted_curie_node_map.items():
         if search_node.category == BIOLINK_ENTITY_PROTEIN:
