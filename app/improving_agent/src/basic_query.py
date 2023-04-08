@@ -1,5 +1,5 @@
 from collections import Counter, namedtuple
-from typing import Dict, List, Union
+from typing import Dict, List, Tuple, Union
 from string import ascii_letters
 
 import neo4j
@@ -34,14 +34,18 @@ from improving_agent.src.kps.cohd import annotate_edges_with_cohd
 from improving_agent.src.normalization import SearchNode
 from improving_agent.src.normalization.node_normalization import normalize_spoke_nodes_for_translator
 from improving_agent.src.provenance import (
+    choose_primary_source,
     IMPROVING_AGENT_PROVENANCE_ATTR,
-    SPOKE_KP_PROVENANCE_ATTR,
-    SPOKE_PROVENANCE_FIELDS,
     make_default_provenance_attribute,
     make_provenance_attributes,
+    make_publications_attribute,
+    SPOKE_KP_PROVENANCE_ATTR,
+    SPOKE_PROVENANCE_FIELDS,
+    SPOKE_PUBLICATION_FIELDS,
 )
 from improving_agent.src.psev import get_psev_scores
 from improving_agent.src.result_handling import get_edge_qualifiers
+from improving_agent.src.scoring.scoring_utils import normalize_results_scores
 from improving_agent.util import get_evidara_logger
 
 logger = get_evidara_logger(__name__)
@@ -178,6 +182,7 @@ def make_qnode_filter_clause(name, query_node):
         return f'({filter_clause})'
 
     return ''
+
 
 def make_qedge_cypher_repr(name, query_edge):
     edge_repr = f'[{name}'
@@ -533,12 +538,21 @@ class BasicQuery:
                 source_attributes = make_provenance_attributes(k, v)
                 provenance_attributes.extend(source_attributes)
                 continue
+            if k in SPOKE_PUBLICATION_FIELDS:
+                edge_attributes.extend(make_publications_attribute(k, v))
+                continue
             edge_attribute = self._make_result_attribute(k, v, SPOKE_GRAPH_TYPE_EDGE, edge_type)
             if edge_attribute:
                 edge_attributes.append(edge_attribute)
 
         if not provenance_attributes:
             provenance_attributes.append(make_default_provenance_attribute(edge_type))
+
+        if len(provenance_attributes) > 1:
+            provenance_attributes = choose_primary_source(
+                provenance_attributes,
+                edge_type,
+            )
 
         provenance_attributes.extend([SPOKE_KP_PROVENANCE_ATTR, IMPROVING_AGENT_PROVENANCE_ATTR])
         edge_attributes = provenance_attributes + edge_attributes
@@ -650,7 +664,11 @@ class BasicQuery:
         self.results = [self.extract_result(record) for record in r]
 
     # Query
-    def do_query(self, session):
+    def do_query(
+        self,
+        session: neo4j.Session,
+        norm_scores: bool = True,
+    ) -> Tuple[List[models.Result], models.KnowledgeGraph]:
         """Returns the SPOKE node label equivalent to `node_type`
 
         Parameters
@@ -687,6 +705,8 @@ class BasicQuery:
         #     self.results = tm.query_for_associations_in_text_miner(self.query_order, self.results)
 
         scored_results = self.score_results(self.results)
+        if norm_scores is True:
+            scored_results = normalize_results_scores(scored_results)
         sorted_scored_results = sorted(scored_results, key=lambda x: x.score, reverse=True)
 
         if query_kps:

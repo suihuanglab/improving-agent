@@ -124,7 +124,11 @@ def process_query(raw_json):
             querier = BasicQuery(qnodes, qedges, query_options, query.max_results)
         results, knowledge_graph = querier.do_query(session)
         response_message = Message(results, query_graph, knowledge_graph)
-        success_description = f'Success. Returning {len(results)} results...'
+        success_description = (
+            f'Success. Returning {len(results)} results. Note: imProving '
+            "Agent's result scores are contextual within a set of results "
+            'and should not be compared with scores from other queries.'
+        )
         response = Response(response_message, description=success_description, workflow=query.workflow)
         logger.info(success_description)
     return response

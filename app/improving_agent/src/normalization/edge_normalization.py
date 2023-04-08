@@ -73,6 +73,11 @@ def _verify_qedge_kt_support(qedge, subj_qnode, obj_qnode):
             raise UnsupportedKnowledgeType(
                 'Only "biolink:affects" or "biolink:treats" are allowed for "inferred" queries'
             )
+        if not subj_qnode.categories or not obj_qnode.categories:
+            raise UnsupportedKnowledgeType(
+                'imProving Agent requires that qnodes must have a "categories" '
+                f'property when using "inferred" predicate "{predicate}"'
+            )
         if not all(cat in supported_node_types['subject'] for cat in subj_qnode.categories):
             raise UnsupportedKnowledgeType(
                 f'Unsupported qnode subject for "inferred" predicate "{predicate}"'
