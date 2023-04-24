@@ -32,9 +32,6 @@ servers:
   - url: https://ia.healthdatascience.cloud/api/v1.4/
     description: dev
     x-maturity: dev
-  - url: https://ia.ci.transltr.io/api/v1.4/
-    description: ITRB CI Environment
-    x-maturity: staging
 externalDocs:
   description: >-
     Documentation for the NCATS Biomedical Translator Reasoners web services
