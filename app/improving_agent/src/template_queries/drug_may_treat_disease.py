@@ -1,11 +1,18 @@
 from .template_query_base import template_matches_inferred_one_hop, TemplateQueryBase
-from improving_agent.models import Edge, EdgeBinding, NodeBinding, Result
+from improving_agent.models import (
+    Analysis,
+    Edge,
+    EdgeBinding,
+    NodeBinding,
+    Result,
+)
 from improving_agent.exceptions import TemplateQuerySpecError, UnmatchedIdentifierError
 from improving_agent.src.basic_query import BasicQuery
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_TREATS,
     BIOLINK_ENTITY_SMALL_MOLECULE,
     BIOLINK_ENTITY_DISEASE,
+    INFORES_IMPROVING_AGENT,
     SPOKE_LABEL_COMPOUND,
     SPOKE_LABEL_DISEASE,
 )
@@ -14,7 +21,7 @@ from improving_agent.src.normalization.node_normalization import (
     format_curie_for_sri,
     normalize_spoke_nodes_for_translator,
 )
-from improving_agent.src.provenance import IMPROVING_AGENT_PRIMARY_PROVENANCE_ATTR
+from improving_agent.src.provenance import make_internal_retrieval_source
 from improving_agent.src.psev import get_psev_scores
 from improving_agent.src.scoring.scoring_utils import normalize_results_scores
 from improving_agent.util import get_evidara_logger
@@ -93,7 +100,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
             predicate='biolink:treats',
             subject=subj_id,
             object=obj_id,
-            attributes=[IMPROVING_AGENT_PRIMARY_PROVENANCE_ATTR]
+            sources=[make_internal_retrieval_source([], INFORES_IMPROVING_AGENT)]
         )
 
     def do_query(self, session):
@@ -131,7 +138,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
             self.query_options,
             self.max_results
         )
-        results, knowledge_graph = basic_query.do_query(session, norm_scores=False)
+        results, knowledge_graph, _ = basic_query.do_query(session, norm_scores=False)
 
         # sort compound_psev_scores
         count_to_get = self.max_results - len(results)
@@ -151,7 +158,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
                         continue
 
         if not sorted_compound_scores:
-            return results, knowledge_graph
+            return results, knowledge_graph, {}
 
         # now we can add the remaining highly scored results
         self.knowledge_graph = knowledge_graph
@@ -187,11 +194,14 @@ class DrugMayTreatDisease(TemplateQueryBase):
             new_results.append(Result(
                 node_bindings={self.node_id_disease: [NodeBinding(disease_identifier)],
                                self.node_id_compound: [NodeBinding(biolink_id)]},
-                edge_bindings={self.edge_id_treats: [EdgeBinding(f'inferred_{i}')]},
-                score=sorted_compound_scores[spoke_id] * 10000
+                analyses=[Analysis(
+                    resource_id=INFORES_IMPROVING_AGENT,
+                    edge_bindings={self.edge_id_treats: [EdgeBinding(f'inferred_{i}')]},
+                    score=sorted_compound_scores[spoke_id] * 10000
+                )]
             ))
         results.extend(new_results)
         results = normalize_results_scores(results)
 
-        results = sorted(results, key=lambda x: x.score, reverse=True)
-        return results, self.knowledge_graph
+        results = sorted(results, key=lambda x: x.analyses[0].score, reverse=True)
+        return results, self.knowledge_graph, {}

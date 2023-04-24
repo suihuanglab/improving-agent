@@ -23,7 +23,7 @@ class LogEntry(Model):
         :param timestamp: The timestamp of this LogEntry.  # noqa: E501
         :type timestamp: datetime
         :param level: The level of this LogEntry.  # noqa: E501
-        :type level: LogLevel
+        :type level: LogEntryLevel
         :param code: The code of this LogEntry.  # noqa: E501
         :type code: str
         :param message: The message of this LogEntry.  # noqa: E501
@@ -63,7 +63,7 @@ class LogEntry(Model):
     def timestamp(self):
         """Gets the timestamp of this LogEntry.
 
-        Timestamp in ISO 8601 format  # noqa: E501
+        Timestamp in ISO 8601 format, providing the LogEntry time either in univeral coordinated time (UTC) using the 'Z' tag (e.g 2020-09-03T18:13:49Z), or, if local time is provided, the timezone offset must be provided (e.g. 2020-09-03T18:13:49-04:00).  # noqa: E501
 
         :return: The timestamp of this LogEntry.
         :rtype: datetime
@@ -74,11 +74,13 @@ class LogEntry(Model):
     def timestamp(self, timestamp):
         """Sets the timestamp of this LogEntry.
 
-        Timestamp in ISO 8601 format  # noqa: E501
+        Timestamp in ISO 8601 format, providing the LogEntry time either in univeral coordinated time (UTC) using the 'Z' tag (e.g 2020-09-03T18:13:49Z), or, if local time is provided, the timezone offset must be provided (e.g. 2020-09-03T18:13:49-04:00).  # noqa: E501
 
         :param timestamp: The timestamp of this LogEntry.
         :type timestamp: datetime
         """
+        if timestamp is None:
+            raise ValueError("Invalid value for `timestamp`, must not be `None`")  # noqa: E501
 
         self._timestamp = timestamp
 
@@ -88,7 +90,7 @@ class LogEntry(Model):
 
 
         :return: The level of this LogEntry.
-        :rtype: LogLevel
+        :rtype: LogEntryLevel
         """
         return self._level
 
@@ -98,7 +100,7 @@ class LogEntry(Model):
 
 
         :param level: The level of this LogEntry.
-        :type level: LogLevel
+        :type level: LogEntryLevel
         """
 
         self._level = level
@@ -146,5 +148,7 @@ class LogEntry(Model):
         :param message: The message of this LogEntry.
         :type message: str
         """
+        if message is None:
+            raise ValueError("Invalid value for `message`, must not be `None`")  # noqa: E501
 
         self._message = message

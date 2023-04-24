@@ -24,9 +24,9 @@ class Attribute(Model):
         :param original_attribute_name: The original_attribute_name of this Attribute.  # noqa: E501
         :type original_attribute_name: str
         :param value: The value of this Attribute.  # noqa: E501
-        :type value: AnyType
+        :type value: object
         :param value_type_id: The value_type_id of this Attribute.  # noqa: E501
-        :type value_type_id: str
+        :type value_type_id: AttributeValueTypeId
         :param attribute_source: The attribute_source of this Attribute.  # noqa: E501
         :type attribute_source: str
         :param value_url: The value_url of this Attribute.  # noqa: E501
@@ -133,7 +133,7 @@ class Attribute(Model):
         Value of the attribute. May be any data type, including a list.  # noqa: E501
 
         :return: The value of this Attribute.
-        :rtype: AnyType
+        :rtype: object
         """
         return self._value
 
@@ -144,7 +144,7 @@ class Attribute(Model):
         Value of the attribute. May be any data type, including a list.  # noqa: E501
 
         :param value: The value of this Attribute.
-        :type value: AnyType
+        :type value: object
         """
         if value is None:
             raise ValueError("Invalid value for `value`, must not be `None`")  # noqa: E501
@@ -155,10 +155,9 @@ class Attribute(Model):
     def value_type_id(self):
         """Gets the value_type_id of this Attribute.
 
-        CURIE describing the semantic type of an  attribute's value. Use a Biolink class if possible, otherwise a term from an external ontology. If a suitable CURIE/identifier does not exist, enter a descriptive phrase here and submit the new type for consideration by the appropriate authority.  # noqa: E501
 
         :return: The value_type_id of this Attribute.
-        :rtype: str
+        :rtype: AttributeValueTypeId
         """
         return self._value_type_id
 
@@ -166,10 +165,9 @@ class Attribute(Model):
     def value_type_id(self, value_type_id):
         """Sets the value_type_id of this Attribute.
 
-        CURIE describing the semantic type of an  attribute's value. Use a Biolink class if possible, otherwise a term from an external ontology. If a suitable CURIE/identifier does not exist, enter a descriptive phrase here and submit the new type for consideration by the appropriate authority.  # noqa: E501
 
         :param value_type_id: The value_type_id of this Attribute.
-        :type value_type_id: str
+        :type value_type_id: AttributeValueTypeId
         """
 
         self._value_type_id = value_type_id

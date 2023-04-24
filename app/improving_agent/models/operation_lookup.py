@@ -3,7 +3,7 @@
 from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
-from typing import List, Dict  # noqa: F401
+from typing import Any, List, Dict  # noqa: F401
 
 from improving_agent.models.base_model_ import Model
 from improving_agent import util
@@ -15,26 +15,31 @@ class OperationLookup(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, id=None, parameters=None):  # noqa: E501
+    def __init__(self, id=None, parameters=None, runner_parameters=None):  # noqa: E501
         """OperationLookup - a model defined in OpenAPI
 
         :param id: The id of this OperationLookup.  # noqa: E501
         :type id: str
         :param parameters: The parameters of this OperationLookup.  # noqa: E501
         :type parameters: object
+        :param runner_parameters: The runner_parameters of this OperationLookup.  # noqa: E501
+        :type runner_parameters: OperationAnnotateRunnerParameters
         """
         self.openapi_types = {
             'id': str,
-            'parameters': object
+            'parameters': Dict[str, Any],
+            'runner_parameters': Dict[str, Any]
         }
 
         self.attribute_map = {
             'id': 'id',
-            'parameters': 'parameters'
+            'parameters': 'parameters',
+            'runner_parameters': 'runner_parameters'
         }
 
         self._id = id
         self._parameters = parameters
+        self._runner_parameters = runner_parameters
 
     @classmethod
     def from_dict(cls, dikt) -> 'OperationLookup':
@@ -94,3 +99,24 @@ class OperationLookup(Model):
         """
 
         self._parameters = parameters
+
+    @property
+    def runner_parameters(self):
+        """Gets the runner_parameters of this OperationLookup.
+
+
+        :return: The runner_parameters of this OperationLookup.
+        :rtype: OperationAnnotateRunnerParameters
+        """
+        return self._runner_parameters
+
+    @runner_parameters.setter
+    def runner_parameters(self, runner_parameters):
+        """Sets the runner_parameters of this OperationLookup.
+
+
+        :param runner_parameters: The runner_parameters of this OperationLookup.
+        :type runner_parameters: OperationAnnotateRunnerParameters
+        """
+
+        self._runner_parameters = runner_parameters
