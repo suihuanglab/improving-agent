@@ -35,9 +35,6 @@ servers:
   - url: https://ia.test.transltr.io/api/v1.3/
     description: ITRB Test server
     x-maturity: testing
-  - url: https://ia.ci.transltr.io/api/v1.3/
-    description: ITRB CI server
-    x-maturity: staging
   - url: https://ia.healthdatascience.cloud/api/v1.3/
     description: development
     x-maturity: development
