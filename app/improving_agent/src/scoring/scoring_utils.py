@@ -15,7 +15,7 @@ def normalize_results_scores(results: list[Result]) -> list[Result]:
     """Given a set of results, return a version normalized between
     0 and 1.
     """
-    scores = [result.score for result in results]
+    scores = [result.analyses[0].score for result in results]
     if not scores:
         return results
     min_score = min(scores)
@@ -24,7 +24,11 @@ def normalize_results_scores(results: list[Result]) -> list[Result]:
     if min_score == 0 and max_score == 0:
         return results
 
+    if len(scores) == 1:
+        results[0].analyses[0].score = 1
+        return results
+
     for i, score in enumerate(scores):
-        results[i].score = normalize_score(score, min_score, max_score)
+        results[i].analyses[0].score = normalize_score(score, min_score, max_score)
 
     return results

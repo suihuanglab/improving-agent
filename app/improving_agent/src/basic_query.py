@@ -1,5 +1,5 @@
 from collections import Counter, namedtuple
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Optional, Tuple, Union
 from string import ascii_letters
 
 import neo4j
@@ -13,6 +13,8 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_GENE,
     BIOLINK_ENTITY_SMALL_MOLECULE,
     BIOLINK_SLOT_HIGHEST_FDA_APPROVAL,
+    INFORES_IMPROVING_AGENT,
+    INFORES_SPOKE,
     MAX_PHASE_FDA_APPROVAL_MAP,
     QUALIFIERS,
     SPOKE_ANY_TYPE,
@@ -35,11 +37,10 @@ from improving_agent.src.normalization import SearchNode
 from improving_agent.src.normalization.node_normalization import normalize_spoke_nodes_for_translator
 from improving_agent.src.provenance import (
     choose_primary_source,
-    IMPROVING_AGENT_PROVENANCE_ATTR,
-    make_default_provenance_attribute,
-    make_provenance_attributes,
+    make_default_retrieval_sources,
     make_publications_attribute,
-    SPOKE_KP_PROVENANCE_ATTR,
+    make_retrieval_sources,
+    make_internal_retrieval_source,
     SPOKE_PROVENANCE_FIELDS,
     SPOKE_PUBLICATION_FIELDS,
 )
@@ -378,7 +379,7 @@ class BasicQuery:
                 if score_func:
                     score += score_func(value)
 
-        for kedge in result.edge_bindings.values():
+        for kedge in result.analyses[0].edge_bindings.values():
             # kedge is a list of node_bindings, but we only support
             # one, so index at 0
             # TODO: reconsider upon version upgrade
@@ -394,7 +395,7 @@ class BasicQuery:
         psev_concepts = self.query_options.get('psev_context')
         psev_scores = self._get_psev_scores(psev_concepts)
         for result in results:
-            result.score = self.score_result(result, psev_scores)
+            result.analyses[0].score = self.score_result(result, psev_scores)
             scored_results.append(result)
         return scored_results
 
@@ -423,6 +424,9 @@ class BasicQuery:
             raise ValueError(
                 f'Got {edge_or_node=} but it must be one of "edge" or "node"'
             )
+
+        if property_type in SPOKE_PUBLICATION_FIELDS:
+            return make_publications_attribute(property_type, property_value)
 
         object_properties = ATTRIBUTE_MAPS[edge_or_node].get(spoke_object_type)
         if not object_properties:
@@ -530,38 +534,46 @@ class BasicQuery:
             predicate = biolink_map_info[BIOLINK_ASSOCIATION_TYPE]
 
         edge_attributes = []
-        provenance_attributes = []
+        provenance_retrieval_sources = []
         for k, v in n4j_object.items():
             if k == SPOKE_PROPERTY_NATIVE_SPOKE:
                 continue
             if k in SPOKE_PROVENANCE_FIELDS:
-                source_attributes = make_provenance_attributes(k, v)
-                provenance_attributes.extend(source_attributes)
-                continue
-            if k in SPOKE_PUBLICATION_FIELDS:
-                edge_attributes.extend(make_publications_attribute(k, v))
+                retrieval_sources = make_retrieval_sources(k, v)
+                provenance_retrieval_sources.extend(retrieval_sources)
                 continue
             edge_attribute = self._make_result_attribute(k, v, SPOKE_GRAPH_TYPE_EDGE, edge_type)
             if edge_attribute:
-                edge_attributes.append(edge_attribute)
+                if isinstance(edge_attribute, list):
+                    edge_attributes.extend(edge_attribute)
+                else:
+                    edge_attributes.append(edge_attribute)
 
-        if not provenance_attributes:
-            provenance_attributes.append(make_default_provenance_attribute(edge_type))
+        if not provenance_retrieval_sources:
+            provenance_retrieval_sources.append(make_default_retrieval_sources(edge_type))
 
-        if len(provenance_attributes) > 1:
-            provenance_attributes = choose_primary_source(
-                provenance_attributes,
+        if len(provenance_retrieval_sources) > 1:
+            provenance_retrieval_sources = choose_primary_source(
+                provenance_retrieval_sources,
                 edge_type,
             )
-
-        provenance_attributes.extend([SPOKE_KP_PROVENANCE_ATTR, IMPROVING_AGENT_PROVENANCE_ATTR])
-        edge_attributes = provenance_attributes + edge_attributes
+        spoke_retrieval_source = make_internal_retrieval_source(
+            provenance_retrieval_sources,
+            INFORES_SPOKE.infores_id,
+        )
+        provenance_retrieval_sources.append(spoke_retrieval_source)
+        ia_retrieval_source = make_internal_retrieval_source(
+            provenance_retrieval_sources,
+            INFORES_IMPROVING_AGENT.infores_id,
+        )
+        provenance_retrieval_sources.append(ia_retrieval_source)
 
         result_edge = models.Edge(
             attributes=edge_attributes,
             object=n4j_object.end_node["identifier"],
             predicate=predicate,
             qualifiers=qualifiers,
+            sources=provenance_retrieval_sources,
             subject=n4j_object.start_node["identifier"],
         )
 
@@ -633,13 +645,17 @@ class BasicQuery:
                 edge_bindings[self.query_mapping['edges'][name]] = [models.EdgeBinding(spoke_edge_id)]
                 result_edge = self.make_result_edge(n4j_result[name])
                 self.knowledge_graph['edges'][spoke_edge_id] = result_edge
+                result_analysis = models.Analysis(
+                    resource_id=INFORES_IMPROVING_AGENT.infores_id,
+                    edge_bindings=edge_bindings,
+                )
 
-        return models.Result(node_bindings, edge_bindings)
+        return models.Result(node_bindings, [result_analysis])
 
     # normalization
     def normalize(self):
         # search the node normalizer for nodes collected in result creation
-        node_search_results = normalize_spoke_nodes_for_translator(list(self.nodes_to_normalize))
+        node_search_results = normalize_spoke_nodes_for_translator(self.nodes_to_normalize)
         for spoke_curie, normalized_curie in node_search_results.items():
             self.knowledge_graph['nodes'][normalized_curie] = self.knowledge_graph['nodes'].pop(spoke_curie)
 
@@ -655,7 +671,7 @@ class BasicQuery:
                 if node.query_id == normalized_node_id:
                     node.query_id = None
                 new_node_bindings[qnode] = [models.NodeBinding(normalized_node_id, node.query_id)]
-            new_results.append(models.Result(new_node_bindings, result.edge_bindings))
+            new_results.append(models.Result(new_node_bindings, result.analyses))
 
         self.results = new_results
 
@@ -668,7 +684,7 @@ class BasicQuery:
         self,
         session: neo4j.Session,
         norm_scores: bool = True,
-    ) -> Tuple[List[models.Result], models.KnowledgeGraph]:
+    ) -> Tuple[List[models.Result], models.KnowledgeGraph, List[Optional[str]]]:
         """Returns the SPOKE node label equivalent to `node_type`
 
         Parameters
@@ -692,7 +708,7 @@ class BasicQuery:
         session.read_transaction(self.run_query, query_string)
 
         if not self.results:
-            return self.results, self.knowledge_graph
+            return self.results, self.knowledge_graph, []
 
         # normalize the knowledge_graph and results
         self.normalize()
@@ -707,7 +723,7 @@ class BasicQuery:
         scored_results = self.score_results(self.results)
         if norm_scores is True:
             scored_results = normalize_results_scores(scored_results)
-        sorted_scored_results = sorted(scored_results, key=lambda x: x.score, reverse=True)
+        sorted_scored_results = sorted(scored_results, key=lambda x: x.analyses[0].score, reverse=True)
 
         if query_kps:
             # check BigGIM
@@ -719,4 +735,4 @@ class BasicQuery:
                 self.query_options.get("psev_context"),
             )
 
-        return sorted_scored_results, self.knowledge_graph
+        return sorted_scored_results, self.knowledge_graph, {}

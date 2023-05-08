@@ -4,9 +4,14 @@ is known in the other two.
 """
 from copy import deepcopy
 from random import randint
-from typing import Any
+from typing import Any, Tuple
 
 from .template_query_base import template_matches_inferred_one_hop, TemplateQueryBase
+from improving_agent.models.attribute import Attribute
+from improving_agent.models.auxiliary_graph import AuxiliaryGraph
+from improving_agent.models.edge import Edge
+from improving_agent.models.edge_binding import EdgeBinding
+from improving_agent.models.node_binding import NodeBinding
 from improving_agent.models.q_edge import QEdge
 from improving_agent.models.q_node import QNode
 from improving_agent.src.basic_query import BasicQuery
@@ -15,8 +20,10 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_REGULATES,
     BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_GENE,
+    BIOLINK_SLOT_SUPPORT_GRAPHS,
     BL_QUALIFIER_DIRECTION_DECREASED,
     BL_QUALIFIER_DIRECTION_INCREASED,
+    INFORES_IMPROVING_AGENT,
     SPOKE_EDGE_TYPE_DOWNREGULATES_CdG,
     SPOKE_EDGE_TYPE_DOWNREGULATES_GPdG,
     SPOKE_EDGE_TYPE_DOWNREGULATES_KGdG,
@@ -26,6 +33,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     SPOKE_EDGE_TYPE_UPREGULATES_KGuG,
     SPOKE_EDGE_TYPE_UPREGULATES_OGuG,
 )
+from improving_agent.src.provenance import make_internal_retrieval_source
 from improving_agent.src.scoring.scoring_utils import normalize_results_scores
 from improving_agent.util import get_evidara_logger
 
@@ -170,6 +178,35 @@ class CompoundAffectsGene(TemplateQueryBase):
             qnodes,
         )
 
+    def _make_new_inferred_edge(
+        self,
+        i: int,
+        j: int,
+        aux_graph_id: str,
+        node_bindings: dict[str: list[NodeBinding]],
+    ) -> Tuple[str, Edge]:
+        """Returns an identifier and new inferred edge between the query's
+        original subject and object
+        """
+        retrieval_source = make_internal_retrieval_source([], INFORES_IMPROVING_AGENT)
+        supporting_edges_attr = Attribute(
+            attribute_source=INFORES_IMPROVING_AGENT,
+            attribute_type_id=BIOLINK_SLOT_SUPPORT_GRAPHS,
+            value=[aux_graph_id],
+        )
+
+        object_id = node_bindings[self.node_id_gene][0].id
+        subject_id = node_bindings[self.node_id_compound][0].id
+        new_edge = Edge(
+            attributes=[supporting_edges_attr],
+            object=object_id,
+            predicate=BIOLINK_ASSOCIATION_AFFECTS,
+            qualifiers=self.qedges[self.edge_id_affects].qualifier_constraints,
+            subject=subject_id,
+            sources=[retrieval_source],
+        )
+        return f'inferred_edge_{i}-{j}', new_edge
+
     def do_query(self, session):
         """Returns results from three subsequent BasicQueries: known
         results and expanded two hops to ask conceptually the
@@ -184,11 +221,11 @@ class CompoundAffectsGene(TemplateQueryBase):
             self.query_options,
             self.max_results,
         )
-        results, knowledge_graph = one_hop_query.do_query(session, norm_scores=False)
+        results, knowledge_graph, _ = one_hop_query.do_query(session, norm_scores=False)
 
         count_to_get = self.max_results - len(results)
         if count_to_get == 0:
-            return results, knowledge_graph
+            return results, knowledge_graph, {}
 
         # we have fewer than the max requested results, so we do a
         # second query.
@@ -241,7 +278,7 @@ class CompoundAffectsGene(TemplateQueryBase):
         edge_combos = DIRECTION_COMBO_MAP.get(affects_direction)
         if not edge_combos:
             logger.warn(f'An unconfigured direction was received: {affects_direction=}')
-            return results, knowledge_graph
+            return results, knowledge_graph, {}
 
         result_sets = []
         for predicate_edge_1, predicates_edge_2 in edge_combos.items():
@@ -256,7 +293,8 @@ class CompoundAffectsGene(TemplateQueryBase):
                 query_options=self.query_options,
                 n_results=count_to_get,
             )
-            _results, _knowledge_graph = two_hop_querier.do_query(session, norm_scores=False)
+            _results, _knowledge_graph, _ = two_hop_querier.do_query(session, norm_scores=False)
+
             result_sets.append((_results, _knowledge_graph))
 
         # resolve the kgs
@@ -264,26 +302,55 @@ class CompoundAffectsGene(TemplateQueryBase):
         _nodes = {}
         _edges = {}
         _results = []
+        _aux_graphs = {}
         for i, (_r, _kg) in enumerate(result_sets):
             _nodes |= {**_kg['nodes']}
 
-            for result in _r:
-                if result.score:
-                    result.score = result.score / 2  # penalize
-                for bindings in result.edge_bindings.values():
+            for j, result in enumerate(_r):
+
+                # make the aux graphs
+                aux_graph_edges = []
+                for bindings in result.analyses[0].edge_bindings.values():
                     for binding in bindings:
-                        binding.id = f"{binding.id}-i{i}"
+                        # new binding id created below as well
+                        updated_edge_id = f'{binding.id}-i{i}'
+                        aux_graph_edges.append(updated_edge_id)
+                        _edges[updated_edge_id] = _kg['edges'][binding.id]
+
+                aux_graph_id = f'ag_{i}_{j}'
+                _aux_graphs[aux_graph_id] = AuxiliaryGraph(edges=aux_graph_edges)
+
+                # make a new inferred edge and add it to the kg
+                new_edge_id, new_inferred_edge = self._make_new_inferred_edge(
+                    i, j, aux_graph_id, result.node_bindings,
+                )
+                _edges[new_edge_id] = new_inferred_edge
+
+                # update the results
+                result.analyses[0].support_graphs = [aux_graph_id]
+
+                if result.analyses[0].score:
+                    result.analyses[0].score = result.analyses[0].score / 2  # penalize
+
+                result.analyses[0].edge_bindings = {
+                    self.edge_id_affects: [EdgeBinding(id=new_edge_id)]
+                }
+
                 _results.append(result)
 
-            for edge_name, edge_details in _kg['edges'].items():
-                _edges[f"{edge_name}-i{i}"] = edge_details
-
-        two_hop_results = sorted(_results, key=lambda x: x.score, reverse=True)[:count_to_get]
+        two_hop_results = sorted(_results, key=lambda x: x.analyses[0].score, reverse=True)[:count_to_get]
         two_hop_knowledge_graph = {'edges': {}, 'nodes': {}}
+        two_hop_aux_graphs = {}
         for two_hop_result in two_hop_results:
-            for edge_binding in two_hop_result.edge_bindings.values():
+            for edge_binding in two_hop_result.analyses[0].edge_bindings.values():
                 for edge in edge_binding:
                     two_hop_knowledge_graph['edges'][edge.id] = _edges[edge.id]
+
+            for supporting_graph in two_hop_result.analyses[0].support_graphs:
+                two_hop_aux_graphs[supporting_graph] = _aux_graphs[supporting_graph]
+                for aux_edge_id in _aux_graphs[supporting_graph].edges:
+                    two_hop_knowledge_graph['edges'][aux_edge_id] = _edges[aux_edge_id]
+
             for node_binding in two_hop_result.node_bindings.values():
                 for node in node_binding:
                     two_hop_knowledge_graph['nodes'][node.id] = _nodes[node.id]
@@ -293,4 +360,4 @@ class CompoundAffectsGene(TemplateQueryBase):
         knowledge_graph['nodes'] |= two_hop_knowledge_graph['nodes']
         knowledge_graph['edges'] |= two_hop_knowledge_graph['edges']
 
-        return results, knowledge_graph
+        return results, knowledge_graph, two_hop_aux_graphs

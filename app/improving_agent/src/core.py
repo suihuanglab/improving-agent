@@ -19,6 +19,7 @@ from improving_agent.exceptions import (
 from improving_agent.models import Message, Query, QueryGraph, Response
 from improving_agent.models import Schema1 as Workflow
 from improving_agent.src.basic_query import BasicQuery
+from improving_agent.src.config import app_config
 from improving_agent.src.normalization.edge_normalization import validate_normalize_qedges
 from improving_agent.src.normalization.node_normalization import validate_normalize_qnodes
 from improving_agent.src.psev import get_psev_concepts
@@ -122,14 +123,20 @@ def process_query(raw_json):
             querier = template_query(qnodes, qedges, query_options, max_results)
         else:
             querier = BasicQuery(qnodes, qedges, query_options, query.max_results)
-        results, knowledge_graph = querier.do_query(session)
-        response_message = Message(results, query_graph, knowledge_graph)
+        results, knowledge_graph, aux_graphs = querier.do_query(session)
+        response_message = Message(results, query_graph, knowledge_graph, aux_graphs)
         success_description = (
             f'Success. Returning {len(results)} results. Note: imProving '
             "Agent's result scores are contextual within a set of results "
             'and should not be compared with scores from other queries.'
         )
-        response = Response(response_message, description=success_description, workflow=query.workflow)
+        response = Response(
+            response_message,
+            description=success_description,
+            workflow=query.workflow,
+            schema_version=app_config.TRAPI_VERSION,
+            biolink_version=app_config.BIOLINK_VERSION,
+        )
         logger.info(success_description)
     return response
 
@@ -145,16 +152,34 @@ def try_query(query):
         UnsupportedKnowledgeType,
         TemplateQuerySpecError
     ) as e:
-        return Response(message=Message(), status="Bad Request", description=str(e)), 400
+        return Response(
+            message=Message(),
+            status="Bad Request",
+            description=str(e),
+            schema_version=app_config.TRAPI_VERSION,
+            biolink_version=app_config.BIOLINK_VERSION,
+        ), 400
     except (
         NonLinearQueryError,
         UnmatchedIdentifierError,
         UnsupportedQualifier,
         UnsupportedTypeError,
     ) as e:
-        return Response(Message(), status="Query unprocessable", description=f'{str(e)}; returning empty message...'), 200
+        return Response(
+            message=Message(),
+            status="Query unprocessable",
+            description=f'{str(e)}; returning empty message...',
+            schema_version=app_config.TRAPI_VERSION,
+            biolink_version=app_config.BIOLINK_VERSION,
+        ), 200
     except NotImplemented as e:
-        return Response(message=Message(), status="Not Implemented", description=str(e)), NotImplemented.code
+        return Response(
+            message=Message(),
+            status="Not Implemented",
+            description=str(e),
+            schema_version=app_config.TRAPI_VERSION,
+            biolink_version=app_config.BIOLINK_VERSION,
+        ), NotImplemented.code
     except Exception as e:
         logger.exception(str(e))
         timestamp = datetime.now().isoformat()
@@ -164,4 +189,10 @@ def try_query(query):
             'page https://github.com/suihuanglab/improving-agent '
             f'timestamp: {timestamp}'
         )
-        return Response(Message(), status="Server Error", description=error_description), 500
+        return Response(
+            message=Message(),
+            status="Server Error",
+            description=error_description,
+            schema_version=app_config.TRAPI_VERSION,
+            biolink_version=app_config.BIOLINK_VERSION,
+        ), 500

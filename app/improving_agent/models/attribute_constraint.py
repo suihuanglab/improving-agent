@@ -20,7 +20,7 @@ class AttributeConstraint(Model):
         """AttributeConstraint - a model defined in OpenAPI
 
         :param id: The id of this AttributeConstraint.  # noqa: E501
-        :type id: str
+        :type id: AttributeConstraintId
         :param name: The name of this AttributeConstraint.  # noqa: E501
         :type name: str
         :param _not: The _not of this AttributeConstraint.  # noqa: E501
@@ -28,11 +28,11 @@ class AttributeConstraint(Model):
         :param operator: The operator of this AttributeConstraint.  # noqa: E501
         :type operator: str
         :param value: The value of this AttributeConstraint.  # noqa: E501
-        :type value: AnyType
+        :type value: object
         :param unit_id: The unit_id of this AttributeConstraint.  # noqa: E501
-        :type unit_id: AnyType
+        :type unit_id: object
         :param unit_name: The unit_name of this AttributeConstraint.  # noqa: E501
-        :type unit_name: AnyType
+        :type unit_name: object
         """
         self.openapi_types = {
             'id': str,
@@ -77,10 +77,9 @@ class AttributeConstraint(Model):
     def id(self):
         """Gets the id of this AttributeConstraint.
 
-        CURIE of the concept being constrained. For properties defined by the Biolink model this SHOULD be a biolink CURIE. otherwise, if possible, from the EDAM ontology. If a suitable CURIE does not exist, enter a descriptive phrase here and submit the new type for consideration by the appropriate authority.  # noqa: E501
 
         :return: The id of this AttributeConstraint.
-        :rtype: str
+        :rtype: AttributeConstraintId
         """
         return self._id
 
@@ -88,10 +87,9 @@ class AttributeConstraint(Model):
     def id(self, id):
         """Sets the id of this AttributeConstraint.
 
-        CURIE of the concept being constrained. For properties defined by the Biolink model this SHOULD be a biolink CURIE. otherwise, if possible, from the EDAM ontology. If a suitable CURIE does not exist, enter a descriptive phrase here and submit the new type for consideration by the appropriate authority.  # noqa: E501
 
         :param id: The id of this AttributeConstraint.
-        :type id: str
+        :type id: AttributeConstraintId
         """
         if id is None:
             raise ValueError("Invalid value for `id`, must not be `None`")  # noqa: E501
@@ -180,7 +178,7 @@ class AttributeConstraint(Model):
         Value of the attribute. May be any data type, including a list. If the value is a list and there are multiple items, at least one comparison must be true (equivalent to OR) unless the '===' operator is used. If 'value' is of data type 'object', the keys of the object MAY be treated as a list. A 'list' data type paired with the '>' or '<' operators will encode extraneous comparisons, but this is permitted as it is in SQL and other languages.  # noqa: E501
 
         :return: The value of this AttributeConstraint.
-        :rtype: AnyType
+        :rtype: object
         """
         return self._value
 
@@ -191,7 +189,7 @@ class AttributeConstraint(Model):
         Value of the attribute. May be any data type, including a list. If the value is a list and there are multiple items, at least one comparison must be true (equivalent to OR) unless the '===' operator is used. If 'value' is of data type 'object', the keys of the object MAY be treated as a list. A 'list' data type paired with the '>' or '<' operators will encode extraneous comparisons, but this is permitted as it is in SQL and other languages.  # noqa: E501
 
         :param value: The value of this AttributeConstraint.
-        :type value: AnyType
+        :type value: object
         """
         if value is None:
             raise ValueError("Invalid value for `value`, must not be `None`")  # noqa: E501
@@ -205,7 +203,7 @@ class AttributeConstraint(Model):
         CURIE of the units of the value or list of values in the 'value' property. The Units of Measurement Ontology (UO) should be used if possible. The unit_id MUST be provided for (lists of) numerical values that correspond to a quantity that has units.  # noqa: E501
 
         :return: The unit_id of this AttributeConstraint.
-        :rtype: AnyType
+        :rtype: object
         """
         return self._unit_id
 
@@ -216,7 +214,7 @@ class AttributeConstraint(Model):
         CURIE of the units of the value or list of values in the 'value' property. The Units of Measurement Ontology (UO) should be used if possible. The unit_id MUST be provided for (lists of) numerical values that correspond to a quantity that has units.  # noqa: E501
 
         :param unit_id: The unit_id of this AttributeConstraint.
-        :type unit_id: AnyType
+        :type unit_id: object
         """
 
         self._unit_id = unit_id
@@ -228,7 +226,7 @@ class AttributeConstraint(Model):
         Term name that is associated with the CURIE of the units of the value or list of values in the 'value' property. The Units of Measurement Ontology (UO) SHOULD be used if possible. This property SHOULD be provided if a unit_id is provided. This is redundant but recommended for human readability.  # noqa: E501
 
         :return: The unit_name of this AttributeConstraint.
-        :rtype: AnyType
+        :rtype: object
         """
         return self._unit_name
 
@@ -239,7 +237,7 @@ class AttributeConstraint(Model):
         Term name that is associated with the CURIE of the units of the value or list of values in the 'value' property. The Units of Measurement Ontology (UO) SHOULD be used if possible. This property SHOULD be provided if a unit_id is provided. This is redundant but recommended for human readability.  # noqa: E501
 
         :param unit_name: The unit_name of this AttributeConstraint.
-        :type unit_name: AnyType
+        :type unit_name: object
         """
 
         self._unit_name = unit_name
