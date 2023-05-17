@@ -788,10 +788,10 @@ SPOKE_PROPERTY_URL = 'url'
 SPOKE_PROPERTY_VESTIGE = 'vestige'
 SPOKE_PROPERTY_ZSCORE = 'zscore'
 
-BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE = 'biolink:aggregator_knowledge_source'
-BL_ATTR_KNOWLEDGE_SOURCE = 'biolink:knowledge_source'
-BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE = 'biolink:primary_knowledge_source'
-BL_ATTR_SUPPORTING_DATA_SOURCE = 'biolink:supporting_data_source'
+BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE = 'aggregator_knowledge_source'
+BL_ATTR_KNOWLEDGE_SOURCE = 'knowledge_source'
+BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE = 'primary_knowledge_source'
+BL_ATTR_SUPPORTING_DATA_SOURCE = 'supporting_data_source'
 
 INFORES_BGEE = Infores('infores:bgee', BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE)
 INFORES_BINDINGDB = Infores('infores:bindingdb', BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE)
