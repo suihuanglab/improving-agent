@@ -100,7 +100,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
             predicate='biolink:treats',
             subject=subj_id,
             object=obj_id,
-            sources=[make_internal_retrieval_source([], INFORES_IMPROVING_AGENT)]
+            sources=[make_internal_retrieval_source([], INFORES_IMPROVING_AGENT.infores_id)]
         )
 
     def do_query(self, session):
@@ -195,7 +195,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
                 node_bindings={self.node_id_disease: [NodeBinding(disease_identifier)],
                                self.node_id_compound: [NodeBinding(biolink_id)]},
                 analyses=[Analysis(
-                    resource_id=INFORES_IMPROVING_AGENT,
+                    resource_id=INFORES_IMPROVING_AGENT.infores_id,
                     edge_bindings={self.edge_id_treats: [EdgeBinding(f'inferred_{i}')]},
                     score=sorted_compound_scores[spoke_id] * 10000
                 )]

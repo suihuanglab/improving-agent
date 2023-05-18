@@ -188,9 +188,9 @@ class CompoundAffectsGene(TemplateQueryBase):
         """Returns an identifier and new inferred edge between the query's
         original subject and object
         """
-        retrieval_source = make_internal_retrieval_source([], INFORES_IMPROVING_AGENT)
+        retrieval_source = make_internal_retrieval_source([], INFORES_IMPROVING_AGENT.infores_id)
         supporting_edges_attr = Attribute(
-            attribute_source=INFORES_IMPROVING_AGENT,
+            attribute_source=INFORES_IMPROVING_AGENT.infores_id,
             attribute_type_id=BIOLINK_SLOT_SUPPORT_GRAPHS,
             value=[aux_graph_id],
         )
