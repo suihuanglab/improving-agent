@@ -32,12 +32,6 @@ servers:
   - url: https://ia.transltr.io/api/v1.3/
     description: ITRB Production server
     x-maturity: production
-  - url: https://ia.test.transltr.io/api/v1.3/
-    description: ITRB Test server
-    x-maturity: testing
-  - url: https://ia.healthdatascience.cloud/api/v1.3/
-    description: development
-    x-maturity: development
 tags:
   - name: meta_knowledge_graph
     description: >-
