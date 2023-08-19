@@ -201,7 +201,7 @@ class CompoundAffectsGene(TemplateQueryBase):
             attributes=[supporting_edges_attr],
             object=object_id,
             predicate=BIOLINK_ASSOCIATION_AFFECTS,
-            qualifiers=self.qedges[self.edge_id_affects].qualifier_constraints,
+            qualifiers=self.qedges[self.edge_id_affects].qualifier_constraints[0]['qualifier_set'],
             subject=subject_id,
             sources=[retrieval_source],
         )
