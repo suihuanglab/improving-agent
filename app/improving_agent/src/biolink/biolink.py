@@ -9,7 +9,7 @@ from .spoke_biolink_constants import (
     BIOLINK_SPOKE_NODE_MAPPINGS,
 )
 
-BMT = Toolkit('https://raw.githubusercontent.com/biolink/biolink-model/67fec603ecbf2759064cd36566d23b4f6aaed4ff/biolink-model.yaml')  # NOQA biolink 3.1.2
+BMT = Toolkit('https://raw.githubusercontent.com/biolink/biolink-model/ad97b5fb6bd1e9896c6a61c4c12e2456b562fbb9/biolink-model.yaml')  # NOQA biolink 3.5.4
 
 EDGE = 'edge'
 NODE = 'node'

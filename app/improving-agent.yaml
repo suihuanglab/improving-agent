@@ -14,7 +14,7 @@ info:
     component: ARA
     team:
       - imProving Agent
-    biolink-version: 3.2.8
+    biolink-version: 3.5.4
     infores: "infores:improving-agent"
     externalDocs:
       description: >-

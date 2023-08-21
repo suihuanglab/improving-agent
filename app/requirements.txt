@@ -1,9 +1,9 @@
-bmt == 0.10.0
+bmt ~= 1.1
 boto3 ~= 1.17
 connexion[swagger-ui] ~= 2.14; python_version>="3.6"
 flake8 ~=6.0
 neo4j ~= 4.2
-numpy ~= 1.18.1
+numpy ~= 1.18
 python_dateutil ~= 2.8
 requests ~= 2.23
 setuptools ~= 65.7
