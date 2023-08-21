@@ -137,6 +137,11 @@ def check_db():
         return 'Error', 500
 
 
+@app.route("/api/ia-version")
+def get_tool_version():
+    return app_config.IA_VERSION
+
+
 @app.app.teardown_appcontext
 def close_db(error):
     if hasattr(g, "db"):
