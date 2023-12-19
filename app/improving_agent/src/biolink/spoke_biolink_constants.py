@@ -788,6 +788,10 @@ SPOKE_PROPERTY_URL = 'url'
 SPOKE_PROPERTY_VESTIGE = 'vestige'
 SPOKE_PROPERTY_ZSCORE = 'zscore'
 
+KNOWN_UNMAPPED_ATTRS = [
+    SPOKE_PROPERTY_ACT_SOURCES,
+]
+
 BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE = 'aggregator_knowledge_source'
 BL_ATTR_KNOWLEDGE_SOURCE = 'knowledge_source'
 BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE = 'primary_knowledge_source'
@@ -890,7 +894,9 @@ SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS = {
         SPOKE_PROPERTY_SOURCE: SpokeAttributeMapping(BIOLINK_SLOT_PROVIDED_BY, INFORES_SPOKE.infores_id),
     },
     SPOKE_EDGE_TYPE_CONTRAINDICATES_CcD: {
-        SPOKE_PROPERTY_ACT_SOURCES: SpokeAttributeMapping(BIOLINK_SLOT_PROVIDED_BY, INFORES_DRUGCENTRAL.infores_id),
+        # note: act_sources unmapped as of 2023-12 when provided by was
+        # found to be removed from biolink
+        # SPOKE_PROPERTY_ACT_SOURCES: SpokeAttributeMapping(BIOLINK_SLOT_PROVIDED_BY, INFORES_DRUGCENTRAL.infores_id),
         SPOKE_PROPERTY_SOURCE: SpokeAttributeMapping(BIOLINK_SLOT_PROVIDED_BY, INFORES_SPOKE.infores_id),
     },
     SPOKE_EDGE_TYPE_DECREASEDIN_PdD: {
@@ -1077,7 +1083,9 @@ SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS = {
     SPOKE_EDGE_TYPE_TREATS_CtD: {
         SPOKE_PROPERTY_SOURCES: SpokeAttributeMapping(BIOLINK_SLOT_PROVIDED_BY, INFORES_SPOKE.infores_id),
         'phase': SpokeAttributeMapping(BIOLINK_SLOT_HAS_CONFIDENCE_LEVEL, INFORES_CHEMBL.infores_id),
-        SPOKE_PROPERTY_ACT_SOURCES: SpokeAttributeMapping(BIOLINK_SLOT_PROVIDED_BY, INFORES_DRUGCENTRAL.infores_id),
+        # note: act_sources unmapped as of 2023-12 when provided by was
+        # found to be removed from biolink
+        # SPOKE_PROPERTY_ACT_SOURCES: SpokeAttributeMapping(BIOLINK_SLOT_PROVIDED_BY, INFORES_DRUGCENTRAL.infores_id),
         SPOKE_PROPERTY_SOURCE: SpokeAttributeMapping(BIOLINK_SLOT_PROVIDED_BY, INFORES_SPOKE.infores_id),
     },
     SPOKE_EDGE_TYPE_UPREGULATES_AuG: {

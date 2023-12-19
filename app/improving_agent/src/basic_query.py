@@ -15,6 +15,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_SLOT_HIGHEST_FDA_APPROVAL,
     INFORES_IMPROVING_AGENT,
     INFORES_SPOKE,
+    KNOWN_UNMAPPED_ATTRS,
     MAX_PHASE_FDA_APPROVAL_MAP,
     QUALIFIERS,
     SPOKE_ANY_TYPE,
@@ -424,6 +425,9 @@ class BasicQuery:
             raise ValueError(
                 f'Got {edge_or_node=} but it must be one of "edge" or "node"'
             )
+        
+        if property_type in KNOWN_UNMAPPED_ATTRS:
+            return
 
         if property_type in SPOKE_PUBLICATION_FIELDS:
             return make_publications_attribute(property_type, property_value)
