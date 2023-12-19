@@ -1,6 +1,8 @@
 from .template_query_base import template_matches_inferred_one_hop, TemplateQueryBase
 from improving_agent.models import (
     Analysis,
+    Attribute,
+    AuxiliaryGraph,
     Edge,
     EdgeBinding,
     NodeBinding,
@@ -12,7 +14,9 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_TREATS,
     BIOLINK_ENTITY_SMALL_MOLECULE,
     BIOLINK_ENTITY_DISEASE,
+    BIOLINK_SLOT_SUPPORT_GRAPHS,
     INFORES_IMPROVING_AGENT,
+    INFORES_SPOKE,
     SPOKE_LABEL_COMPOUND,
     SPOKE_LABEL_DISEASE,
 )
@@ -95,13 +99,58 @@ class DrugMayTreatDisease(TemplateQueryBase):
             [BIOLINK_ASSOCIATION_TREATS],
         )
 
-    def make_result_edge(self, subj_id, obj_id):
+    def make_result_edge(
+        self,
+        subj_id: str,
+        obj_id: str,
+        aux_graph_id: str
+    ):
+        supporting_edges_attr = Attribute(
+            attribute_source=INFORES_IMPROVING_AGENT.infores_id,
+            attribute_type_id=BIOLINK_SLOT_SUPPORT_GRAPHS,
+            value=[aux_graph_id],
+        )
+
         return Edge(
+            attributes=[supporting_edges_attr],
             predicate='biolink:treats',
             subject=subj_id,
             object=obj_id,
             sources=[make_internal_retrieval_source([], INFORES_IMPROVING_AGENT.infores_id)]
         )
+    
+    def make_supporting_edge(self, subj_id: str, obj_id: str) -> str:
+        """Returns a supporting edge that has been created and added to
+        the knowledge graph
+        """
+        supp_edge = Edge(
+            predicate='biolink:associated_with',
+            subject=subj_id,
+            object=obj_id,
+            sources=[make_internal_retrieval_source([], INFORES_SPOKE.infores_id)],
+        )
+        return supp_edge
+    
+    def make_aux_graph(
+        self,
+        subj_id: str,
+        obj_id: str,
+        result_number: int,
+    ) -> tuple[str, AuxiliaryGraph]:
+        """Returns a tuple of the id of an auxiliary graph and the aux
+        graph itself with an edge that relates the clinical concept of
+        the PSEV. A side effect is that an edge is added to the
+        knowledge graph
+        """
+        # make supporting edge and add to the knowledge graph
+        supporting_edge = self.make_supporting_edge(subj_id, obj_id)
+        supporting_edge_id = f'psev_edge_{result_number}'
+        self.knowledge_graph['edges'][supporting_edge_id] = supporting_edge
+
+        # make the aux graph ID and aux graph, then return
+        aux_graph_id = f'ag_{result_number}'
+        aux_graph = AuxiliaryGraph(edges=[supporting_edge_id])
+        return aux_graph_id, aux_graph
 
     def do_query(self, session):
         logger.info(f'Doing template query: {self.template_query_name}')
@@ -183,12 +232,23 @@ class DrugMayTreatDisease(TemplateQueryBase):
         node_ids = list(sorted_compound_scores.keys())
         result_nodes = session.read_transaction(_compound_search, node_ids, basic_query)
 
+        auxiliary_graphs = {}
         for i, spoke_id in enumerate(result_nodes):
             biolink_id = format_curie_for_sri(
                 BIOLINK_ENTITY_SMALL_MOLECULE,
                 spoke_id,
             )
-            result_edge = self.make_result_edge(biolink_id, disease_identifier)
+            aux_graph_id, aux_graph = self.make_aux_graph(
+                biolink_id,
+                disease_identifier,
+                i,
+            )
+            auxiliary_graphs[aux_graph_id] = aux_graph
+            result_edge = self.make_result_edge(
+                biolink_id,
+                disease_identifier,
+                aux_graph_id,
+            )
             self.knowledge_graph['edges'][f'inferred_{i}'] = result_edge
             self.knowledge_graph['nodes'][biolink_id] = result_nodes[spoke_id]
             new_results.append(Result(
@@ -204,4 +264,4 @@ class DrugMayTreatDisease(TemplateQueryBase):
         results = normalize_results_scores(results)
 
         results = sorted(results, key=lambda x: x.analyses[0].score, reverse=True)
-        return results, self.knowledge_graph, {}
+        return results, self.knowledge_graph, auxiliary_graphs
