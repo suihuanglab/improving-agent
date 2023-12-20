@@ -257,7 +257,8 @@ class DrugMayTreatDisease(TemplateQueryBase):
                 analyses=[Analysis(
                     resource_id=INFORES_IMPROVING_AGENT.infores_id,
                     edge_bindings={self.edge_id_treats: [EdgeBinding(f'inferred_{i}')]},
-                    score=sorted_compound_scores[spoke_id] * 10000
+                    score=sorted_compound_scores[spoke_id] * 10000,
+                    support_graphs=[aux_graph_id],
                 )]
             ))
         results.extend(new_results)
