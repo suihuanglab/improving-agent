@@ -8,16 +8,18 @@ from typing import Dict, List, Union
 
 from improving_agent import models
 from improving_agent.src.biolink.spoke_biolink_constants import (
-    BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE,
-    BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE,
     BIOLINK_ENTITY_ARTICLE,
     BIOLINK_SLOT_PUBLICATIONS,
-    INFORES_SPOKE,
+    BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE,
+    BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE,
     INFORES_BINDINGDB,
+    INFORES_CHEMBL,
     INFORES_DISEASES,
     INFORES_DRUGCENTRAL,
     INFORES_GWAS,
+    INFORES_IMPROVING_AGENT,
     INFORES_OMIM,
+    INFORES_SPOKE,
     SPOKE_EDGE_DEFAULT_SOURCE,
     SPOKE_EDGE_TYPE_ASSOCIATES_DaG,
     SPOKE_EDGE_TYPE_BINDS_CbP,
@@ -58,6 +60,42 @@ PREFERRED_ORDER_MULTI_SOURCE = {
 }
 
 
+TREATS_LOOKUP_RETRIEVAL_SOURCE_MAP = {  # primary KS -> list of RetrievalSource
+    INFORES_CHEMBL.infores_id: [
+        models.RetrievalSource(
+            resource_id=INFORES_CHEMBL.infores_id,
+            resource_role=BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE,
+        ),
+        models.RetrievalSource(
+            resource_id=INFORES_SPOKE.infores_id,
+            resource_role=BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE,
+            upstream_resource_ids=[INFORES_CHEMBL.infores_id]
+        )
+    ],
+    INFORES_DRUGCENTRAL.infores_id: [
+        models.RetrievalSource(
+            resource_id=INFORES_DRUGCENTRAL.infores_id,
+            resource_role=BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE,
+        ),
+        models.RetrievalSource(
+            resource_id=INFORES_SPOKE.infores_id,
+            resource_role=BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE,
+            upstream_resource_ids=[INFORES_CHEMBL.infores_id]
+        )
+    ],
+    INFORES_SPOKE.infores_id: [
+        models.RetrievalSource(
+            resource_id=INFORES_SPOKE.infores_id,
+            resource_role=BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE,
+        ),
+        models.RetrievalSource(
+            resource_id=INFORES_CHEMBL.infores_id,
+            resource_role=BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE,
+        )
+    ],
+}
+
+
 def make_internal_retrieval_source(
     retrieval_sources: list[str],
     infores_id: str
@@ -74,6 +112,29 @@ def make_internal_retrieval_source(
         upstream_resource_ids=list(upstream_sources)
     )
 
+def get_internal_retrieval_sources(
+    provenance_sources: list[models.RetrievalSource]
+) -> list[models.RetrievalSource]:
+    """Returns a list of Retrieval Sources for internal components,
+    improving and spoke, as appropriate
+    """
+    internal_sources = []
+    found_spoke = False
+    for source in provenance_sources:
+        if source.resource_id == INFORES_SPOKE.infores_id:
+            found_spoke = True
+    if found_spoke is False:
+        spoke_retrieval_source = make_internal_retrieval_source(
+            provenance_sources,
+            INFORES_SPOKE.infores_id,
+        )
+        internal_sources.append(spoke_retrieval_source)
+    ia_retrieval_source = make_internal_retrieval_source(
+        provenance_sources,
+        INFORES_IMPROVING_AGENT.infores_id,
+    )
+    internal_sources.append(ia_retrieval_source)
+    return internal_sources
 
 def _make_retrieval_source(source_or_sources):
     retrieval_sources = []
@@ -132,7 +193,7 @@ def make_publications_attribute(
 
 def make_retrieval_sources(
     field_name: str, field_value: Union[str, int, List[str]]
-) -> List[Dict[str, Union[str, int]]]:
+) -> list[models.RetrievalSource]:
     """Returns a list of source-provenance attributes to be attached
     to the result node or edge
 
@@ -155,7 +216,7 @@ def make_default_retrieval_sources(spoke_type):
 
 
 def choose_primary_source(
-    retrieval_sources: List[models.RetrievalSource],
+    retrieval_sources: list[models.RetrievalSource],
     edge_type: str,
 ):
     """Returns a mutated list of sources with one source being deemed

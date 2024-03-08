@@ -236,6 +236,8 @@ BIOLINK_ASSOCIATION_HAS_PARTICIPANT = 'biolink:has_participant'
 BIOLINK_ASSOCIATION_HAS_PHENOTYPE = 'biolink:has_phenotype'
 BIOLINK_ASSOCIATION_HAS_REAL_WORLD_EVIDENCE_OF_ASSOCIATION_WITH = 'biolink:has_real_world_evidence_of_association_with'
 BIOLINK_ASSOCIATION_HAS_SIDE_EFFECT = 'biolink:has_side_effect'
+BIOLINK_ASSOCIATION_IN_CLINICAL_TRIALS_FOR = 'biolink:in_clinical_trials_for'
+BIOLINK_ASSOCIATION_IN_PRECLINICAL_TRIALS_FOR = 'biolink:in_preclinical_trials_for'
 BIOLINK_ASSOCIATION_INTERACTS_WITH = 'biolink:interacts_with'
 BIOLINK_ASSOCIATION_MOLECULARLY_INTERACTS_WITH = 'biolink:molecularly_interacts_with'
 BIOLINK_ASSOCIATION_NEGATIVELY_CORRELATED_WITH = 'biolink:negatively_correlated_with'
@@ -735,6 +737,7 @@ BIOLINK_ENTITY_ARTICLE = 'biolink:Article'
 
 BIOLINK_METATYPE_BOOLEAN = 'metatype:Boolean'
 
+BIOLINK_SLOT_AGENT_TYPE = 'biolink:agent_type'
 BIOLINK_SLOT_DESCRIPTION = 'biolink:description'
 BIOLINK_SLOT_FULL_NAME = 'biolink:full_name'
 BIOLINK_SLOT_ID = 'biolink:id'
@@ -745,8 +748,10 @@ BIOLINK_SLOT_HAS_QUANTITATIVE_VALUE = 'biolink:has_quantitative_value'
 BIOLINK_SLOT_HAS_TAXONOMIC_RANK = 'biolink:has_taxonomic_rank'
 BIOLINK_SLOT_HIGHEST_FDA_APPROVAL = 'biolink:highest_FDA_approval_status'
 BIOLINK_SLOT_IRI = 'biolink:iri'
+BIOLINK_SLOT_KNOWLEDGE_LEVEL = 'biolink:knowledge_level'
 BIOLINK_SLOT_LICENSE = 'biolink:license'
 BIOLINK_SLOT_LOCATED_IN = 'biolink:located_in'
+BIOLINK_SLOT_MAX_RESEARCH_PHASE = 'biolink:max_research_phase'
 BIOLINK_SLOT_MESH_TERMS = 'biolink:mesh_terms'
 BIOLINK_SLOT_NAME = 'biolink:name'
 BIOLINK_SLOT_PROVIDED_BY = 'biolink:provided_by'
@@ -813,7 +818,7 @@ INFORES_CIVIC = Infores('infores:civic', BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE)
 INFORES_CMAP_LINCS = Infores('infores:lincs', BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE)
 INFORES_DISEASE_ONTOLOGY = Infores('infores:disease-ontology', BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE)
 INFORES_DISEASES = Infores('infores:diseases', BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE)
-INFORES_DRUGCENTRAL = Infores('infores:drugcentral', BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE)
+INFORES_DRUGCENTRAL = Infores('infores:drugcentral', BL_ATTR_SUPPORTING_DATA_SOURCE)
 INFORES_FOODB = Infores('infores:fooddb', BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE)
 INFORES_GWAS = Infores('infores:gwas-catalog', BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE)
 INFORES_HUMAN_PROTEIN_ATLAS = Infores('infores:hpa', BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE)
@@ -1090,7 +1095,7 @@ SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS = {
     },
     SPOKE_EDGE_TYPE_TREATS_CtD: {
         SPOKE_PROPERTY_SOURCES: SpokeAttributeMapping(BIOLINK_SLOT_PROVIDED_BY, INFORES_SPOKE.infores_id),
-        'phase': SpokeAttributeMapping(BIOLINK_SLOT_HAS_CONFIDENCE_LEVEL, INFORES_CHEMBL.infores_id),
+        'phase': SpokeAttributeMapping(BIOLINK_SLOT_MAX_RESEARCH_PHASE, INFORES_CHEMBL.infores_id),
         # note: act_sources unmapped as of 2023-12 when provided by was
         # found to be removed from biolink
         # SPOKE_PROPERTY_ACT_SOURCES: SpokeAttributeMapping(BIOLINK_SLOT_PROVIDED_BY, INFORES_DRUGCENTRAL.infores_id),
@@ -1377,7 +1382,23 @@ SPOKE_EDGE_DEFAULT_SOURCE = {
     SPOKE_EDGE_TYPE_PRODUCES_RpC: INFORES_KEGG
 }
 
-# special attribute mappings
+# attribute enums / mappings
+BL_MAX_RESEARCH_PHASE_ENUM_PC_RESEARCH_PHASE = 'biolink:pre_clinical_research_phase'
+BL_MAX_RESEARCH_PHASE_ENUM_PHASE = 'biolink:clinical_trial_phase'
+BL_MAX_RESEARCH_PHASE_ENUM_PHASE_1 = 'biolink:clinical_trial_phase_1'
+BL_MAX_RESEARCH_PHASE_ENUM_PHASE_2 = 'biolink:clinical_trial_phase_2'
+BL_MAX_RESEARCH_PHASE_ENUM_PHASE_3 = 'biolink:clinical_trial_phase_3'
+BL_MAX_RESEARCH_PHASE_ENUM_PHASE_4 = 'biolink:clinical_trial_phase_4'
+BL_MAX_RESEARCH_PHASE_ENUM_NOT_PROVIDED = 'biolink:not_provided'
+
+PHASE_BL_CT_PHASE_ENUM_MAP = {
+    0: BL_MAX_RESEARCH_PHASE_ENUM_PC_RESEARCH_PHASE,
+    1: BL_MAX_RESEARCH_PHASE_ENUM_PHASE_1,
+    2: BL_MAX_RESEARCH_PHASE_ENUM_PHASE_2,
+    3: BL_MAX_RESEARCH_PHASE_ENUM_PHASE_3,
+    4: BL_MAX_RESEARCH_PHASE_ENUM_PHASE_4,
+}
+
 FDA_APPROVAL_MAX_PHASE_MAP = {
     'Discovery & Development Phase': 0,
     'Preclinical Research Phase': 0,
@@ -1408,6 +1429,24 @@ MAX_PHASE_FDA_APPROVAL_MAP = {
 # knowledge types
 KNOWLEDGE_TYPE_INFERRED = 'inferred'
 KNOWLEDGE_TYPE_LOOKUP = 'lookup'
+
+# Enums for knowledge level / agent type
+
+TRAPI_KNOWLEDGE_LEVEL_KNOWLEDGE_ASSERTION = 'knowledge_assertion'
+TRAPI_KNOWLEDGE_LEVEL_LOGICAL_ENTAILMENT = 'logical_entailment'
+TRAPI_KNOWLEDGE_LEVEL_PREDICTION = 'prediction'
+TRAPI_KNOWLEDGE_LEVEL_STATISTICAL_ASSOCIATION = 'statistical_association'
+TRAPI_KNOWLEDGE_LEVEL_OBSERVATION = 'observation'
+TRAPI_KNOWLEDGE_LEVEL_NOT_PROVIDED = 'not_provided'
+
+TRAPI_AGENT_TYPE_ENUM_MANUAL_AGENT = 'manual_agent'
+TRAPI_AGENT_TYPE_ENUM_AUTOMATED_AGENT = 'automated_agent'
+TRAPI_AGENT_TYPE_ENUM_DATA_ANALYSIS_PIPELINE = 'data_analysis_pipeline'
+TRAPI_AGENT_TYPE_ENUM_COMPUTATIONAL_MODEL = 'computational_model'
+TRAPI_AGENT_TYPE_ENUM_TEXT_MINING_AGENT = 'text_mining_agent'
+TRAPI_AGENT_TYPE_ENUM_IMAGE_PROCESSING_AGENT = 'image_processing_agent'
+TRAPI_AGENT_TYPE_ENUM_MANUAL_VALIDATION_OF_AUTOMATED_AGENT = 'manual_validation_of_automated_agent'
+TRAPI_AGENT_TYPE_ENUM_NOT_PROVIDED = 'not_provided'
 
 # this could be added to the predicate config above, but
 # we hope to retire that soon. Given the limited support, really a
