@@ -124,7 +124,6 @@ def _evaluate_treats_lookup(
     updated_retrieval_sources = deepcopy(
         TREATS_LOOKUP_RETRIEVAL_SOURCE_MAP[primary_ks.infores_id]
     )
-    print(updated_retrieval_sources)
     return predicate, kl_at_attrs, updated_retrieval_sources
 
 def evaluate_kl_at_for_lookup_query(
@@ -138,12 +137,10 @@ def evaluate_kl_at_for_lookup_query(
     if edge_type != SPOKE_EDGE_TYPE_TREATS_CtD:
         # KL and AT are not configured
         return None, attributes, retrieval_sources
-    print('About to evaluate')
     predicate, new_attrs, sources = _evaluate_treats_lookup(
         attributes,
         retrieval_sources,
     )
-    print(f'{predicate=}')
     attrs = deepcopy(attributes)
     attrs.extend(new_attrs)
     return predicate, attrs, sources

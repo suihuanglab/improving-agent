@@ -14,11 +14,16 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_TREATS,
     BIOLINK_ENTITY_SMALL_MOLECULE,
     BIOLINK_ENTITY_DISEASE,
+    BIOLINK_SLOT_AGENT_TYPE,
+    BIOLINK_SLOT_KNOWLEDGE_LEVEL,
     BIOLINK_SLOT_SUPPORT_GRAPHS,
     INFORES_IMPROVING_AGENT,
     INFORES_SPOKE,
     SPOKE_LABEL_COMPOUND,
     SPOKE_LABEL_DISEASE,
+    TRAPI_AGENT_TYPE_ENUM_MANUAL_AGENT,
+    TRAPI_KNOWLEDGE_LEVEL_PREDICTION,
+    TRAPI_KNOWLEDGE_LEVEL_STATISTICAL_ASSOCIATION,
 )
 from improving_agent.src.normalization.edge_normalization import SUPPORTED_INFERRED_DRUG_SUBJ
 from improving_agent.src.normalization.node_normalization import (
@@ -105,14 +110,26 @@ class DrugMayTreatDisease(TemplateQueryBase):
         obj_id: str,
         aux_graph_id: str
     ):
-        supporting_edges_attr = Attribute(
-            attribute_source=INFORES_IMPROVING_AGENT.infores_id,
-            attribute_type_id=BIOLINK_SLOT_SUPPORT_GRAPHS,
-            value=[aux_graph_id],
-        )
+        attributes = [
+            Attribute(
+                attribute_source=INFORES_IMPROVING_AGENT.infores_id,
+                attribute_type_id=BIOLINK_SLOT_SUPPORT_GRAPHS,
+                value=[aux_graph_id],
+            ),
+            Attribute(
+                attribute_source=INFORES_IMPROVING_AGENT.infores_id,
+                attribute_type_id=BIOLINK_SLOT_AGENT_TYPE,
+                value=TRAPI_AGENT_TYPE_ENUM_MANUAL_AGENT,
+            ),
+            Attribute(
+                attribute_source=INFORES_IMPROVING_AGENT.infores_id,
+                attribute_type_id=BIOLINK_SLOT_AGENT_TYPE,
+                value=TRAPI_KNOWLEDGE_LEVEL_PREDICTION,
+            ),
+        ]
 
         return Edge(
-            attributes=[supporting_edges_attr],
+            attributes=attributes,
             predicate='biolink:treats',
             subject=subj_id,
             object=obj_id,
@@ -123,10 +140,23 @@ class DrugMayTreatDisease(TemplateQueryBase):
         """Returns a supporting edge that has been created and added to
         the knowledge graph
         """
+        attributes = [
+            Attribute(
+                attribute_type_id=BIOLINK_SLOT_AGENT_TYPE,
+                value=TRAPI_AGENT_TYPE_ENUM_MANUAL_AGENT,
+                attribute_source=INFORES_IMPROVING_AGENT.infores_id,
+            ),
+            Attribute(
+                attribute_type_id=BIOLINK_SLOT_KNOWLEDGE_LEVEL,
+                value=TRAPI_KNOWLEDGE_LEVEL_STATISTICAL_ASSOCIATION,
+                attribute_source=INFORES_IMPROVING_AGENT.infores_id,
+            )
+        ]
         supp_edge = Edge(
             predicate='biolink:associated_with',
             subject=subj_id,
             object=obj_id,
+            attributes=attributes,
             sources=[make_internal_retrieval_source([], INFORES_SPOKE.infores_id)],
         )
         return supp_edge

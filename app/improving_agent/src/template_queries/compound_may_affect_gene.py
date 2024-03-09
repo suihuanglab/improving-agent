@@ -355,7 +355,12 @@ class CompoundAffectsGene(TemplateQueryBase):
                 for node in node_binding:
                     two_hop_knowledge_graph['nodes'][node.id] = _nodes[node.id]
 
-        results.extend(two_hop_results)
+            # we don't want the intermediate node in the actual result
+            # so we pop it from the node bindings before appending it
+            # to the final result object
+            two_hop_result.node_bindings.pop(i_gene_qnode_id)
+            results.append(two_hop_result)
+
         results = normalize_results_scores(results)
         knowledge_graph['nodes'] |= two_hop_knowledge_graph['nodes']
         knowledge_graph['edges'] |= two_hop_knowledge_graph['edges']

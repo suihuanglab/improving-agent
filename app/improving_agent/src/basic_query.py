@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from string import ascii_letters
 
 import neo4j
-from improving_agent import models  # TODO: replace with direct imports after fixing definitions
+from improving_agent import models
 from improving_agent.exceptions import MissingComponentError, NonLinearQueryError
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_TYPE,
@@ -28,7 +28,10 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     SPOKE_LABEL_COMPOUND,
     SPOKE_PROPERTY_NATIVE_SPOKE,
 )
-from improving_agent.src.constraints import get_node_constraint_cypher_clause
+from improving_agent.src.constraints import (
+    get_edge_constraint_cypher_clause,
+    get_node_constraint_cypher_clause,
+)
 from improving_agent.src.improving_agent_constants import (
     ATTRIBUTE_TYPE_PSEV_WEIGHT,
     SPOKE_NODE_PROPERTY_SOURCE
@@ -194,6 +197,17 @@ def make_qnode_filter_clause(name, query_node):
     return ''
 
 
+def make_qedge_filter_clause(name: str, query_edge: models.QEdge):
+    constraints_clause = ''
+    if query_edge.attribute_constraints:
+        constraints_clause = ' AND '.join([
+            get_edge_constraint_cypher_clause(query_edge, name, constraint)
+            for constraint
+            in query_edge.attribute_constraints
+        ])
+    return constraints_clause
+
+
 def make_qedge_cypher_repr(name, query_edge):
     edge_repr = f'[{name}'
     if SPOKE_ANY_TYPE not in query_edge.spoke_edge_types:
@@ -307,6 +321,7 @@ class BasicQuery:
         self.query_names = list(ascii_letters[: len(self.query_order)])
         query_parts = []
         node_filter_clauses = []
+        edge_filter_clauses = []
         self.query_mapping = {"edges": {}, "nodes": {}}
         for query_part, name in zip(self.query_order, self.query_names):
             if isinstance(query_part, models.QNode):
@@ -319,11 +334,21 @@ class BasicQuery:
             else:
                 self.query_mapping["edges"][name] = query_part.qedge_id
                 query_parts.append(make_qedge_cypher_repr(name, query_part))
+                edge_filter_clause = make_qedge_filter_clause(name, query_part)
+                if edge_filter_clause:
+                    edge_filter_clauses.append(edge_filter_clause)
 
         match_clause = f'MATCH path={"-".join(query_parts)}'
         where_clause = ''
         if node_filter_clauses:
             where_clause = f'WHERE {" AND ".join(node_filter_clauses)}'
+        if edge_filter_clauses:
+            if where_clause:
+                where_clause = where_clause + " AND "
+            else:
+                where_clause = "WHERE "
+            where_clause = where_clause + " AND ".join(edge_filter_clauses)
+
         return_clause = f'RETURN * limit {self.n_results}'
 
         return f'{match_clause} {where_clause} {return_clause};'
