@@ -3,7 +3,7 @@ from typing import Dict, List, Optional, Tuple, Union
 from string import ascii_letters
 
 import neo4j
-from improving_agent import models  # TODO: replace with direct imports after fixing definitions
+from improving_agent import models
 from improving_agent.exceptions import MissingComponentError, NonLinearQueryError
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_TYPE,
@@ -13,10 +13,12 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_GENE,
     BIOLINK_ENTITY_SMALL_MOLECULE,
     BIOLINK_SLOT_HIGHEST_FDA_APPROVAL,
+    BIOLINK_SLOT_MAX_RESEARCH_PHASE,
     INFORES_IMPROVING_AGENT,
-    INFORES_SPOKE,
+    KNOWLEDGE_TYPE_LOOKUP,
     KNOWN_UNMAPPED_ATTRS,
     MAX_PHASE_FDA_APPROVAL_MAP,
+    PHASE_BL_CT_PHASE_ENUM_MAP,
     QUALIFIERS,
     SPOKE_ANY_TYPE,
     SPOKE_BIOLINK_EDGE_MAPPINGS,
@@ -26,7 +28,10 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     SPOKE_LABEL_COMPOUND,
     SPOKE_PROPERTY_NATIVE_SPOKE,
 )
-from improving_agent.src.constraints import get_node_constraint_cypher_clause
+from improving_agent.src.constraints import (
+    get_edge_constraint_cypher_clause,
+    get_node_constraint_cypher_clause,
+)
 from improving_agent.src.improving_agent_constants import (
     ATTRIBUTE_TYPE_PSEV_WEIGHT,
     SPOKE_NODE_PROPERTY_SOURCE
@@ -37,16 +42,16 @@ from improving_agent.src.kps.cohd import annotate_edges_with_cohd
 from improving_agent.src.normalization import SearchNode
 from improving_agent.src.normalization.node_normalization import normalize_spoke_nodes_for_translator
 from improving_agent.src.provenance import (
-    choose_primary_source,
-    make_default_retrieval_sources,
     make_publications_attribute,
     make_retrieval_sources,
-    make_internal_retrieval_source,
     SPOKE_PROVENANCE_FIELDS,
     SPOKE_PUBLICATION_FIELDS,
 )
 from improving_agent.src.psev import get_psev_scores
-from improving_agent.src.result_handling import get_edge_qualifiers
+from improving_agent.src.result_handling import (
+    resolve_epc_kl_at,
+    get_edge_qualifiers,
+)
 from improving_agent.src.scoring.scoring_utils import normalize_results_scores
 from improving_agent.util import get_evidara_logger
 
@@ -80,9 +85,15 @@ def register_special_attribute_handler(attribute_name):
     return wrapper
 
 
+# max phase for nodes
 @register_special_attribute_handler(BIOLINK_SLOT_HIGHEST_FDA_APPROVAL)
 def _map_max_phase_to_fda_approval(property_value):
     return MAX_PHASE_FDA_APPROVAL_MAP[property_value]
+
+# phase for edges
+@register_special_attribute_handler(BIOLINK_SLOT_MAX_RESEARCH_PHASE)
+def _map_max_phase_to_fda_approval(property_value):
+    return PHASE_BL_CT_PHASE_ENUM_MAP[property_value]
 
 
 def _transform_special_attributes(slot_type, property_value):
@@ -186,6 +197,17 @@ def make_qnode_filter_clause(name, query_node):
     return ''
 
 
+def make_qedge_filter_clause(name: str, query_edge: models.QEdge):
+    constraints_clause = ''
+    if query_edge.attribute_constraints:
+        constraints_clause = ' AND '.join([
+            get_edge_constraint_cypher_clause(query_edge, name, constraint)
+            for constraint
+            in query_edge.attribute_constraints
+        ])
+    return constraints_clause
+
+
 def make_qedge_cypher_repr(name, query_edge):
     edge_repr = f'[{name}'
     if SPOKE_ANY_TYPE not in query_edge.spoke_edge_types:
@@ -218,13 +240,20 @@ def get_n4j_param_str(self, parameters):
 
 class BasicQuery:
     """A class for making basic queries to the SPOKE neo4j database"""
-
-    def __init__(self, qnodes, qedges, query_options={}, n_results=200):
+    def __init__(
+        self,
+        qnodes,
+        qedges,
+        query_options={},
+        n_results=200,
+        query_type=KNOWLEDGE_TYPE_LOOKUP,
+    ):
         """Instantiates a new BasicQuery object"""
         self.qnodes = qnodes
         self.qedges = qedges
         self.query_options = query_options
         self.n_results = n_results
+        self.query_type = query_type
 
         self.knowledge_graph = {"edges": {}, "nodes": {}}
         self.knowledge_node_counter = 0
@@ -292,6 +321,7 @@ class BasicQuery:
         self.query_names = list(ascii_letters[: len(self.query_order)])
         query_parts = []
         node_filter_clauses = []
+        edge_filter_clauses = []
         self.query_mapping = {"edges": {}, "nodes": {}}
         for query_part, name in zip(self.query_order, self.query_names):
             if isinstance(query_part, models.QNode):
@@ -304,11 +334,21 @@ class BasicQuery:
             else:
                 self.query_mapping["edges"][name] = query_part.qedge_id
                 query_parts.append(make_qedge_cypher_repr(name, query_part))
+                edge_filter_clause = make_qedge_filter_clause(name, query_part)
+                if edge_filter_clause:
+                    edge_filter_clauses.append(edge_filter_clause)
 
         match_clause = f'MATCH path={"-".join(query_parts)}'
         where_clause = ''
         if node_filter_clauses:
             where_clause = f'WHERE {" AND ".join(node_filter_clauses)}'
+        if edge_filter_clauses:
+            if where_clause:
+                where_clause = where_clause + " AND "
+            else:
+                where_clause = "WHERE "
+            where_clause = where_clause + " AND ".join(edge_filter_clauses)
+
         return_clause = f'RETURN * limit {self.n_results}'
 
         return f'{match_clause} {where_clause} {return_clause};'
@@ -553,31 +593,21 @@ class BasicQuery:
                 else:
                     edge_attributes.append(edge_attribute)
 
-        if not provenance_retrieval_sources:
-            provenance_retrieval_sources.append(make_default_retrieval_sources(edge_type))
-
-        if len(provenance_retrieval_sources) > 1:
-            provenance_retrieval_sources = choose_primary_source(
-                provenance_retrieval_sources,
-                edge_type,
-            )
-        spoke_retrieval_source = make_internal_retrieval_source(
+        updated_predicate, attrs, sources = resolve_epc_kl_at(
+            edge_type,
+            edge_attributes,
             provenance_retrieval_sources,
-            INFORES_SPOKE.infores_id,
+            self.query_type,
         )
-        provenance_retrieval_sources.append(spoke_retrieval_source)
-        ia_retrieval_source = make_internal_retrieval_source(
-            provenance_retrieval_sources,
-            INFORES_IMPROVING_AGENT.infores_id,
-        )
-        provenance_retrieval_sources.append(ia_retrieval_source)
+        if updated_predicate is not None:
+            predicate = updated_predicate
 
         result_edge = models.Edge(
-            attributes=edge_attributes,
+            attributes=attrs,
             object=n4j_object.end_node["identifier"],
             predicate=predicate,
             qualifiers=qualifiers,
-            sources=provenance_retrieval_sources,
+            sources=sources,
             subject=n4j_object.start_node["identifier"],
         )
 

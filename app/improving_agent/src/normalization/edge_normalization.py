@@ -8,10 +8,11 @@ from improving_agent.exceptions import (
     UnsupportedQualifier,
     UnsupportedTypeError
 )
-from improving_agent.models import QEdge
+from improving_agent.models import AttributeConstraint, QEdge, QueryGraph
 from improving_agent.src.biolink.biolink import EDGE, get_supported_biolink_descendants
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_AFFECTS,
+    BIOLINK_ASSOCIATION_IN_CLINICAL_TRIALS_FOR,
     BIOLINK_ASSOCIATION_TREATS,
     BIOLINK_ENTITY_CHEMICAL_ENTITY,
     BIOLINK_ENTITY_DISEASE,
@@ -19,6 +20,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_GENE,
     BIOLINK_ENTITY_SMALL_MOLECULE,
     BIOLINK_SPOKE_EDGE_MAPPINGS,
+    BIOLINK_SLOT_MAX_RESEARCH_PHASE,
     BL_QUALIFIER_TYPE_OBJECT_ASPECT,
     BL_QUALIFIER_TYPE_OBJECT_DIRECTION,
     BL_QUALIFIER_TYPE_QUALIFIED_PREDICATE,
@@ -28,6 +30,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     QUALIFIERS,
     SPOKE_ANY_TYPE,
     SPOKE_BIOLINK_EDGE_MAPPINGS,
+    SPOKE_EDGE_TYPE_TREATS_CtD,
 )
 
 
@@ -49,6 +52,30 @@ SUPPORTED_INFERRED_PRED_SUBJ_OBJ_MAP = {
     }
 }
 
+
+def treats_mutator(qedge: QEdge) -> QEdge:
+    """Adds a constraint on the edge if knowledge type == 'lookup'"""
+    if qedge.knowledge_type != KNOWLEDGE_TYPE_LOOKUP:
+        return qedge
+    
+    if qedge.predicates and BIOLINK_ASSOCIATION_IN_CLINICAL_TRIALS_FOR in qedge.predicates:
+        # both "treats" and "in c.t. for" map to TREATS_CtD. If we were
+        # to add a constraint, we'd miss some of c.t. edges here
+        return qedge
+    
+    treats_attr_constraint = AttributeConstraint(
+        id=BIOLINK_SLOT_MAX_RESEARCH_PHASE,
+        operator='==',
+        value=4,
+    )
+    attr_constraints = qedge.attribute_constraints or []
+    qedge.attribute_constraints = attr_constraints + [treats_attr_constraint]
+    return qedge
+
+EDGE_MUTATORS = {
+    # some edges require special handling based on the lookup
+    SPOKE_EDGE_TYPE_TREATS_CtD: treats_mutator
+}
 
 def _verify_qedge_kt_support(qedge, subj_qnode, obj_qnode):
     """Raises if the requested knowledge_type on the edge is not
@@ -261,11 +288,15 @@ def _assign_spoke_edge_types(qedge):
     else:
         spoke_edge_types.append(SPOKE_ANY_TYPE)
 
+    for edge_type in spoke_edge_types:
+        if edge_type in EDGE_MUTATORS:
+            qedge = EDGE_MUTATORS[edge_type](qedge)
+
     setattr(qedge, 'spoke_edge_types', set(spoke_edge_types))
     return qedge
 
 
-def validate_normalize_qedges(query_graph):
+def validate_normalize_qedges(query_graph: QueryGraph) -> list[QEdge]:
     qedges = {}
     for qedge_id, qedge in query_graph.edges.items():
         qedge = _deserialize_qedge(qedge_id, qedge)

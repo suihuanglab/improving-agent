@@ -2,17 +2,21 @@ from collections import defaultdict
 from numbers import Number
 
 from improving_agent.exceptions import UnsupportedConstraint
+from improving_agent.models import AttributeConstraint, QEdge
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_SLOT_HIGHEST_FDA_APPROVAL,
+    BIOLINK_SLOT_MAX_RESEARCH_PHASE,
     FDA_APPROVAL_MAX_PHASE_MAP,
     SPOKE_ANY_TYPE,
+    SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
     SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS,
     SPOKE_BIOLINK_NODE_MAPPINGS
 )
 
 
 SUPPORTED_CONSTRAINT_ATTRIBUTES = [
-    BIOLINK_SLOT_HIGHEST_FDA_APPROVAL
+    BIOLINK_SLOT_HIGHEST_FDA_APPROVAL,
+    BIOLINK_SLOT_MAX_RESEARCH_PHASE,
 ]
 
 SPECIAL_CONSTRAINT_HANDLERS = {}
@@ -37,6 +41,11 @@ for node, attributes in SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS.items():
     for spoke_property, biolink_mapping in attributes.items():
         BIOLINK_SPOKE_NODE_ATTRIBUTE_MAPPINGS[node][biolink_mapping.biolink_type].append(spoke_property)
 
+BIOLINK_SPOKE_EDGE_ATTRIBUTE_MAPPINGS = {}
+for node, attributes in SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS.items():
+    BIOLINK_SPOKE_EDGE_ATTRIBUTE_MAPPINGS[node] = defaultdict(list)
+    for spoke_property, biolink_mapping in attributes.items():
+        BIOLINK_SPOKE_EDGE_ATTRIBUTE_MAPPINGS[node][biolink_mapping.biolink_type].append(spoke_property)
 
 def special_constraint(biolink_slot):
     def wrapper(f):
@@ -55,7 +64,7 @@ def validate_constraint_support(constraint, spoke_labels):
     '''
     if constraint.unit_id is not None or constraint.unit_name is not None:
         raise UnsupportedConstraint(
-            'imProving Agent does not support constraints with units (yet...)'
+            'imProving Agent does not support constraints with units'
         )
 
     # TODO: eventually, all properties/attrs should be supported and this check
@@ -122,6 +131,52 @@ def _get_constraint_value(constraint_id, constraint_value):
     return constraint_transformer(constraint_value)
 
 
+def _build_cypher_constraint_clause(
+    name: str,
+    constraint: AttributeConstraint,
+    operator: str,
+    spoke_properties: list[str],
+) -> str:
+    constraint_clause = ''
+    constraint_value = _get_constraint_value(constraint.id, constraint.value)
+    if not isinstance(constraint_value, list):
+        constraint_value = [constraint_value]
+
+    # TODO:
+    # - create a revese mapping , i.e. max_phase to biolink enum that gets called when creating the Attribute in a result node
+    for i, spoke_property in enumerate(spoke_properties):
+        if i > 0:
+            constraint_clause = f'{constraint_clause} OR '
+        curr_constraint = f'({name}.{spoke_property}'
+        if operator in ('>', '>=', '<', '<='):
+            if operator in ('>', '>='):
+                curr_constraint = f'{curr_constraint} {operator} {max(constraint_value)})'
+            elif operator in ('<', '<='):
+                curr_constraint = f'{curr_constraint} {operator} {min(constraint_value)})'
+        elif operator == '=~':
+            for val in constraint_value:
+                if not isinstance(val, str):
+                    raise UnsupportedConstraint(f'{TRAPI_CONSTRAINT_MATCHES_OPERATOR} should have string values')
+            curr_constraint = f'{curr_constraint} {operator} {"|".join(constraint_value)})'
+            continue
+        elif operator in ('=', '<>'):
+            # transform values for cypher list transform via join,
+            # i.e. double-quote strings and single-quote ints
+            # ','.join(["'foo'"", "'bar'"]) -> "['foo','bar']"; ','.join(['1', '2']) -> "[1, 2]"
+            constraint_value = [str(i) if isinstance(i, Number) else f"'{i}'" for i in constraint_value]
+            curr_constraint = f'{curr_constraint} '
+            if operator == '<>':
+                curr_constraint = f'{curr_constraint} NOT '
+            curr_constraint = f'{curr_constraint} IN [{", ".join(constraint_value)}])'
+        else:
+            raise ValueError(f'Do not know what to do with constraint operator={operator} in constraint={constraint}')
+        constraint_clause = f'{constraint_clause}{curr_constraint}'
+
+    if constraint_clause:
+        constraint_clause = f'({constraint_clause})'
+    return constraint_clause
+
+
 def get_node_constraint_cypher_clause(qnode, name, constraint):
     '''Returns a Cypher "WHERE" fragment that can be used when
     querying SPOKE.
@@ -151,45 +206,36 @@ def get_node_constraint_cypher_clause(qnode, name, constraint):
     else:
         operator = TRAPI_CONSTRAINT_CYPHER_OPERATOR_MAP[constraint.operator]
 
-    constraint_clause = ''
-    constraint_value = _get_constraint_value(constraint.id, constraint.value)
+    return _build_cypher_constraint_clause(
+        name,
+        constraint,
+        operator,
+        spoke_properties,
+    )
 
-    if isinstance(constraint.value, list):
-        # TODO:
-        # - create a revese mapping , i.e. max_phase to biolink enum that gets called when creating the Attribute in a result node
-        for i, spoke_property in enumerate(spoke_properties):
-            if i > 0:
-                constraint_clause = f'{constraint_clause} OR '
-            curr_constraint = f'({name}.{spoke_property}'
-            if operator in ('>', '>=', '<', '<='):
-                if operator in ('>', '>='):
-                    curr_constraint = f'{curr_constraint} {operator} {max(constraint_value)})'
-                elif operator in ('<', '<='):
-                    curr_constraint = f'{curr_constraint} {operator} {min(constraint_value)})'
-            elif operator == '=~':
-                for val in constraint_value:
-                    if not isinstance(val, str):
-                        raise UnsupportedConstraint(f'{TRAPI_CONSTRAINT_MATCHES_OPERATOR} should have string values')
-                curr_constraint = f'{curr_constraint} {operator} {"|".join(constraint_value)})'
-                continue
-            elif operator in ('=', '<>'):
-                # transform values for cypher list transform via join,
-                # i.e. double-quote strings and single-quote ints
-                # ','.join(["'foo'"", "'bar'"]) -> "['foo','bar']"; ','.join(['1', '2']) -> "[1, 2]"
-                constraint_value = [str(i) if isinstance(i, Number) else f"'{i}'" for i in constraint_value]
-                curr_constraint = f'{curr_constraint} '
-                if operator == '<>':
-                    curr_constraint = f'{curr_constraint} NOT '
-                curr_constraint = f'{curr_constraint} IN [{", ".join(constraint_value)}])'
-            else:
-                raise ValueError(f'Do not know what to do with constraint operator={operator} in constraint={constraint}')
-            constraint_clause = f'{constraint_clause}{curr_constraint}'
+def get_edge_constraint_cypher_clause(
+    qedge: QEdge,
+    name: str,
+    constraint: AttributeConstraint,
+) -> str:
+    spoke_properties = []
+    for edge_type in qedge.spoke_edge_types:
+        if edge_type == SPOKE_ANY_TYPE:
+            continue
+        edge_attributes = BIOLINK_SPOKE_EDGE_ATTRIBUTE_MAPPINGS[edge_type]
+        spoke_properties.extend(edge_attributes.get(constraint.id, []))
+    
+    if constraint._not:
+        if constraint.operator == TRAPI_CONSTRAINT_MATCHES_OPERATOR:
+            raise UnsupportedConstraint(
+                'imProving Agent can not reliably invert a regular expression'
+            )
+        operator = NEGATED_TRAPI_CONSTRAINT_CYPHER_OPERATOR_MAP[constraint.operator]
     else:
-        for i, spoke_property in enumerate(spoke_properties):
-            if i > 0:
-                constraint_clause = f'{constraint_clause} OR '
-            constraint_clause = f'{constraint_clause}({name}.{spoke_property} {operator} {constraint_value})'
-
-    if constraint_clause:
-        constraint_clause = f'({constraint_clause})'
-    return constraint_clause
+        operator = TRAPI_CONSTRAINT_CYPHER_OPERATOR_MAP[constraint.operator]
+    return _build_cypher_constraint_clause(
+        name,
+        constraint,
+        operator,
+        spoke_properties,
+    )

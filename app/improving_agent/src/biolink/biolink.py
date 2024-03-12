@@ -2,6 +2,8 @@ from functools import cache
 
 from bmt.toolkit import Toolkit
 
+from improving_agent.src.config import app_config
+
 from .spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_RELATED_TO,
     BIOLINK_ENTITY_NAMED_THING,
@@ -9,7 +11,7 @@ from .spoke_biolink_constants import (
     BIOLINK_SPOKE_NODE_MAPPINGS,
 )
 
-BMT = Toolkit('https://raw.githubusercontent.com/biolink/biolink-model/ad97b5fb6bd1e9896c6a61c4c12e2456b562fbb9/biolink-model.yaml')  # NOQA biolink 3.5.4
+BMT = Toolkit(f'https://raw.githubusercontent.com/biolink/biolink-model/v{app_config.BIOLINK_VERSION}/biolink-model.yaml')
 
 EDGE = 'edge'
 NODE = 'node'
