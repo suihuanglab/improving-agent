@@ -146,8 +146,12 @@ def evaluate_kl_at_for_lookup_query(
     return predicate, attrs, sources
 
 
-def evaluate_kl_at_for_inferred_query():
-    pass
+def evaluate_kl_at_for_inferred_query(
+    edge_type: str,
+    attributes: list[Attribute],
+    retrieval_sources: list[RetrievalSource],
+):
+    return None, attributes, retrieval_sources
 
 
 def resolve_epc_kl_at(
