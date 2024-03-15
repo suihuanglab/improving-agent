@@ -334,7 +334,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
             auxiliary_graphs |= aux_graph_updates
 
         # sort compound_psev_scores
-        count_to_get = self.max_results - len(results)
+        count_to_get = self.max_results - len(mutated_results)
         sorted_compound_scores = {
             k: v
             for k, v

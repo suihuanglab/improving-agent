@@ -6,6 +6,7 @@ from improving_agent.models import AttributeConstraint, QEdge
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_SLOT_HIGHEST_FDA_APPROVAL,
     BIOLINK_SLOT_MAX_RESEARCH_PHASE,
+    BL_MAX_RESEARCH_PHASE_SPOKE_PHASE_ENUM_MAP,
     FDA_APPROVAL_MAX_PHASE_MAP,
     SPOKE_ANY_TYPE,
     SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
@@ -101,7 +102,17 @@ def _map_fda_enum(constraint_value):
     mapped_val = FDA_APPROVAL_MAX_PHASE_MAP.get(constraint_value)
     if not mapped_val:
         raise UnsupportedConstraint(
-            f'Can not handle "{constraint_value}" for constraint "{BIOLINK_SLOT_HIGHEST_FDA_APPROVAL}"'
+            f'Cannot handle "{constraint_value}" for constraint "{BIOLINK_SLOT_HIGHEST_FDA_APPROVAL}"'
+        )
+    return mapped_val
+
+
+@special_constraint(BIOLINK_SLOT_MAX_RESEARCH_PHASE)
+def _map_research_phase_enum(constraint_value):
+    mapped_val = BL_MAX_RESEARCH_PHASE_SPOKE_PHASE_ENUM_MAP.get(constraint_value)
+    if not mapped_val:
+        raise UnsupportedConstraint(
+            f'Cannot handle "{constraint_value}" for constraint "{BIOLINK_SLOT_MAX_RESEARCH_PHASE}"'
         )
     return mapped_val
 

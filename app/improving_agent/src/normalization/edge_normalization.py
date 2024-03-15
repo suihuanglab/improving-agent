@@ -21,6 +21,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_SMALL_MOLECULE,
     BIOLINK_SPOKE_EDGE_MAPPINGS,
     BIOLINK_SLOT_MAX_RESEARCH_PHASE,
+    BL_MAX_RESEARCH_PHASE_ENUM_PHASE_4,
     BL_QUALIFIER_TYPE_OBJECT_ASPECT,
     BL_QUALIFIER_TYPE_OBJECT_DIRECTION,
     BL_QUALIFIER_TYPE_QUALIFIED_PREDICATE,
@@ -55,7 +56,7 @@ SUPPORTED_INFERRED_PRED_SUBJ_OBJ_MAP = {
 
 def treats_mutator(qedge: QEdge) -> QEdge:
     """Adds a constraint on the edge if knowledge type == 'lookup'"""
-    if qedge.knowledge_type != KNOWLEDGE_TYPE_LOOKUP:
+    if qedge.knowledge_type and qedge.knowledge_type != KNOWLEDGE_TYPE_LOOKUP:
         return qedge
     
     if qedge.predicates and BIOLINK_ASSOCIATION_IN_CLINICAL_TRIALS_FOR in qedge.predicates:
@@ -65,8 +66,9 @@ def treats_mutator(qedge: QEdge) -> QEdge:
     
     treats_attr_constraint = AttributeConstraint(
         id=BIOLINK_SLOT_MAX_RESEARCH_PHASE,
+        name='max-phase-4',
         operator='==',
-        value=4,
+        value=BL_MAX_RESEARCH_PHASE_ENUM_PHASE_4,
     )
     attr_constraints = qedge.attribute_constraints or []
     qedge.attribute_constraints = attr_constraints + [treats_attr_constraint]
@@ -120,10 +122,18 @@ def _deserialize_qedge(qedge_id, qedge):
         subject = qedge['subject']
         object_ = qedge['object']
 
-        constraints = qedge.get('attribute_constraints')
+        req_constraints = qedge.get('attribute_constraints')
         knowledge_type = qedge.get('knowledge_type')
         predicates = qedge.get('predicates')
         qualifiers = qedge.get('qualifier_constraints')
+        constraints = []
+        if req_constraints:
+            for constraint in req_constraints:
+                try:
+                    query_constraint = AttributeConstraint(**constraint)
+                    constraints.append(query_constraint)
+                except TypeError:
+                    BadRequest(f'Could not deserialize constraint={constraint}')
 
         qedge = QEdge(
             attribute_constraints=constraints,
