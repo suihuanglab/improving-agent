@@ -12,6 +12,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_SLOT_PUBLICATIONS,
     BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE,
     BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE,
+    BL_ATTR_SUPPORTING_DATA_SOURCE,
     INFORES_BINDINGDB,
     INFORES_CHEMBL,
     INFORES_DISEASES,
@@ -90,7 +91,7 @@ TREATS_LOOKUP_RETRIEVAL_SOURCE_MAP = {  # primary KS -> list of RetrievalSource
         ),
         models.RetrievalSource(
             resource_id=INFORES_CHEMBL.infores_id,
-            resource_role=BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE,
+            resource_role=BL_ATTR_SUPPORTING_DATA_SOURCE,
         )
     ],
 }
