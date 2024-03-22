@@ -3,18 +3,15 @@ from typing import Union
 from improving_agent.models import Result
 
 
-def normalize_score(
-    i_score: Union[float, int],
-    min_score: Union[float, int],
-    max_score: Union[float, int],
-) -> float:
-    return (i_score - min_score) / (max_score - min_score)
+def normalize_round_score(i_score: float, m: float, b: float) -> float:
+    return round(m * i_score + b, 3)
 
 
 def normalize_results_scores(results: list[Result]) -> list[Result]:
     """Given a set of results, return a version normalized between
-    0 and 1.
+    0.01 and 1.
     """
+
     scores = [result.analyses[0].score for result in results]
     if not scores:
         return results
@@ -28,7 +25,11 @@ def normalize_results_scores(results: list[Result]) -> list[Result]:
         results[0].analyses[0].score = 1
         return results
 
+    desired_max = 1
+    desired_min = 0.01
+    m = (desired_max - desired_min) / (max_score - min_score)
+    b = desired_min - m * min_score
     for i, score in enumerate(scores):
-        results[i].analyses[0].score = normalize_score(score, min_score, max_score)
+        results[i].analyses[0].score = normalize_round_score(score, m, b)
 
     return results

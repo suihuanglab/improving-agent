@@ -338,7 +338,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
         sorted_compound_scores = {
             k: v
             for k, v
-            in sorted(compound_psev_scores.items(), key=lambda item: item[1])[:count_to_get]
+            in sorted(compound_psev_scores.items(), reverse=True, key=lambda item: item[1])[:count_to_get]
         }
 
         # remove the known to treat compounds from the top scored
