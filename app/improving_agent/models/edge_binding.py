@@ -1,11 +1,8 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from improving_agent.models.base_model_ import Model
+from improving_agent.models.base_model import Model
 from improving_agent.models.attribute import Attribute
 from improving_agent import util
 
@@ -50,7 +47,7 @@ class EdgeBinding(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def id(self):
+    def id(self) -> str:
         """Gets the id of this EdgeBinding.
 
         The key identifier of a specific KnowledgeGraph Edge.  # noqa: E501
@@ -61,7 +58,7 @@ class EdgeBinding(Model):
         return self._id
 
     @id.setter
-    def id(self, id):
+    def id(self, id: str):
         """Sets the id of this EdgeBinding.
 
         The key identifier of a specific KnowledgeGraph Edge.  # noqa: E501
@@ -75,7 +72,7 @@ class EdgeBinding(Model):
         self._id = id
 
     @property
-    def attributes(self):
+    def attributes(self) -> List[Attribute]:
         """Gets the attributes of this EdgeBinding.
 
         A list of attributes providing further information about the edge binding. This is not intended for capturing edge attributes and should only be used for properties that vary from result to result.  # noqa: E501
@@ -86,7 +83,7 @@ class EdgeBinding(Model):
         return self._attributes
 
     @attributes.setter
-    def attributes(self, attributes):
+    def attributes(self, attributes: List[Attribute]):
         """Sets the attributes of this EdgeBinding.
 
         A list of attributes providing further information about the edge binding. This is not intended for capturing edge attributes and should only be used for properties that vary from result to result.  # noqa: E501
@@ -94,5 +91,9 @@ class EdgeBinding(Model):
         :param attributes: The attributes of this EdgeBinding.
         :type attributes: List[Attribute]
         """
+        if attributes is None:
+            raise ValueError("Invalid value for `attributes`, must not be `None`")  # noqa: E501
+        if attributes is not None and len(attributes) < 0:
+            raise ValueError("Invalid value for `attributes`, number of items must be greater than or equal to `0`")  # noqa: E501
 
         self._attributes = attributes

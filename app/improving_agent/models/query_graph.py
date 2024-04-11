@@ -1,11 +1,8 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from improving_agent.models.base_model_ import Model
+from improving_agent.models.base_model import Model
 from improving_agent.models.q_edge import QEdge
 from improving_agent.models.q_node import QNode
 from improving_agent import util
@@ -52,7 +49,7 @@ class QueryGraph(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def nodes(self):
+    def nodes(self) -> Dict[str, QNode]:
         """Gets the nodes of this QueryGraph.
 
         The node specifications. The keys of this map are unique node identifiers and the corresponding values include the constraints on bound nodes.  # noqa: E501
@@ -63,7 +60,7 @@ class QueryGraph(Model):
         return self._nodes
 
     @nodes.setter
-    def nodes(self, nodes):
+    def nodes(self, nodes: Dict[str, QNode]):
         """Sets the nodes of this QueryGraph.
 
         The node specifications. The keys of this map are unique node identifiers and the corresponding values include the constraints on bound nodes.  # noqa: E501
@@ -77,7 +74,7 @@ class QueryGraph(Model):
         self._nodes = nodes
 
     @property
-    def edges(self):
+    def edges(self) -> Dict[str, QEdge]:
         """Gets the edges of this QueryGraph.
 
         The edge specifications. The keys of this map are unique edge identifiers and the corresponding values include the constraints on bound edges, in addition to specifying the subject and object QNodes.  # noqa: E501
@@ -88,7 +85,7 @@ class QueryGraph(Model):
         return self._edges
 
     @edges.setter
-    def edges(self, edges):
+    def edges(self, edges: Dict[str, QEdge]):
         """Sets the edges of this QueryGraph.
 
         The edge specifications. The keys of this map are unique edge identifiers and the corresponding values include the constraints on bound edges, in addition to specifying the subject and object QNodes.  # noqa: E501

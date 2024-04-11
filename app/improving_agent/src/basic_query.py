@@ -568,15 +568,7 @@ class BasicQuery:
             inclusion as a part of a KnowledgeGraph result
         """
         edge_type = n4j_object.type
-        biolink_map_info = SPOKE_BIOLINK_EDGE_MAPPINGS.get(edge_type)
-        if not biolink_map_info:
-            predicate = BIOLINK_ASSOCIATION_RELATED_TO
-        else:
-            qualifiers = biolink_map_info.get(QUALIFIERS)
-            if qualifiers:
-                qualifiers = get_edge_qualifiers(qualifiers)
-            predicate = biolink_map_info[BIOLINK_ASSOCIATION_TYPE]
-
+        
         edge_attributes = []
         provenance_retrieval_sources = []
         for k, v in n4j_object.items():
@@ -593,14 +585,12 @@ class BasicQuery:
                 else:
                     edge_attributes.append(edge_attribute)
 
-        updated_predicate, attrs, sources = resolve_epc_kl_at(
+        predicate, attrs, sources, qualifiers = resolve_epc_kl_at(
             edge_type,
             edge_attributes,
             provenance_retrieval_sources,
             self.query_type,
         )
-        if updated_predicate is not None:
-            predicate = updated_predicate
 
         result_edge = models.Edge(
             attributes=attrs,
@@ -670,13 +660,18 @@ class BasicQuery:
                 # CURIE on a QNode's ids
                 query_id = self.find_query_id(name, spoke_curie, result_node)
                 node_bindings[self.query_mapping['nodes'][name]] = models.NodeBinding(
-                    spoke_curie, query_id
+                    id=spoke_curie,
+                    query_id=query_id,
+                    attributes=[],
                 )
 
             else:
                 # these are ints, but we want them as strings for TRAPI spec
                 spoke_edge_id = str(n4j_result[name].id)  # TODO: is there a way to make this consistent?
-                edge_bindings[self.query_mapping['edges'][name]] = [models.EdgeBinding(spoke_edge_id)]
+                edge_bindings[self.query_mapping['edges'][name]] = [models.EdgeBinding(
+                    id=spoke_edge_id,
+                    attributes=[],
+                )]
                 result_edge = self.make_result_edge(n4j_result[name])
                 self.knowledge_graph['edges'][spoke_edge_id] = result_edge
                 result_analysis = models.Analysis(
@@ -704,7 +699,11 @@ class BasicQuery:
                 normalized_node_id = node_search_results[node.id]
                 if node.query_id == normalized_node_id:
                     node.query_id = None
-                new_node_bindings[qnode] = [models.NodeBinding(normalized_node_id, node.query_id)]
+                new_node_bindings[qnode] = [models.NodeBinding(
+                    id=normalized_node_id,
+                    query_id=node.query_id,
+                    attributes=[],
+                )]
             new_results.append(models.Result(new_node_bindings, result.analyses))
 
         self.results = new_results

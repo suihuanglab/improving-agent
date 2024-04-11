@@ -68,6 +68,13 @@ class UnsupportedQualifier(Exception):
     """
     pass
 
+class UnsupportedSetInterpretation(Exception):
+    """Raise if we get a set interpretation that we do not support
+    
+    This should raise 501, Not Implemented
+    """
+    pass
+
 
 class UnsupportedTypeError(Exception):
     """Raise when a request specifies a category or predicate that

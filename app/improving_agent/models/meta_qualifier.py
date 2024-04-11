@@ -1,11 +1,8 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from improving_agent.models.base_model_ import Model
+from improving_agent.models.base_model import Model
 from improving_agent import util
 
 
@@ -48,7 +45,7 @@ class MetaQualifier(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def qualifier_type_id(self):
+    def qualifier_type_id(self) -> str:
         """Gets the qualifier_type_id of this MetaQualifier.
 
         A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
@@ -59,7 +56,7 @@ class MetaQualifier(Model):
         return self._qualifier_type_id
 
     @qualifier_type_id.setter
-    def qualifier_type_id(self, qualifier_type_id):
+    def qualifier_type_id(self, qualifier_type_id: str):
         """Sets the qualifier_type_id of this MetaQualifier.
 
         A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
@@ -73,7 +70,7 @@ class MetaQualifier(Model):
         self._qualifier_type_id = qualifier_type_id
 
     @property
-    def applicable_values(self):
+    def applicable_values(self) -> List[str]:
         """Gets the applicable_values of this MetaQualifier.
 
         The list of values that are possible for this qualifier.  # noqa: E501
@@ -84,7 +81,7 @@ class MetaQualifier(Model):
         return self._applicable_values
 
     @applicable_values.setter
-    def applicable_values(self, applicable_values):
+    def applicable_values(self, applicable_values: List[str]):
         """Sets the applicable_values of this MetaQualifier.
 
         The list of values that are possible for this qualifier.  # noqa: E501

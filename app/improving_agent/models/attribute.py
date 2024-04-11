@@ -1,12 +1,9 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
 from improving_agent.models.any_type import AnyType
-from improving_agent.models.base_model_ import Model
+from improving_agent.models.base_model import Model
 from improving_agent import util
 
 
@@ -26,7 +23,7 @@ class Attribute(Model):
         :param value: The value of this Attribute.  # noqa: E501
         :type value: object
         :param value_type_id: The value_type_id of this Attribute.  # noqa: E501
-        :type value_type_id: AttributeValueTypeId
+        :type value_type_id: str
         :param attribute_source: The attribute_source of this Attribute.  # noqa: E501
         :type attribute_source: str
         :param value_url: The value_url of this Attribute.  # noqa: E501
@@ -79,7 +76,7 @@ class Attribute(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def attribute_type_id(self):
+    def attribute_type_id(self) -> str:
         """Gets the attribute_type_id of this Attribute.
 
         A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
@@ -90,7 +87,7 @@ class Attribute(Model):
         return self._attribute_type_id
 
     @attribute_type_id.setter
-    def attribute_type_id(self, attribute_type_id):
+    def attribute_type_id(self, attribute_type_id: str):
         """Sets the attribute_type_id of this Attribute.
 
         A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
@@ -104,7 +101,7 @@ class Attribute(Model):
         self._attribute_type_id = attribute_type_id
 
     @property
-    def original_attribute_name(self):
+    def original_attribute_name(self) -> str:
         """Gets the original_attribute_name of this Attribute.
 
         The term used by the original source of an attribute to describe the meaning or significance of the value it captures. This may be a column name in a source tsv file, or a key in a source json document for the field in the data that held the attribute's value. Capturing this information  where possible lets us preserve what the original source said. Note that the data type is string' but the contents of the field could also be a CURIE of a third party ontology term.  # noqa: E501
@@ -115,7 +112,7 @@ class Attribute(Model):
         return self._original_attribute_name
 
     @original_attribute_name.setter
-    def original_attribute_name(self, original_attribute_name):
+    def original_attribute_name(self, original_attribute_name: str):
         """Sets the original_attribute_name of this Attribute.
 
         The term used by the original source of an attribute to describe the meaning or significance of the value it captures. This may be a column name in a source tsv file, or a key in a source json document for the field in the data that held the attribute's value. Capturing this information  where possible lets us preserve what the original source said. Note that the data type is string' but the contents of the field could also be a CURIE of a third party ontology term.  # noqa: E501
@@ -127,24 +124,24 @@ class Attribute(Model):
         self._original_attribute_name = original_attribute_name
 
     @property
-    def value(self):
+    def value(self) -> AnyType:
         """Gets the value of this Attribute.
 
         Value of the attribute. May be any data type, including a list.  # noqa: E501
 
         :return: The value of this Attribute.
-        :rtype: object
+        :rtype: AnyType
         """
         return self._value
 
     @value.setter
-    def value(self, value):
+    def value(self, value: AnyType):
         """Sets the value of this Attribute.
 
         Value of the attribute. May be any data type, including a list.  # noqa: E501
 
         :param value: The value of this Attribute.
-        :type value: object
+        :type value: AnyType
         """
         if value is None:
             raise ValueError("Invalid value for `value`, must not be `None`")  # noqa: E501
@@ -152,28 +149,28 @@ class Attribute(Model):
         self._value = value
 
     @property
-    def value_type_id(self):
+    def value_type_id(self) -> str:
         """Gets the value_type_id of this Attribute.
 
 
         :return: The value_type_id of this Attribute.
-        :rtype: AttributeValueTypeId
+        :rtype: str
         """
         return self._value_type_id
 
     @value_type_id.setter
-    def value_type_id(self, value_type_id):
+    def value_type_id(self, value_type_id: str):
         """Sets the value_type_id of this Attribute.
 
 
         :param value_type_id: The value_type_id of this Attribute.
-        :type value_type_id: AttributeValueTypeId
+        :type value_type_id: str
         """
 
         self._value_type_id = value_type_id
 
     @property
-    def attribute_source(self):
+    def attribute_source(self) -> str:
         """Gets the attribute_source of this Attribute.
 
         The source of the core assertion made by the key-value pair of an attribute object. Use a CURIE or namespace designator for this resource where possible.  # noqa: E501
@@ -184,7 +181,7 @@ class Attribute(Model):
         return self._attribute_source
 
     @attribute_source.setter
-    def attribute_source(self, attribute_source):
+    def attribute_source(self, attribute_source: str):
         """Sets the attribute_source of this Attribute.
 
         The source of the core assertion made by the key-value pair of an attribute object. Use a CURIE or namespace designator for this resource where possible.  # noqa: E501
@@ -196,7 +193,7 @@ class Attribute(Model):
         self._attribute_source = attribute_source
 
     @property
-    def value_url(self):
+    def value_url(self) -> str:
         """Gets the value_url of this Attribute.
 
         Human-consumable URL linking to a web document that provides additional information about an  attribute's value (not the node or the edge fom which it hangs).  # noqa: E501
@@ -207,7 +204,7 @@ class Attribute(Model):
         return self._value_url
 
     @value_url.setter
-    def value_url(self, value_url):
+    def value_url(self, value_url: str):
         """Sets the value_url of this Attribute.
 
         Human-consumable URL linking to a web document that provides additional information about an  attribute's value (not the node or the edge fom which it hangs).  # noqa: E501
@@ -219,7 +216,7 @@ class Attribute(Model):
         self._value_url = value_url
 
     @property
-    def description(self):
+    def description(self) -> str:
         """Gets the description of this Attribute.
 
         Human-readable description for the attribute and its value.  # noqa: E501
@@ -230,7 +227,7 @@ class Attribute(Model):
         return self._description
 
     @description.setter
-    def description(self, description):
+    def description(self, description: str):
         """Sets the description of this Attribute.
 
         Human-readable description for the attribute and its value.  # noqa: E501
@@ -242,7 +239,7 @@ class Attribute(Model):
         self._description = description
 
     @property
-    def attributes(self):
+    def attributes(self) -> List['Attribute']:
         """Gets the attributes of this Attribute.
 
         A list of attributes providing further information about the parent attribute (for example to provide provenance information about the parent attribute).  # noqa: E501
@@ -253,7 +250,7 @@ class Attribute(Model):
         return self._attributes
 
     @attributes.setter
-    def attributes(self, attributes):
+    def attributes(self, attributes: List['Attribute']):
         """Sets the attributes of this Attribute.
 
         A list of attributes providing further information about the parent attribute (for example to provide provenance information about the parent attribute).  # noqa: E501

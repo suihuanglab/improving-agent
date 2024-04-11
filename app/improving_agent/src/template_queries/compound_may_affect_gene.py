@@ -318,7 +318,10 @@ class CompoundAffectsGene(TemplateQueryBase):
                         _edges[updated_edge_id] = _kg['edges'][binding.id]
 
                 aux_graph_id = f'ag_{i}_{j}'
-                _aux_graphs[aux_graph_id] = AuxiliaryGraph(edges=aux_graph_edges)
+                _aux_graphs[aux_graph_id] = AuxiliaryGraph(
+                    attributes=[],  # attrs can't be null
+                    edges=aux_graph_edges,
+                )
 
                 # make a new inferred edge and add it to the kg
                 new_edge_id, new_inferred_edge = self._make_new_inferred_edge(
@@ -333,7 +336,10 @@ class CompoundAffectsGene(TemplateQueryBase):
                     result.analyses[0].score = result.analyses[0].score / 2  # penalize
 
                 result.analyses[0].edge_bindings = {
-                    self.edge_id_affects: [EdgeBinding(id=new_edge_id)]
+                    self.edge_id_affects: [EdgeBinding(
+                        id=new_edge_id,
+                        attributes=[],
+                    )]
                 }
 
                 _results.append(result)

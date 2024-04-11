@@ -1,11 +1,8 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from improving_agent.models.base_model_ import Model
+from improving_agent.models.base_model import Model
 from improving_agent import util
 
 
@@ -48,7 +45,7 @@ class Qualifier(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def qualifier_type_id(self):
+    def qualifier_type_id(self) -> str:
         """Gets the qualifier_type_id of this Qualifier.
 
         A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
@@ -59,7 +56,7 @@ class Qualifier(Model):
         return self._qualifier_type_id
 
     @qualifier_type_id.setter
-    def qualifier_type_id(self, qualifier_type_id):
+    def qualifier_type_id(self, qualifier_type_id: str):
         """Sets the qualifier_type_id of this Qualifier.
 
         A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
@@ -73,7 +70,7 @@ class Qualifier(Model):
         self._qualifier_type_id = qualifier_type_id
 
     @property
-    def qualifier_value(self):
+    def qualifier_value(self) -> str:
         """Gets the qualifier_value of this Qualifier.
 
         The value associated with the type of the qualifier, drawn from a set of controlled values by the type as specified in the Biolink model (e.g. 'expression' or 'abundance' for the qualifier type 'biolink:subject_aspect_qualifier', etc). The enumeration of qualifier values for a given qualifier type is generally going to be constrained by the category of edge (i.e. biolink:Association subtype) of the (Q)Edge.  # noqa: E501
@@ -84,7 +81,7 @@ class Qualifier(Model):
         return self._qualifier_value
 
     @qualifier_value.setter
-    def qualifier_value(self, qualifier_value):
+    def qualifier_value(self, qualifier_value: str):
         """Sets the qualifier_value of this Qualifier.
 
         The value associated with the type of the qualifier, drawn from a set of controlled values by the type as specified in the Biolink model (e.g. 'expression' or 'abundance' for the qualifier type 'biolink:subject_aspect_qualifier', etc). The enumeration of qualifier values for a given qualifier type is generally going to be constrained by the category of edge (i.e. biolink:Association subtype) of the (Q)Edge.  # noqa: E501

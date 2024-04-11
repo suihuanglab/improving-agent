@@ -1,11 +1,8 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from improving_agent.models.base_model_ import Model
+from improving_agent.models.base_model import Model
 from improving_agent import util
 
 
@@ -63,7 +60,7 @@ class MetaAttribute(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def attribute_type_id(self):
+    def attribute_type_id(self) -> str:
         """Gets the attribute_type_id of this MetaAttribute.
 
         A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
@@ -74,7 +71,7 @@ class MetaAttribute(Model):
         return self._attribute_type_id
 
     @attribute_type_id.setter
-    def attribute_type_id(self, attribute_type_id):
+    def attribute_type_id(self, attribute_type_id: str):
         """Sets the attribute_type_id of this MetaAttribute.
 
         A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
@@ -88,7 +85,7 @@ class MetaAttribute(Model):
         self._attribute_type_id = attribute_type_id
 
     @property
-    def attribute_source(self):
+    def attribute_source(self) -> str:
         """Gets the attribute_source of this MetaAttribute.
 
         Source of an attribute provided by this TRAPI web service.  # noqa: E501
@@ -99,7 +96,7 @@ class MetaAttribute(Model):
         return self._attribute_source
 
     @attribute_source.setter
-    def attribute_source(self, attribute_source):
+    def attribute_source(self, attribute_source: str):
         """Sets the attribute_source of this MetaAttribute.
 
         Source of an attribute provided by this TRAPI web service.  # noqa: E501
@@ -111,7 +108,7 @@ class MetaAttribute(Model):
         self._attribute_source = attribute_source
 
     @property
-    def original_attribute_names(self):
+    def original_attribute_names(self) -> List[str]:
         """Gets the original_attribute_names of this MetaAttribute.
 
         Names of an the attribute as provided by the source.  # noqa: E501
@@ -122,7 +119,7 @@ class MetaAttribute(Model):
         return self._original_attribute_names
 
     @original_attribute_names.setter
-    def original_attribute_names(self, original_attribute_names):
+    def original_attribute_names(self, original_attribute_names: List[str]):
         """Sets the original_attribute_names of this MetaAttribute.
 
         Names of an the attribute as provided by the source.  # noqa: E501
@@ -136,7 +133,7 @@ class MetaAttribute(Model):
         self._original_attribute_names = original_attribute_names
 
     @property
-    def constraint_use(self):
+    def constraint_use(self) -> bool:
         """Gets the constraint_use of this MetaAttribute.
 
         Indicates whether this attribute can be used as a query constraint.  # noqa: E501
@@ -147,7 +144,7 @@ class MetaAttribute(Model):
         return self._constraint_use
 
     @constraint_use.setter
-    def constraint_use(self, constraint_use):
+    def constraint_use(self, constraint_use: bool):
         """Sets the constraint_use of this MetaAttribute.
 
         Indicates whether this attribute can be used as a query constraint.  # noqa: E501
@@ -159,7 +156,7 @@ class MetaAttribute(Model):
         self._constraint_use = constraint_use
 
     @property
-    def constraint_name(self):
+    def constraint_name(self) -> str:
         """Gets the constraint_name of this MetaAttribute.
 
         Human-readable name or label for the constraint concept. Required whenever constraint_use is true.  # noqa: E501
@@ -170,7 +167,7 @@ class MetaAttribute(Model):
         return self._constraint_name
 
     @constraint_name.setter
-    def constraint_name(self, constraint_name):
+    def constraint_name(self, constraint_name: str):
         """Sets the constraint_name of this MetaAttribute.
 
         Human-readable name or label for the constraint concept. Required whenever constraint_use is true.  # noqa: E501
