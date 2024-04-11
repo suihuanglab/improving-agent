@@ -1,12 +1,8 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from improving_agent.models.base_model_ import Model
-from improving_agent.models.log_level import LogLevel
+from improving_agent.models.base_model import Model
 from improving_agent import util
 
 from improving_agent.models.log_level import LogLevel  # noqa: E501
@@ -23,7 +19,7 @@ class LogEntry(Model):
         :param timestamp: The timestamp of this LogEntry.  # noqa: E501
         :type timestamp: datetime
         :param level: The level of this LogEntry.  # noqa: E501
-        :type level: LogEntryLevel
+        :type level: LogLevel
         :param code: The code of this LogEntry.  # noqa: E501
         :type code: str
         :param message: The message of this LogEntry.  # noqa: E501
@@ -60,7 +56,7 @@ class LogEntry(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def timestamp(self):
+    def timestamp(self) -> datetime:
         """Gets the timestamp of this LogEntry.
 
         Timestamp in ISO 8601 format, providing the LogEntry time either in univeral coordinated time (UTC) using the 'Z' tag (e.g 2020-09-03T18:13:49Z), or, if local time is provided, the timezone offset must be provided (e.g. 2020-09-03T18:13:49-04:00).  # noqa: E501
@@ -71,7 +67,7 @@ class LogEntry(Model):
         return self._timestamp
 
     @timestamp.setter
-    def timestamp(self, timestamp):
+    def timestamp(self, timestamp: datetime):
         """Sets the timestamp of this LogEntry.
 
         Timestamp in ISO 8601 format, providing the LogEntry time either in univeral coordinated time (UTC) using the 'Z' tag (e.g 2020-09-03T18:13:49Z), or, if local time is provided, the timezone offset must be provided (e.g. 2020-09-03T18:13:49-04:00).  # noqa: E501
@@ -85,7 +81,7 @@ class LogEntry(Model):
         self._timestamp = timestamp
 
     @property
-    def level(self):
+    def level(self) -> LogLevel:
         """Gets the level of this LogEntry.
 
 
@@ -95,7 +91,7 @@ class LogEntry(Model):
         return self._level
 
     @level.setter
-    def level(self, level):
+    def level(self, level: LogLevel):
         """Sets the level of this LogEntry.
 
 
@@ -106,7 +102,7 @@ class LogEntry(Model):
         self._level = level
 
     @property
-    def code(self):
+    def code(self) -> str:
         """Gets the code of this LogEntry.
 
         One of a standardized set of short codes e.g. QueryNotTraversable, KPNotAvailable, KPResponseMalformed  # noqa: E501
@@ -117,7 +113,7 @@ class LogEntry(Model):
         return self._code
 
     @code.setter
-    def code(self, code):
+    def code(self, code: str):
         """Sets the code of this LogEntry.
 
         One of a standardized set of short codes e.g. QueryNotTraversable, KPNotAvailable, KPResponseMalformed  # noqa: E501
@@ -129,7 +125,7 @@ class LogEntry(Model):
         self._code = code
 
     @property
-    def message(self):
+    def message(self) -> str:
         """Gets the message of this LogEntry.
 
         A human-readable log message  # noqa: E501
@@ -140,7 +136,7 @@ class LogEntry(Model):
         return self._message
 
     @message.setter
-    def message(self, message):
+    def message(self, message: str):
         """Sets the message of this LogEntry.
 
         A human-readable log message  # noqa: E501

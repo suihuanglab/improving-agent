@@ -11,7 +11,11 @@ from .sri_node_normalizer import (
     SRI_NODE_NORMALIZER
 )
 from improving_agent.models import AttributeConstraint, QNode
-from improving_agent.exceptions import UnmatchedIdentifierError, UnsupportedTypeError
+from improving_agent.exceptions import (
+    UnmatchedIdentifierError,
+    UnsupportedSetInterpretation,
+    UnsupportedTypeError,
+)
 from improving_agent.src.biolink.biolink import get_supported_biolink_descendants, NODE
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_PROTEIN,
@@ -77,8 +81,12 @@ def _deserialize_qnode(qnode_id, qnode):
     try:
         ids = qnode.get('ids')
         categories = qnode.get('categories')
-        is_set = qnode.get('is_set')
         req_constraints = qnode.get('attribute_constraints')
+        set_interpretation = qnode.get('set_interpretation', 'BATCH')
+        if set_interpretation != 'BATCH':
+            raise UnsupportedSetInterpretation(
+                'imProving Agent only supports BATCH set interpretation'
+            )
         if req_constraints:
             for constraint in req_constraints:
                 try:
@@ -86,7 +94,7 @@ def _deserialize_qnode(qnode_id, qnode):
                     constraints.append(attribute_constraints)
                 except TypeError:
                     BadRequest(f'Could not deserialize constraint={constraint}')
-        qnode = QNode(ids, categories, is_set, constraints)
+        qnode = QNode(ids, categories, set_interpretation, constraints)
         setattr(qnode, 'qnode_id', qnode_id)
     except TypeError:
         raise BadRequest(f'Could not deserialize qnode={qnode}')

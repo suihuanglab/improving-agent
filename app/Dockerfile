@@ -1,4 +1,4 @@
-FROM python:3.9-slim
+FROM python:3.11-slim
 
 RUN mkdir -p /usr/src/app
 WORKDIR /usr/src/app
@@ -7,7 +7,7 @@ COPY requirements.txt /usr/src/app/
 
 RUN apt-get clean \
   && apt -y update \
-  && pip install --upgrade pip  \
+  && pip install --upgrade pip setuptools wheel \
   && apt -y install python3-dev \
      build-essential \
   && pip3 install --no-cache-dir -r requirements.txt

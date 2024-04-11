@@ -1,11 +1,8 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from improving_agent.models.base_model_ import Model
+from improving_agent.models.base_model import Model
 from improving_agent.models.log_entry import LogEntry
 from improving_agent import util
 
@@ -60,7 +57,7 @@ class AsyncQueryStatusResponse(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def status(self):
+    def status(self) -> str:
         """Gets the status of this AsyncQueryStatusResponse.
 
         One of a standardized set of short codes: Queued, Running, Completed, Failed  # noqa: E501
@@ -71,7 +68,7 @@ class AsyncQueryStatusResponse(Model):
         return self._status
 
     @status.setter
-    def status(self, status):
+    def status(self, status: str):
         """Sets the status of this AsyncQueryStatusResponse.
 
         One of a standardized set of short codes: Queued, Running, Completed, Failed  # noqa: E501
@@ -85,7 +82,7 @@ class AsyncQueryStatusResponse(Model):
         self._status = status
 
     @property
-    def description(self):
+    def description(self) -> str:
         """Gets the description of this AsyncQueryStatusResponse.
 
         A brief human-readable description of the current state or summary of the problem if the status is Failed.  # noqa: E501
@@ -96,7 +93,7 @@ class AsyncQueryStatusResponse(Model):
         return self._description
 
     @description.setter
-    def description(self, description):
+    def description(self, description: str):
         """Sets the description of this AsyncQueryStatusResponse.
 
         A brief human-readable description of the current state or summary of the problem if the status is Failed.  # noqa: E501
@@ -110,7 +107,7 @@ class AsyncQueryStatusResponse(Model):
         self._description = description
 
     @property
-    def logs(self):
+    def logs(self) -> List[LogEntry]:
         """Gets the logs of this AsyncQueryStatusResponse.
 
         A list of LogEntry items, containing errors, warnings, debugging information, etc. List items MUST be in chronological order with earliest first. The most recent entry should be last. Its timestamp will be compared against the current time to see if there is still activity.  # noqa: E501
@@ -121,7 +118,7 @@ class AsyncQueryStatusResponse(Model):
         return self._logs
 
     @logs.setter
-    def logs(self, logs):
+    def logs(self, logs: List[LogEntry]):
         """Sets the logs of this AsyncQueryStatusResponse.
 
         A list of LogEntry items, containing errors, warnings, debugging information, etc. List items MUST be in chronological order with earliest first. The most recent entry should be last. Its timestamp will be compared against the current time to see if there is still activity.  # noqa: E501
@@ -131,11 +128,13 @@ class AsyncQueryStatusResponse(Model):
         """
         if logs is None:
             raise ValueError("Invalid value for `logs`, must not be `None`")  # noqa: E501
+        if logs is not None and len(logs) < 1:
+            raise ValueError("Invalid value for `logs`, number of items must be greater than or equal to `1`")  # noqa: E501
 
         self._logs = logs
 
     @property
-    def response_url(self):
+    def response_url(self) -> str:
         """Gets the response_url of this AsyncQueryStatusResponse.
 
         Optional URL that can be queried to restrieve the full TRAPI Response.  # noqa: E501
@@ -146,7 +145,7 @@ class AsyncQueryStatusResponse(Model):
         return self._response_url
 
     @response_url.setter
-    def response_url(self, response_url):
+    def response_url(self, response_url: str):
         """Sets the response_url of this AsyncQueryStatusResponse.
 
         Optional URL that can be queried to restrieve the full TRAPI Response.  # noqa: E501

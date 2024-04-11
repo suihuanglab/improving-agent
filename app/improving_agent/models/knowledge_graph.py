@@ -1,11 +1,8 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from improving_agent.models.base_model_ import Model
+from improving_agent.models.base_model import Model
 from improving_agent.models.edge import Edge
 from improving_agent.models.node import Node
 from improving_agent import util
@@ -52,7 +49,7 @@ class KnowledgeGraph(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def nodes(self):
+    def nodes(self) -> Dict[str, Node]:
         """Gets the nodes of this KnowledgeGraph.
 
         Dictionary of Node instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key.  # noqa: E501
@@ -63,7 +60,7 @@ class KnowledgeGraph(Model):
         return self._nodes
 
     @nodes.setter
-    def nodes(self, nodes):
+    def nodes(self, nodes: Dict[str, Node]):
         """Sets the nodes of this KnowledgeGraph.
 
         Dictionary of Node instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key.  # noqa: E501
@@ -77,7 +74,7 @@ class KnowledgeGraph(Model):
         self._nodes = nodes
 
     @property
-    def edges(self):
+    def edges(self) -> Dict[str, Edge]:
         """Gets the edges of this KnowledgeGraph.
 
         Dictionary of Edge instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key.  # noqa: E501
@@ -88,7 +85,7 @@ class KnowledgeGraph(Model):
         return self._edges
 
     @edges.setter
-    def edges(self, edges):
+    def edges(self, edges: Dict[str, Edge]):
         """Sets the edges of this KnowledgeGraph.
 
         Dictionary of Edge instances used in the KnowledgeGraph, referenced elsewhere in the TRAPI output by the dictionary key.  # noqa: E501

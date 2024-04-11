@@ -44,14 +44,13 @@ def get_db():
 
 from improving_agent.src import core # noqa: #E402, E401 
 
-app = connexion.App(__name__, specification_dir="./openapi/")
+app = connexion.FlaskApp(__name__, specification_dir="./openapi/")
 app.app.json_encoder = encoder.JSONEncoder
 app.add_api(
     "openapi.yaml",
     arguments={"title": "imProving Agent - a query (im)proving Autonomous Relay Agent"},
     pythonic_params=True,
 )
-
 
 def extract_text_result(result):
     new_result = {}

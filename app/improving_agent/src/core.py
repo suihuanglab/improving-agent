@@ -14,7 +14,8 @@ from improving_agent.exceptions import (
     UnsupportedConstraint,
     UnsupportedKnowledgeType,
     UnsupportedQualifier,
-    UnsupportedTypeError
+    UnsupportedSetInterpretation,
+    UnsupportedTypeError,
 )
 from improving_agent.models import Message, Query, QueryGraph, Response
 from improving_agent.models import Schema1 as Workflow
@@ -136,6 +137,7 @@ def process_query(raw_json):
             workflow=query.workflow,
             schema_version=app_config.TRAPI_VERSION,
             biolink_version=app_config.BIOLINK_VERSION,
+            logs=[],
         )
         logger.info(success_description)
     return response
@@ -158,6 +160,7 @@ def try_query(query):
             description=str(e),
             schema_version=app_config.TRAPI_VERSION,
             biolink_version=app_config.BIOLINK_VERSION,
+            logs=[],
         ), 400
     except (
         NonLinearQueryError,
@@ -171,14 +174,16 @@ def try_query(query):
             description=f'{str(e)}; returning empty message...',
             schema_version=app_config.TRAPI_VERSION,
             biolink_version=app_config.BIOLINK_VERSION,
+            logs=[],
         ), 200
-    except NotImplemented as e:
+    except (NotImplemented, UnsupportedSetInterpretation) as e:
         return Response(
             message=Message(),
             status="Not Implemented",
             description=str(e),
             schema_version=app_config.TRAPI_VERSION,
             biolink_version=app_config.BIOLINK_VERSION,
+            logs=[],
         ), NotImplemented.code
     except Exception as e:
         logger.exception(str(e))
@@ -195,4 +200,5 @@ def try_query(query):
             description=error_description,
             schema_version=app_config.TRAPI_VERSION,
             biolink_version=app_config.BIOLINK_VERSION,
+            logs=[],
         ), 500

@@ -1,11 +1,8 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from improving_agent.models.base_model_ import Model
+from improving_agent.models.base_model import Model
 from improving_agent import util
 
 
@@ -53,7 +50,7 @@ class AsyncQueryResponse(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def status(self):
+    def status(self) -> str:
         """Gets the status of this AsyncQueryResponse.
 
         One of a standardized set of short codes: e.g. Accepted, QueryNotTraversable, KPsNotAvailable  # noqa: E501
@@ -64,7 +61,7 @@ class AsyncQueryResponse(Model):
         return self._status
 
     @status.setter
-    def status(self, status):
+    def status(self, status: str):
         """Sets the status of this AsyncQueryResponse.
 
         One of a standardized set of short codes: e.g. Accepted, QueryNotTraversable, KPsNotAvailable  # noqa: E501
@@ -76,7 +73,7 @@ class AsyncQueryResponse(Model):
         self._status = status
 
     @property
-    def description(self):
+    def description(self) -> str:
         """Gets the description of this AsyncQueryResponse.
 
         A brief human-readable description of the result of the async_query submission.  # noqa: E501
@@ -87,7 +84,7 @@ class AsyncQueryResponse(Model):
         return self._description
 
     @description.setter
-    def description(self, description):
+    def description(self, description: str):
         """Sets the description of this AsyncQueryResponse.
 
         A brief human-readable description of the result of the async_query submission.  # noqa: E501
@@ -99,7 +96,7 @@ class AsyncQueryResponse(Model):
         self._description = description
 
     @property
-    def job_id(self):
+    def job_id(self) -> str:
         """Gets the job_id of this AsyncQueryResponse.
 
         An identifier for the submitted job that can be used with /async_query_status to receive an update on the status of the job.  # noqa: E501
@@ -110,7 +107,7 @@ class AsyncQueryResponse(Model):
         return self._job_id
 
     @job_id.setter
-    def job_id(self, job_id):
+    def job_id(self, job_id: str):
         """Sets the job_id of this AsyncQueryResponse.
 
         An identifier for the submitted job that can be used with /async_query_status to receive an update on the status of the job.  # noqa: E501

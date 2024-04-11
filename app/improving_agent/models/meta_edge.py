@@ -1,18 +1,13 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from improving_agent.models.base_model_ import Model
+from improving_agent.models.base_model import Model
 from improving_agent.models.meta_attribute import MetaAttribute
 from improving_agent.models.meta_qualifier import MetaQualifier
 import re
 from improving_agent import util
 
-from improving_agent.models.meta_attribute import MetaAttribute  # noqa: E501
-from improving_agent.models.meta_qualifier import MetaQualifier  # noqa: E501
 import re  # noqa: E501
 
 class MetaEdge(Model):
@@ -79,7 +74,7 @@ class MetaEdge(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def subject(self):
+    def subject(self) -> str:
         """Gets the subject of this MetaEdge.
 
         Compact URI (CURIE) for a Biolink class, biolink:NamedThing or a child thereof. The CURIE must use the prefix 'biolink:' followed by the PascalCase class name.  # noqa: E501
@@ -90,7 +85,7 @@ class MetaEdge(Model):
         return self._subject
 
     @subject.setter
-    def subject(self, subject):
+    def subject(self, subject: str):
         """Sets the subject of this MetaEdge.
 
         Compact URI (CURIE) for a Biolink class, biolink:NamedThing or a child thereof. The CURIE must use the prefix 'biolink:' followed by the PascalCase class name.  # noqa: E501
@@ -106,7 +101,7 @@ class MetaEdge(Model):
         self._subject = subject
 
     @property
-    def predicate(self):
+    def predicate(self) -> str:
         """Gets the predicate of this MetaEdge.
 
         CURIE for a Biolink 'predicate' slot, taken from the Biolink slot ('is_a') hierarchy rooted in biolink:related_to (snake_case). This predicate defines the Biolink relationship between the subject and object nodes of a biolink:Association defining a knowledge graph edge.  # noqa: E501
@@ -117,7 +112,7 @@ class MetaEdge(Model):
         return self._predicate
 
     @predicate.setter
-    def predicate(self, predicate):
+    def predicate(self, predicate: str):
         """Sets the predicate of this MetaEdge.
 
         CURIE for a Biolink 'predicate' slot, taken from the Biolink slot ('is_a') hierarchy rooted in biolink:related_to (snake_case). This predicate defines the Biolink relationship between the subject and object nodes of a biolink:Association defining a knowledge graph edge.  # noqa: E501
@@ -133,7 +128,7 @@ class MetaEdge(Model):
         self._predicate = predicate
 
     @property
-    def object(self):
+    def object(self) -> str:
         """Gets the object of this MetaEdge.
 
         Compact URI (CURIE) for a Biolink class, biolink:NamedThing or a child thereof. The CURIE must use the prefix 'biolink:' followed by the PascalCase class name.  # noqa: E501
@@ -144,7 +139,7 @@ class MetaEdge(Model):
         return self._object
 
     @object.setter
-    def object(self, object):
+    def object(self, object: str):
         """Sets the object of this MetaEdge.
 
         Compact URI (CURIE) for a Biolink class, biolink:NamedThing or a child thereof. The CURIE must use the prefix 'biolink:' followed by the PascalCase class name.  # noqa: E501
@@ -160,7 +155,7 @@ class MetaEdge(Model):
         self._object = object
 
     @property
-    def knowledge_types(self):
+    def knowledge_types(self) -> List[str]:
         """Gets the knowledge_types of this MetaEdge.
 
         A list of knowledge_types that are supported by the service. If the knowledge_types is null, this means that only 'lookup' is supported. Currently allowed values are 'lookup' or 'inferred'.  # noqa: E501
@@ -171,7 +166,7 @@ class MetaEdge(Model):
         return self._knowledge_types
 
     @knowledge_types.setter
-    def knowledge_types(self, knowledge_types):
+    def knowledge_types(self, knowledge_types: List[str]):
         """Sets the knowledge_types of this MetaEdge.
 
         A list of knowledge_types that are supported by the service. If the knowledge_types is null, this means that only 'lookup' is supported. Currently allowed values are 'lookup' or 'inferred'.  # noqa: E501
@@ -185,7 +180,7 @@ class MetaEdge(Model):
         self._knowledge_types = knowledge_types
 
     @property
-    def attributes(self):
+    def attributes(self) -> List[MetaAttribute]:
         """Gets the attributes of this MetaEdge.
 
         Edge attributes provided by this TRAPI web service.  # noqa: E501
@@ -196,7 +191,7 @@ class MetaEdge(Model):
         return self._attributes
 
     @attributes.setter
-    def attributes(self, attributes):
+    def attributes(self, attributes: List[MetaAttribute]):
         """Sets the attributes of this MetaEdge.
 
         Edge attributes provided by this TRAPI web service.  # noqa: E501
@@ -208,7 +203,7 @@ class MetaEdge(Model):
         self._attributes = attributes
 
     @property
-    def qualifiers(self):
+    def qualifiers(self) -> List[MetaQualifier]:
         """Gets the qualifiers of this MetaEdge.
 
         Qualifiers that are possible to be found on this edge type.  # noqa: E501
@@ -219,7 +214,7 @@ class MetaEdge(Model):
         return self._qualifiers
 
     @qualifiers.setter
-    def qualifiers(self, qualifiers):
+    def qualifiers(self, qualifiers: List[MetaQualifier]):
         """Sets the qualifiers of this MetaEdge.
 
         Qualifiers that are possible to be found on this edge type.  # noqa: E501
@@ -231,7 +226,7 @@ class MetaEdge(Model):
         self._qualifiers = qualifiers
 
     @property
-    def association(self):
+    def association(self) -> str:
         """Gets the association of this MetaEdge.
 
         Compact URI (CURIE) for a Biolink class, biolink:NamedThing or a child thereof. The CURIE must use the prefix 'biolink:' followed by the PascalCase class name.  # noqa: E501
@@ -242,7 +237,7 @@ class MetaEdge(Model):
         return self._association
 
     @association.setter
-    def association(self, association):
+    def association(self, association: str):
         """Sets the association of this MetaEdge.
 
         Compact URI (CURIE) for a Biolink class, biolink:NamedThing or a child thereof. The CURIE must use the prefix 'biolink:' followed by the PascalCase class name.  # noqa: E501

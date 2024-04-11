@@ -181,7 +181,10 @@ class DrugMayTreatDisease(TemplateQueryBase):
 
         # make the aux graph ID and aux graph, then return
         aux_graph_id = f'ag_{result_number}'
-        aux_graph = AuxiliaryGraph(edges=[supporting_edge_id])
+        aux_graph = AuxiliaryGraph(
+            attributes=[],
+            edges=[supporting_edge_id]
+        )
         return aux_graph_id, aux_graph
     
     def _make_new_predicted_treats_edge(
@@ -241,7 +244,10 @@ class DrugMayTreatDisease(TemplateQueryBase):
 
         # NOTE: outside of the loop, but still have the variables
         # now setup auxiliary graph
-        ag = AuxiliaryGraph(edges=[kg_edge_key])
+        ag = AuxiliaryGraph(
+            attributes=[],
+            edges=[kg_edge_key]
+        )
         ag_id = f'ag_{kg_edge_key}'
         aux_graph_updates[ag_id] = ag
     
@@ -259,7 +265,10 @@ class DrugMayTreatDisease(TemplateQueryBase):
             ag_id,
         )
         new_edge_id = f'i_{kg_edge_key}'
-        edge_bindings = {qg_edge_key: [EdgeBinding(new_edge_id)]}
+        edge_bindings = {qg_edge_key: [EdgeBinding(
+            id=new_edge_id,
+            attributes=[],
+        )]}
         kg_edge_updates[new_edge_id] = new_result_edge
 
         updated_analysis = Analysis(
@@ -395,11 +404,22 @@ class DrugMayTreatDisease(TemplateQueryBase):
             self.knowledge_graph['edges'][f'inferred_{i}'] = result_edge
             self.knowledge_graph['nodes'][biolink_id] = result_nodes[spoke_id]
             new_results.append(Result(
-                node_bindings={self.node_id_disease: [NodeBinding(disease_identifier)],
-                               self.node_id_compound: [NodeBinding(biolink_id)]},
+                node_bindings={
+                    self.node_id_disease: [NodeBinding(
+                        id=disease_identifier,
+                        attributes=[],
+                    )],
+                    self.node_id_compound: [NodeBinding(
+                        id=biolink_id,
+                        attributes=[],
+                    )]
+                },
                 analyses=[Analysis(
                     resource_id=INFORES_IMPROVING_AGENT.infores_id,
-                    edge_bindings={self.edge_id_treats: [EdgeBinding(f'inferred_{i}')]},
+                    edge_bindings={self.edge_id_treats: [EdgeBinding(
+                        id=f'inferred_{i}',
+                        attributes=[],
+                    )]},
                     score=sorted_compound_scores[spoke_id] * 10000,
                     support_graphs=[aux_graph_id],
                 )]

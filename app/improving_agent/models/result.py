@@ -1,11 +1,8 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from improving_agent.models.base_model_ import Model
+from improving_agent.models.base_model import Model
 from improving_agent.models.analysis import Analysis
 from improving_agent.models.node_binding import NodeBinding
 from improving_agent import util
@@ -52,7 +49,7 @@ class Result(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def node_bindings(self):
+    def node_bindings(self) -> Dict[str, List[NodeBinding]]:
         """Gets the node_bindings of this Result.
 
         The dictionary of Input Query Graph to Result Knowledge Graph node bindings where the dictionary keys are the key identifiers of the Query Graph nodes and the associated values of those keys are instances of NodeBinding schema type (see below). This value is an array of NodeBindings since a given query node may have multiple knowledge graph Node bindings in the result.  # noqa: E501
@@ -63,7 +60,7 @@ class Result(Model):
         return self._node_bindings
 
     @node_bindings.setter
-    def node_bindings(self, node_bindings):
+    def node_bindings(self, node_bindings: Dict[str, List[NodeBinding]]):
         """Sets the node_bindings of this Result.
 
         The dictionary of Input Query Graph to Result Knowledge Graph node bindings where the dictionary keys are the key identifiers of the Query Graph nodes and the associated values of those keys are instances of NodeBinding schema type (see below). This value is an array of NodeBindings since a given query node may have multiple knowledge graph Node bindings in the result.  # noqa: E501
@@ -77,7 +74,7 @@ class Result(Model):
         self._node_bindings = node_bindings
 
     @property
-    def analyses(self):
+    def analyses(self) -> List[Analysis]:
         """Gets the analyses of this Result.
 
         The list of all Analysis components that contribute to the result. See below for Analysis components.  # noqa: E501
@@ -88,7 +85,7 @@ class Result(Model):
         return self._analyses
 
     @analyses.setter
-    def analyses(self, analyses):
+    def analyses(self, analyses: List[Analysis]):
         """Sets the analyses of this Result.
 
         The list of all Analysis components that contribute to the result. See below for Analysis components.  # noqa: E501
@@ -98,5 +95,7 @@ class Result(Model):
         """
         if analyses is None:
             raise ValueError("Invalid value for `analyses`, must not be `None`")  # noqa: E501
+        if analyses is not None and len(analyses) < 0:
+            raise ValueError("Invalid value for `analyses`, number of items must be greater than or equal to `0`")  # noqa: E501
 
         self._analyses = analyses

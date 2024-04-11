@@ -7,27 +7,30 @@ from typing import Optional
 from improving_agent.models.attribute import Attribute
 from improving_agent.models.retrieval_source import RetrievalSource
 from improving_agent.src.biolink.spoke_biolink_constants import (
-    BIOLINK_ASSOCIATION_TREATS,
     BIOLINK_ASSOCIATION_IN_CLINICAL_TRIALS_FOR,
     BIOLINK_ASSOCIATION_IN_PRECLINICAL_TRIALS_FOR,
+    BIOLINK_ASSOCIATION_RELATED_TO,
+    BIOLINK_ASSOCIATION_TREATS,
+    BIOLINK_ASSOCIATION_TYPE,
     BIOLINK_SLOT_AGENT_TYPE,
     BIOLINK_SLOT_KNOWLEDGE_LEVEL,
     BIOLINK_SLOT_MAX_RESEARCH_PHASE,
     BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE,
-    BL_MAX_RESEARCH_PHASE_ENUM_NOT_PROVIDED,
     BL_MAX_RESEARCH_PHASE_ENUM_PC_RESEARCH_PHASE,
     BL_MAX_RESEARCH_PHASE_ENUM_PHASE_4,
+    BL_RELATION_SOURCE_KL_AT_MAP,
     KNOWLEDGE_TYPE_INFERRED,
     KNOWLEDGE_TYPE_LOOKUP,
-    PHASE_BL_CT_PHASE_ENUM_MAP,
-    TRAPI_KNOWLEDGE_LEVEL_KNOWLEDGE_ASSERTION,
+    QUALIFIERS,
+    SPOKE_BIOLINK_EDGE_MAPPINGS,
     TRAPI_AGENT_TYPE_ENUM_MANUAL_AGENT,
+    TRAPI_AGENT_TYPE_ENUM_NOT_PROVIDED,
+    TRAPI_KNOWLEDGE_LEVEL_KNOWLEDGE_ASSERTION,
+    TRAPI_KNOWLEDGE_LEVEL_NOT_PROVIDED,
     Infores,
     INFORES_CHEMBL,
     INFORES_DRUGCENTRAL,
-    INFORES_IMPROVING_AGENT,
     INFORES_SPOKE,
-    SPOKE_EDGE_TYPE_TREATS_CtD,
 )
 from improving_agent.src.provenance import (
     choose_primary_source,
@@ -63,7 +66,41 @@ def get_max_research_phase_attr(attr_val: int) -> Attribute:
     """
     pass
 
-def _get_kl_at_attrs_for_lookup() -> list[Attribute]:
+
+def _get_unknown_kl_at_attrs() -> list[Attribute]:
+    at_attr = _make_attribute(BIOLINK_SLOT_AGENT_TYPE, TRAPI_AGENT_TYPE_ENUM_NOT_PROVIDED, INFORES_SPOKE)
+    kl_attr = _make_attribute(BIOLINK_SLOT_KNOWLEDGE_LEVEL, TRAPI_KNOWLEDGE_LEVEL_NOT_PROVIDED, INFORES_SPOKE)
+    return [at_attr, kl_attr]
+
+
+def _get_default_kl_at_attrs(
+    predicate: str,
+    retrieval_sources: list[RetrievalSource],
+) -> list[Attribute]:
+    """Returns a list of two attributes for an edge based on the edge
+    type and the source of the edge
+    """
+    primary_source = None
+    for rs in retrieval_sources:
+        if rs.resource_role == BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE:
+            primary_source = rs.resource_id
+    
+    predicate_source_klat_map = BL_RELATION_SOURCE_KL_AT_MAP.get(predicate)
+
+    if primary_source is None or predicate_source_klat_map is None:
+        return _get_unknown_kl_at_attrs()
+    
+    edge_source_klat = predicate_source_klat_map.get(primary_source)
+    if edge_source_klat is None:
+        return _get_unknown_kl_at_attrs()
+    
+    return [
+        _make_attribute(BIOLINK_SLOT_AGENT_TYPE, edge_source_klat.agent_type, INFORES_SPOKE),
+        _make_attribute(BIOLINK_SLOT_KNOWLEDGE_LEVEL, edge_source_klat.knowledge_level, INFORES_SPOKE)
+    ]
+
+
+def _get_kl_at_attrs_for_treats_lookup() -> list[Attribute]:
     # for spoke LOOKUPs, all supported edges are currently the same
     # knowledge level
     kl_attr = _make_attribute(
@@ -84,7 +121,7 @@ def _evaluate_treats_lookup(
     attributes: list[Attribute],
     retrieval_sources: list[RetrievalSource],
 ) -> tuple[str, list[Attribute], list[RetrievalSource]]:
-    kl_at_attrs = _get_kl_at_attrs_for_lookup()
+    kl_at_attrs = _get_kl_at_attrs_for_treats_lookup()
 
     # evaluate sources to guide logic below
     chembl_in_source = False
@@ -127,31 +164,48 @@ def _evaluate_treats_lookup(
     return predicate, kl_at_attrs, updated_retrieval_sources
 
 def evaluate_kl_at_for_lookup_query(
-    edge_type: str,
+    predicate: str,
     attributes: list[Attribute],
     retrieval_sources: list[RetrievalSource],
-) -> tuple[Optional[str], Optional[list[Attribute]]]:
+) -> tuple[str, list[Attribute], list[RetrievalSource]]:
     """Returns an updated predicate and attribute list with knowledge
     level and agent type, if configured
     """
-    if edge_type != SPOKE_EDGE_TYPE_TREATS_CtD:
-        # KL and AT are not configured
-        return None, attributes, retrieval_sources
-    predicate, new_attrs, sources = _evaluate_treats_lookup(
-        attributes,
-        retrieval_sources,
-    )
+    if predicate == BIOLINK_ASSOCIATION_TREATS:
+         predicate, new_attrs, sources = _evaluate_treats_lookup(
+            attributes,
+            retrieval_sources,
+        )
+    else:
+       sources = retrieval_sources
+       new_attrs = _get_default_kl_at_attrs(predicate, retrieval_sources)
     attrs = deepcopy(attributes)
     attrs.extend(new_attrs)
     return predicate, attrs, sources
 
 
 def evaluate_kl_at_for_inferred_query(
-    edge_type: str,
+    predicate: str,
     attributes: list[Attribute],
     retrieval_sources: list[RetrievalSource],
 ):
-    return None, attributes, retrieval_sources
+    return predicate, attributes, retrieval_sources
+
+
+def get_predicate_and_qualifiers(edge_type: str) -> tuple[str, list[dict[str, str]]]:
+    """Returns the predicate and a list of qualifiers based on the
+    edge type alone
+    """
+    biolink_map_info = SPOKE_BIOLINK_EDGE_MAPPINGS.get(edge_type)
+    if not biolink_map_info:
+        predicate = BIOLINK_ASSOCIATION_RELATED_TO
+        qualifiers = None
+    else:
+        qualifiers = biolink_map_info.get(QUALIFIERS)
+        if qualifiers:
+            qualifiers = get_edge_qualifiers(qualifiers)
+        predicate = biolink_map_info[BIOLINK_ASSOCIATION_TYPE]
+    return predicate, qualifiers
 
 
 def resolve_epc_kl_at(
@@ -159,8 +213,8 @@ def resolve_epc_kl_at(
     attributes: list[Attribute],
     provenance_sources: list[RetrievalSource],
     query_type: str,
-) -> tuple[str, list[Attribute], list[RetrievalSource]]:
-    """Returns an updated predicate, attributes, and provenance sources
+) -> tuple[str, list[Attribute], list[RetrievalSource], list[dict[str, str]]]:
+    """Returns predicate, attributes, provenance sources, and qualifiers
     as appropriate to accommodate Translator requirements.
 
     NOTE: There is some pretty complicated logic called as part of this
@@ -169,17 +223,20 @@ def resolve_epc_kl_at(
     the provenance-retrieval trail, or as noted above, an entirely
     different predicate
     """
-    # first, get agent type and knowledge level, the evaluation of which
+    # get predicate based on the edge type alone
+    predicate, qualifiers = get_predicate_and_qualifiers(edge_type)
+
+    # get agent type and knowledge level, the evaluation of which
     # may result in a new predicate and/or provenance-retrieval
     if query_type == KNOWLEDGE_TYPE_LOOKUP:
         updated_predicate, attrs, sources = evaluate_kl_at_for_lookup_query(
-            edge_type,
+            predicate,
             attributes,
             provenance_sources,
         )
     elif query_type == KNOWLEDGE_TYPE_INFERRED:
         updated_predicate, attrs, sources = evaluate_kl_at_for_inferred_query()
-        return None, attributes, provenance_sources
+        return updated_predicate, attributes, provenance_sources
     else:
         raise ValueError('Unsupported knowledge type=%s' % query_type)
 
@@ -191,4 +248,4 @@ def resolve_epc_kl_at(
         sources = choose_primary_source(sources, edge_type)
     sources.extend(get_internal_retrieval_sources(sources))
 
-    return updated_predicate, attrs, sources
+    return updated_predicate, attrs, sources, qualifiers

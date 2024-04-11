@@ -1,6 +1,6 @@
 bmt ~= 1.2
 boto3 ~= 1.17
-connexion[swagger-ui] ~= 2.14; python_version>="3.6"
+connexion[swagger-ui] ~= 2.14
 flake8 ~=6.0
 neo4j ~= 4.2
 numpy ~= 1.18

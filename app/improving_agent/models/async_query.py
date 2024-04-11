@@ -1,18 +1,14 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from improving_agent.models.base_model_ import Model
-from improving_agent.models.message import Message
+from improving_agent.models.base_model import Model
 from improving_agent.models.log_level import LogLevel
+from improving_agent.models.message import Message
+from improving_agent.models.schema1 import Schema1
 import re
 from improving_agent import util
 
-from improving_agent.models.message import Message  # noqa: E501
-from improving_agent.models.schema1 import Schema1  # noqa: E501
 import re  # noqa: E501
 
 class AsyncQuery(Model):
@@ -21,7 +17,7 @@ class AsyncQuery(Model):
     Do not edit the class manually.
     """
 
-    def __init__(self, callback=None, message=None, log_level=None, workflow=None, submitter=None):  # noqa: E501
+    def __init__(self, callback=None, message=None, log_level=None, workflow=None, submitter=None, bypass_cache=False):  # noqa: E501
         """AsyncQuery - a model defined in OpenAPI
 
         :param callback: The callback of this AsyncQuery.  # noqa: E501
@@ -29,18 +25,21 @@ class AsyncQuery(Model):
         :param message: The message of this AsyncQuery.  # noqa: E501
         :type message: Message
         :param log_level: The log_level of this AsyncQuery.  # noqa: E501
-        :type log_level: QueryLogLevel
+        :type log_level: LogLevel
         :param workflow: The workflow of this AsyncQuery.  # noqa: E501
-        :type workflow: QueryWorkflow
+        :type workflow: Schema1
         :param submitter: The submitter of this AsyncQuery.  # noqa: E501
         :type submitter: str
+        :param bypass_cache: The bypass_cache of this AsyncQuery.  # noqa: E501
+        :type bypass_cache: bool
         """
         self.openapi_types = {
             'callback': str,
             'message': Message,
             'log_level': LogLevel,
-            'workflow': list[Schema1],
-            'submitter': str
+            'workflow': Schema1,
+            'submitter': str,
+            'bypass_cache': bool
         }
 
         self.attribute_map = {
@@ -48,7 +47,8 @@ class AsyncQuery(Model):
             'message': 'message',
             'log_level': 'log_level',
             'workflow': 'workflow',
-            'submitter': 'submitter'
+            'submitter': 'submitter',
+            'bypass_cache': 'bypass_cache'
         }
 
         self._callback = callback
@@ -56,6 +56,7 @@ class AsyncQuery(Model):
         self._log_level = log_level
         self._workflow = workflow
         self._submitter = submitter
+        self._bypass_cache = bypass_cache
 
     @classmethod
     def from_dict(cls, dikt) -> 'AsyncQuery':
@@ -69,7 +70,7 @@ class AsyncQuery(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def callback(self):
+    def callback(self) -> str:
         """Gets the callback of this AsyncQuery.
 
         Upon completion, this server will send a POST request to the callback URL with `Content-Type: application/json` header and request body containing a JSON-encoded `Response` object. The server MAY POST `Response` objects before work is fully complete to provide interim results with a Response.status value of 'Running'. If a POST operation to the callback URL does not succeed, the server SHOULD retry the POST at least once.  # noqa: E501
@@ -80,7 +81,7 @@ class AsyncQuery(Model):
         return self._callback
 
     @callback.setter
-    def callback(self, callback):
+    def callback(self, callback: str):
         """Sets the callback of this AsyncQuery.
 
         Upon completion, this server will send a POST request to the callback URL with `Content-Type: application/json` header and request body containing a JSON-encoded `Response` object. The server MAY POST `Response` objects before work is fully complete to provide interim results with a Response.status value of 'Running'. If a POST operation to the callback URL does not succeed, the server SHOULD retry the POST at least once.  # noqa: E501
@@ -96,7 +97,7 @@ class AsyncQuery(Model):
         self._callback = callback
 
     @property
-    def message(self):
+    def message(self) -> Message:
         """Gets the message of this AsyncQuery.
 
 
@@ -106,7 +107,7 @@ class AsyncQuery(Model):
         return self._message
 
     @message.setter
-    def message(self, message):
+    def message(self, message: Message):
         """Sets the message of this AsyncQuery.
 
 
@@ -119,49 +120,49 @@ class AsyncQuery(Model):
         self._message = message
 
     @property
-    def log_level(self):
+    def log_level(self) -> LogLevel:
         """Gets the log_level of this AsyncQuery.
 
 
         :return: The log_level of this AsyncQuery.
-        :rtype: QueryLogLevel
+        :rtype: LogLevel
         """
         return self._log_level
 
     @log_level.setter
-    def log_level(self, log_level):
+    def log_level(self, log_level: LogLevel):
         """Sets the log_level of this AsyncQuery.
 
 
         :param log_level: The log_level of this AsyncQuery.
-        :type log_level: QueryLogLevel
+        :type log_level: LogLevel
         """
 
         self._log_level = log_level
 
     @property
-    def workflow(self):
+    def workflow(self) -> Schema1:
         """Gets the workflow of this AsyncQuery.
 
 
         :return: The workflow of this AsyncQuery.
-        :rtype: QueryWorkflow
+        :rtype: Schema1
         """
         return self._workflow
 
     @workflow.setter
-    def workflow(self, workflow):
+    def workflow(self, workflow: Schema1):
         """Sets the workflow of this AsyncQuery.
 
 
         :param workflow: The workflow of this AsyncQuery.
-        :type workflow: QueryWorkflow
+        :type workflow: Schema1
         """
 
         self._workflow = workflow
 
     @property
-    def submitter(self):
+    def submitter(self) -> str:
         """Gets the submitter of this AsyncQuery.
 
         Any string for self-identifying the submitter of a query. The purpose of this optional field is to aid in the tracking of the source of queries for development and issue resolution.  # noqa: E501
@@ -172,7 +173,7 @@ class AsyncQuery(Model):
         return self._submitter
 
     @submitter.setter
-    def submitter(self, submitter):
+    def submitter(self, submitter: str):
         """Sets the submitter of this AsyncQuery.
 
         Any string for self-identifying the submitter of a query. The purpose of this optional field is to aid in the tracking of the source of queries for development and issue resolution.  # noqa: E501
@@ -182,3 +183,26 @@ class AsyncQuery(Model):
         """
 
         self._submitter = submitter
+
+    @property
+    def bypass_cache(self) -> bool:
+        """Gets the bypass_cache of this AsyncQuery.
+
+        Set to true in order to request that the agent obtain fresh information from its sources in all cases where it has a viable choice between requesting fresh information in real time and using cached information.  # noqa: E501
+
+        :return: The bypass_cache of this AsyncQuery.
+        :rtype: bool
+        """
+        return self._bypass_cache
+
+    @bypass_cache.setter
+    def bypass_cache(self, bypass_cache: bool):
+        """Sets the bypass_cache of this AsyncQuery.
+
+        Set to true in order to request that the agent obtain fresh information from its sources in all cases where it has a viable choice between requesting fresh information in real time and using cached information.  # noqa: E501
+
+        :param bypass_cache: The bypass_cache of this AsyncQuery.
+        :type bypass_cache: bool
+        """
+
+        self._bypass_cache = bypass_cache

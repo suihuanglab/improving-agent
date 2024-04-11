@@ -1,11 +1,8 @@
-# coding: utf-8
-
-from __future__ import absolute_import
 from datetime import date, datetime  # noqa: F401
 
 from typing import List, Dict  # noqa: F401
 
-from improving_agent.models.base_model_ import Model
+from improving_agent.models.base_model import Model
 from improving_agent.models.resource_role_enum import ResourceRoleEnum
 from improving_agent import util
 
@@ -60,7 +57,7 @@ class RetrievalSource(Model):
         return util.deserialize_model(dikt, cls)
 
     @property
-    def resource_id(self):
+    def resource_id(self) -> str:
         """Gets the resource_id of this RetrievalSource.
 
         A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
@@ -71,7 +68,7 @@ class RetrievalSource(Model):
         return self._resource_id
 
     @resource_id.setter
-    def resource_id(self, resource_id):
+    def resource_id(self, resource_id: str):
         """Sets the resource_id of this RetrievalSource.
 
         A Compact URI, consisting of a prefix and a reference separated by a colon, such as UniProtKB:P00738. Via an external context definition, the CURIE prefix and colon may be replaced by a URI prefix, such as http://identifiers.org/uniprot/, to form a full URI.  # noqa: E501
@@ -79,11 +76,13 @@ class RetrievalSource(Model):
         :param resource_id: The resource_id of this RetrievalSource.
         :type resource_id: str
         """
+        if resource_id is None:
+            raise ValueError("Invalid value for `resource_id`, must not be `None`")  # noqa: E501
 
         self._resource_id = resource_id
 
     @property
-    def resource_role(self):
+    def resource_role(self) -> ResourceRoleEnum:
         """Gets the resource_role of this RetrievalSource.
 
 
@@ -93,7 +92,7 @@ class RetrievalSource(Model):
         return self._resource_role
 
     @resource_role.setter
-    def resource_role(self, resource_role):
+    def resource_role(self, resource_role: ResourceRoleEnum):
         """Sets the resource_role of this RetrievalSource.
 
 
@@ -106,7 +105,7 @@ class RetrievalSource(Model):
         self._resource_role = resource_role
 
     @property
-    def upstream_resource_ids(self):
+    def upstream_resource_ids(self) -> List[str]:
         """Gets the upstream_resource_ids of this RetrievalSource.
 
         An upstream InformationResource from which the resource being described directly retrieved a record of the knowledge expressed in the Edge, or data used to generate this knowledge. This is an array because there are cases where a merged Edge holds knowledge that was retrieved from multiple sources. e.g. an Edge provided by the ARAGORN ARA can expressing knowledge it retrieved from both the automat-mychem-info and molepro KPs, which both provided it with records of this single fact.  # noqa: E501
@@ -117,7 +116,7 @@ class RetrievalSource(Model):
         return self._upstream_resource_ids
 
     @upstream_resource_ids.setter
-    def upstream_resource_ids(self, upstream_resource_ids):
+    def upstream_resource_ids(self, upstream_resource_ids: List[str]):
         """Sets the upstream_resource_ids of this RetrievalSource.
 
         An upstream InformationResource from which the resource being described directly retrieved a record of the knowledge expressed in the Edge, or data used to generate this knowledge. This is an array because there are cases where a merged Edge holds knowledge that was retrieved from multiple sources. e.g. an Edge provided by the ARAGORN ARA can expressing knowledge it retrieved from both the automat-mychem-info and molepro KPs, which both provided it with records of this single fact.  # noqa: E501
@@ -129,7 +128,7 @@ class RetrievalSource(Model):
         self._upstream_resource_ids = upstream_resource_ids
 
     @property
-    def source_record_urls(self):
+    def source_record_urls(self) -> List[str]:
         """Gets the source_record_urls of this RetrievalSource.
 
         A URL linking to a specific web page or document provided by the  source, that contains a record of the knowledge expressed in the  Edge. If the knowledge is contained in more than one web page on  an Information Resource's site, urls MAY be provided for each.  For example, Therapeutic Targets Database (TTD) has separate web  pages for 'Imatinib' and its protein target KIT, both of which hold  the claim that 'the KIT protein is a therapeutic target for Imatinib'.           # noqa: E501
@@ -140,7 +139,7 @@ class RetrievalSource(Model):
         return self._source_record_urls
 
     @source_record_urls.setter
-    def source_record_urls(self, source_record_urls):
+    def source_record_urls(self, source_record_urls: List[str]):
         """Sets the source_record_urls of this RetrievalSource.
 
         A URL linking to a specific web page or document provided by the  source, that contains a record of the knowledge expressed in the  Edge. If the knowledge is contained in more than one web page on  an Information Resource's site, urls MAY be provided for each.  For example, Therapeutic Targets Database (TTD) has separate web  pages for 'Imatinib' and its protein target KIT, both of which hold  the claim that 'the KIT protein is a therapeutic target for Imatinib'.           # noqa: E501
