@@ -29,6 +29,9 @@ info:
     rate_limit: 20
     test_data_location: https://github.com/suihuanglab/improving-agent/tree/main/test-data
 servers:
+  - url: https://ia.transltr.io/api/v1.5/
+    description: ITRB Prod server
+    x-maturity: production
   - url: https://ia.test.transltr.io/api/v1.5/
     description: ITRB Test server
     x-maturity: testing
