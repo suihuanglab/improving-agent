@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
-
 from http import HTTPStatus
 
 import connexion
 import flask
+from flask import g, jsonify, render_template
 import neo4j
 
-from flask import g, jsonify, render_template
 
 from improving_agent import encoder
-from improving_agent.src.config import app_config
 from improving_agent.src.biolink.spoke_biolink_constants import BIOLINK_SPOKE_NODE_MAPPINGS
+from improving_agent.src.config import app_config
+from improving_agent.src.template_queries.pathfinder import try_pathfinder
 from improving_agent.util import get_evidara_logger
 
 driver = neo4j.GraphDatabase.driver(
@@ -37,20 +37,21 @@ def get_db():
     -------
     g.db (driver.session): active neo4j database session
     """
-    if not hasattr(g, "db"):
+    if not hasattr(g, 'db'):
         g.db = driver.session()
     return g.db
 
 
 from improving_agent.src import core # noqa: #E402, E401 
 
-app = connexion.FlaskApp(__name__, specification_dir="./openapi/")
+app = connexion.FlaskApp(__name__, specification_dir='./openapi/')
 app.app.json_encoder = encoder.JSONEncoder
 app.add_api(
-    "openapi.yaml",
-    arguments={"title": "imProving Agent - a query (im)proving Autonomous Relay Agent"},
+    'openapi.yaml',
+    arguments={'title': 'imProving Agent - a query (im)proving Autonomous Relay Agent'},
     pythonic_params=True,
 )
+
 
 def extract_text_result(result):
     new_result = {}
@@ -69,7 +70,7 @@ def full_text_search(tx, _search):
         'RETURN DISTINCT labels(node)[0] AS label, node.identifier AS identifier, node.name AS name, node.pref_name AS pref_name, score '
         'ORDER BY score DESC '
         'LIMIT 15',
-        _search=_search
+        _search=_search,
     )
     return [extract_text_result(record) for record in r]
 
@@ -82,20 +83,20 @@ def _check_db(tx):
     return False
 
 
-@app.route("/")
+@app.route('/')
 def index():
     """returns welcome home page"""
     node_types = list(BIOLINK_SPOKE_NODE_MAPPINGS.keys())
-    return render_template("home.html", node_types=node_types)
+    return render_template('home.html', node_types=node_types)
 
 
-@app.route("/node_search")
+@app.route('/node_search')
 def search_page():
     """returns node search page"""
-    return render_template("node_search.html")
+    return render_template('node_search.html')
 
 
-@app.route("/text-search/<search>")
+@app.route('/text-search/<search>')
 def text_search(search):
     search_fuzz_or_autocomplete = search
     autocomplete = flask.request.args.get('autocomplete')
@@ -113,13 +114,13 @@ def text_search(search):
     return jsonify({'results': results, 'search': search})
 
 
-@app.route("/api/hello")
+@app.route('/api/hello')
 def check_api():
     """Checks for a working connection to this service"""
     return 'OK'
 
 
-@app.route("/api/hellodb")
+@app.route('/api/hellodb')
 def check_db():
     """Checks for a working connection to the database"""
     session = get_db()
@@ -136,21 +137,36 @@ def check_db():
         return 'Error', 500
 
 
-@app.route("/api/ia-version")
+@app.route('/api/ia-version')
 def get_tool_version():
     return app_config.IA_VERSION
 
 
+@app.route('/api/paths/<start_curie>/<end_curie>')
+def run_pathfinder(start_curie: str, end_curie: str):
+    include_labels = flask.request.args.getlist('include_categories')
+    include_ids = flask.request.args.getlist('include_curies')
+    with get_db() as session:
+        resp, code = try_pathfinder(
+            session,
+            start_curie,
+            end_curie,
+            include_labels,
+            include_ids,
+        )
+        return jsonify(resp.to_dict()), code
+
+
 @app.app.teardown_appcontext
 def close_db(error):
-    if hasattr(g, "db"):
+    if hasattr(g, 'db'):
         g.db.close()
 
 
 def main():
-    logger.info("starting improving agent!")
+    logger.info('starting improving agent!')
     app.run(port=8080)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

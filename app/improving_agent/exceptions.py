@@ -27,6 +27,14 @@ class NonLinearQueryError(Exception):
     pass
 
 
+class NoResultsError(Exception):
+    """Raise when we can't find any results
+
+    This should result in a 200 with empty message
+    """
+    pass
+
+
 class TemplateQuerySpecError(Exception):
     """Raise when a template query fails because it is not specified
     as expected
@@ -68,10 +76,11 @@ class UnsupportedQualifier(Exception):
     """
     pass
 
+
 class UnsupportedSetInterpretation(Exception):
     """Raise if we get a set interpretation that we do not support
-    
-    This should raise 501, Not Implemented
+
+        This should raise 501, Not Implemented
     """
     pass
 

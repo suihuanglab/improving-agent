@@ -1,36 +1,43 @@
 from werkzeug.exceptions import BadRequest
 
-from .curie_formatters import (
-    format_curie_for_sri,
-    get_spoke_identifiers_from_normalized_node,
-    get_label_if_appropriate_spoke_curie,
-)
-from .sri_node_normalizer import (
-    SRI_NN_RESPONSE_VALUE_ID,
-    SRI_NN_RESPONSE_VALUE_IDENTIFIER,
-    SRI_NODE_NORMALIZER
-)
-from improving_agent.models import AttributeConstraint, QNode
 from improving_agent.exceptions import (
     UnmatchedIdentifierError,
     UnsupportedSetInterpretation,
     UnsupportedTypeError,
 )
-from improving_agent.src.biolink.biolink import get_supported_biolink_descendants, NODE
+from improving_agent.models import AttributeConstraint, QNode
+from improving_agent.src.biolink.biolink import (
+    NODE,
+    get_supported_biolink_descendants,
+)
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ENTITY_PROTEIN,
     BIOLINK_SPOKE_NODE_MAPPINGS,
-    SPOKE_LABEL_GENE
+    SPOKE_LABEL_GENE,
 )
 from improving_agent.src.constraints import validate_constraint_support
+from improving_agent.src.normalization import SearchNode
 from improving_agent.util import get_evidara_logger
+
+from .curie_formatters import (
+    format_curie_for_sri,
+    get_label_if_appropriate_spoke_curie,
+    get_spoke_identifiers_from_normalized_node,
+)
+from .sri_node_normalizer import (
+    SRI_NN_RESPONSE_VALUE_ID,
+    SRI_NN_RESPONSE_VALUE_IDENTIFIER,
+    SRI_NODE_NORMALIZER,
+)
 
 QNODE_CURIE_SPOKE_IDENTIFIERS = 'spoke_identifiers'
 
 logger = get_evidara_logger(__name__)
 
 
-def normalize_spoke_nodes_for_translator(spoke_search_nodes):
+def normalize_spoke_nodes_for_translator(
+    spoke_search_nodes: list[SearchNode],
+) -> dict[str, str]:
     """Returns a mapping of SPOKE CURIE to their normalized equivalents
     If normalized equivalents are not found, the SPOKE CURIE is returned
 
@@ -85,7 +92,7 @@ def _deserialize_qnode(qnode_id, qnode):
         set_interpretation = qnode.get('set_interpretation', 'BATCH')
         if set_interpretation != 'BATCH':
             raise UnsupportedSetInterpretation(
-                'imProving Agent only supports BATCH set interpretation'
+                'imProving Agent only supports BATCH set interpretation',
             )
         if req_constraints:
             for constraint in req_constraints:
@@ -184,7 +191,7 @@ def _normalize_query_nodes_for_spoke(qnodes):
 
     if not qnodes.keys() == normalized_qnodes.keys():  # we were unable to map some of the qnodes
         raise UnmatchedIdentifierError(
-            f'No identifiers for qnodes {qnodes.keys() - normalized_qnodes.keys()} could be mapped to SPOKE'
+            f'No identifiers for qnodes {qnodes.keys() - normalized_qnodes.keys()} could be mapped to SPOKE',
         )
     return normalized_qnodes
 

@@ -4,7 +4,7 @@ constants defined in the spoke_biolink_constants module
 """
 
 import logging
-from typing import Dict, List, Union
+from typing import List, Union
 
 from improving_agent import models
 from improving_agent.src.biolink.spoke_biolink_constants import (
@@ -36,7 +36,7 @@ logger = logging.getLogger(__name__)
 
 SPOKE_PROVENANCE_FIELDS = [
     SPOKE_PROPERTY_SOURCE,
-    SPOKE_PROPERTY_SOURCES
+    SPOKE_PROPERTY_SOURCES,
 ]
 SPOKE_PUBLICATION_FIELDS = [
     SPOKE_PROPERTY_PMID_LIST,
@@ -57,7 +57,7 @@ PREFERRED_ORDER_MULTI_SOURCE = {
     SPOKE_EDGE_TYPE_BINDS_CbP: {
         INFORES_BINDINGDB.infores_id: 1,
         INFORES_DRUGCENTRAL.infores_id: 2,
-    }
+    },
 }
 
 
@@ -70,8 +70,8 @@ TREATS_LOOKUP_RETRIEVAL_SOURCE_MAP = {  # primary KS -> list of RetrievalSource
         models.RetrievalSource(
             resource_id=INFORES_SPOKE.infores_id,
             resource_role=BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE,
-            upstream_resource_ids=[INFORES_CHEMBL.infores_id]
-        )
+            upstream_resource_ids=[INFORES_CHEMBL.infores_id],
+        ),
     ],
     INFORES_DRUGCENTRAL.infores_id: [
         models.RetrievalSource(
@@ -81,8 +81,8 @@ TREATS_LOOKUP_RETRIEVAL_SOURCE_MAP = {  # primary KS -> list of RetrievalSource
         models.RetrievalSource(
             resource_id=INFORES_SPOKE.infores_id,
             resource_role=BL_ATTR_AGGREGATOR_KNOWLEDGE_SOURCE,
-            upstream_resource_ids=[INFORES_CHEMBL.infores_id]
-        )
+            upstream_resource_ids=[INFORES_CHEMBL.infores_id],
+        ),
     ],
     INFORES_SPOKE.infores_id: [
         models.RetrievalSource(
@@ -92,14 +92,14 @@ TREATS_LOOKUP_RETRIEVAL_SOURCE_MAP = {  # primary KS -> list of RetrievalSource
         models.RetrievalSource(
             resource_id=INFORES_CHEMBL.infores_id,
             resource_role=BL_ATTR_SUPPORTING_DATA_SOURCE,
-        )
+        ),
     ],
 }
 
 
 def make_internal_retrieval_source(
     retrieval_sources: list[str],
-    infores_id: str
+    infores_id: str,
 ) -> models.RetrievalSource:
     upstream_sources = set()
     for retrieval_source in retrieval_sources:
@@ -110,11 +110,12 @@ def make_internal_retrieval_source(
     return models.RetrievalSource(
         resource_id=infores_id,
         resource_role=resource_role,
-        upstream_resource_ids=list(upstream_sources)
+        upstream_resource_ids=list(upstream_sources),
     )
 
+
 def get_internal_retrieval_sources(
-    provenance_sources: list[models.RetrievalSource]
+    provenance_sources: list[models.RetrievalSource],
 ) -> list[models.RetrievalSource]:
     """Returns a list of Retrieval Sources for internal components,
     improving and spoke, as appropriate
@@ -136,6 +137,7 @@ def get_internal_retrieval_sources(
     )
     internal_sources.append(ia_retrieval_source)
     return internal_sources
+
 
 def _make_retrieval_source(source_or_sources):
     retrieval_sources = []
@@ -160,7 +162,7 @@ def _make_publications_attribute(
     articles,
     attribute_name,
     value_prefix='',
-    url_prefix=''
+    url_prefix='',
 ):
     publication_attributes = []
     if not isinstance(articles, list):
@@ -173,7 +175,7 @@ def _make_publications_attribute(
             original_attribute_name=attribute_name,
             value_type_id=BIOLINK_ENTITY_ARTICLE,
             value=f'{value_prefix}{article}',
-            value_url=f'{url_prefix}{article}' if url_prefix else article
+            value_url=f'{url_prefix}{article}' if url_prefix else article,
         )
         publication_attributes.append(pub_attr)
 
@@ -181,11 +183,11 @@ def _make_publications_attribute(
 
 
 def make_publications_attribute(
-    field_name: str, field_value: Union[str, int, List[str]]
+    field_name: str, field_value: Union[str, int, List[str]],
 ):
     if field_name in (SPOKE_PROPERTY_PUBMED, SPOKE_PROPERTY_PMID_LIST):
         return _make_publications_attribute(
-            field_value, field_name, 'pmid:', 'https://pubmed.ncbi.nlm.nih.gov/'
+            field_value, field_name, 'pmid:', 'https://pubmed.ncbi.nlm.nih.gov/',
         )
 
     if field_name == SPOKE_PROPERTY_PREPRINT_LIST:
@@ -193,7 +195,7 @@ def make_publications_attribute(
 
 
 def make_retrieval_sources(
-    field_name: str, field_value: Union[str, int, List[str]]
+    field_name: str, field_value: Union[str, int, List[str]],
 ) -> list[models.RetrievalSource]:
     """Returns a list of source-provenance attributes to be attached
     to the result node or edge
@@ -236,7 +238,7 @@ def choose_primary_source(
         return retrieval_sources
 
     element_ranks = []
-    for i, attr in enumerate(retrieval_sources):
+    for i, source in enumerate(retrieval_sources):
         priority = priority_ranks.get(source.resource_id)
         if not priority:
             # we haven't configured this properly, so just go element-wise
@@ -246,7 +248,7 @@ def choose_primary_source(
 
     min_priority = min(element_ranks)
     primary_set = False
-    for i, rank in enumerate(priority_ranks):
+    for i, rank in enumerate(element_ranks):
         if rank == min_priority and primary_set is False:
             retrieval_sources[i].resource_role = BL_ATTR_PRIMARY_KNOWLEDGE_SOURCE
             primary_set = True
