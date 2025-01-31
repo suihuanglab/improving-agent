@@ -9,7 +9,7 @@ from improving_agent.models import (
     NodeBinding,
     Result,
 )
-from improving_agent.exceptions import TemplateQuerySpecError, UnmatchedIdentifierError
+from improving_agent.exceptions import UnmatchedIdentifierError
 from improving_agent.src.basic_query import BasicQuery
 from improving_agent.src.biolink.spoke_biolink_constants import (
     BIOLINK_ASSOCIATION_IN_CLINICAL_TRIALS_FOR,
@@ -110,7 +110,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
         self,
         subj_id: str,
         obj_id: str,
-        aux_graph_id: str
+        aux_graph_id: str,
     ):
         attributes = [
             Attribute(
@@ -135,9 +135,9 @@ class DrugMayTreatDisease(TemplateQueryBase):
             predicate='biolink:treats',
             subject=subj_id,
             object=obj_id,
-            sources=[make_internal_retrieval_source([], INFORES_IMPROVING_AGENT.infores_id)]
+            sources=[make_internal_retrieval_source([], INFORES_IMPROVING_AGENT.infores_id)],
         )
-    
+
     def make_supporting_edge(self, subj_id: str, obj_id: str) -> str:
         """Returns a supporting edge that has been created and added to
         the knowledge graph
@@ -152,7 +152,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
                 attribute_type_id=BIOLINK_SLOT_KNOWLEDGE_LEVEL,
                 value=TRAPI_KNOWLEDGE_LEVEL_STATISTICAL_ASSOCIATION,
                 attribute_source=INFORES_IMPROVING_AGENT.infores_id,
-            )
+            ),
         ]
         supp_edge = Edge(
             predicate='biolink:associated_with',
@@ -162,7 +162,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
             sources=[make_internal_retrieval_source([], INFORES_SPOKE.infores_id)],
         )
         return supp_edge
-    
+
     def make_aux_graph(
         self,
         subj_id: str,
@@ -183,15 +183,15 @@ class DrugMayTreatDisease(TemplateQueryBase):
         aux_graph_id = f'ag_{result_number}'
         aux_graph = AuxiliaryGraph(
             attributes=[],
-            edges=[supporting_edge_id]
+            edges=[supporting_edge_id],
         )
         return aux_graph_id, aux_graph
-    
+
     def _make_new_predicted_treats_edge(
         self,
         subj_id: str,
         obj_id: str,
-        ag_id: str
+        ag_id: str,
     ) -> Edge:
         attributes = [
             Attribute(
@@ -207,7 +207,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
             Attribute(
                 attribute_type_id=BIOLINK_SLOT_SUPPORT_GRAPHS,
                 value=[ag_id],
-                attribute_source=INFORES_IMPROVING_AGENT.infores_id
+                attribute_source=INFORES_IMPROVING_AGENT.infores_id,
             ),
         ]
         return Edge(
@@ -215,15 +215,15 @@ class DrugMayTreatDisease(TemplateQueryBase):
             subject=subj_id,
             object=obj_id,
             attributes=attributes,
-            sources=[make_internal_retrieval_source([], INFORES_IMPROVING_AGENT.infores_id)]
+            sources=[make_internal_retrieval_source([], INFORES_IMPROVING_AGENT.infores_id)],
         )
 
     def _mutate_clinical_trials_result(
-            self,   
-            result: Result,
-            knowledge_graph: KnowledgeGraph,
-            disease_qnode_id: str,
-        ) -> tuple[Result, dict[str, Edge], dict[str, AuxiliaryGraph]]:
+        self,
+        result: Result,
+        knowledge_graph: KnowledgeGraph,
+        disease_qnode_id: str,
+    ) -> tuple[Result, dict[str, Edge], dict[str, AuxiliaryGraph]]:
         """Returns an updated result and two dicts, one containing updates
         to the knowledge graph and one containing updates to the
         auxiliary_graphs with additional support edges if the
@@ -246,12 +246,12 @@ class DrugMayTreatDisease(TemplateQueryBase):
         # now setup auxiliary graph
         ag = AuxiliaryGraph(
             attributes=[],
-            edges=[kg_edge_key]
+            edges=[kg_edge_key],
         )
         ag_id = f'ag_{kg_edge_key}'
         aux_graph_updates[ag_id] = ag
-    
-        ## make a new edge
+
+        # make a new edge
         # get subject id
         for id_, node in self.qnodes.items():
             if any(i in SUPPORTED_INFERRED_DRUG_SUBJ for i in node.categories):
@@ -285,22 +285,23 @@ class DrugMayTreatDisease(TemplateQueryBase):
 
         return updated_result, kg_edge_updates, aux_graph_updates
 
-
     def do_query(self, session):
         logger.info(f'Doing template query: {self.template_query_name}')
         # first get psev scores for concept; if we don't have it there's
         # no point continuing
-        if len(self.query_options['psev_context']) > 1:
-            raise TemplateQuerySpecError(
-                f'For template query={self.template_query_name} imProving Agent '
-                'expects exactly one disease specified on the object node. Disease '
-                'identifier must map to Disease Ontology via the Node Normalizer.'
-            )
-        disease_concept = self.query_options['psev_context'][0]
-        compound_psev_scores = get_psev_scores([disease_concept], node_type=SPOKE_LABEL_COMPOUND)[disease_concept]
+
+        disease_concepts = self.query_options['psev_context']
+        _psev_scores = get_psev_scores(disease_concepts, node_type=SPOKE_LABEL_COMPOUND)
+        compound_psev_scores = {}
+        for compound_score_map in _psev_scores.values():
+            for compound, score in compound_score_map.items():
+                curr_score = compound_psev_scores.get(compound)
+                if curr_score is None or score > curr_score:
+                    compound_psev_scores[compound] = score
+
         if not compound_psev_scores:
             raise UnmatchedIdentifierError(
-                f'No ML predictions available for disease equivalent to {disease_concept}'
+                f'No ML predictions available for disease equivalent to {disease_concepts}',
             )
 
         # get disease qnode-id
@@ -311,7 +312,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
                 break
         if not qnode_id_disease_node:
             raise UnmatchedIdentifierError(
-                'Could not find a supported qnode binding for template query'
+                'Could not find a supported qnode binding for template query',
             )
 
         # do lookup
@@ -319,12 +320,12 @@ class DrugMayTreatDisease(TemplateQueryBase):
             self.qnodes,
             self.qedges,
             self.query_options,
-            self.max_results
+            self.max_results,
         )
         results, knowledge_graph, _ = basic_query.do_query(session, norm_scores=False)
-        
-        # now we inspect the results and mutate them as necessary, 
-        # specifically, we are looking to see if there are 
+
+        # now we inspect the results and mutate them as necessary,
+        # specifically, we are looking to see if there are
         # "in clinical trials for" edges that need to be converted to
         # "predicted to treats" edges
 
@@ -333,7 +334,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
         mutated_results = []
         # iterate and mutate results; update KG and AG as needed
         for result in results:
-            mutated_result, kg_updates, aux_graph_updates  = self._mutate_clinical_trials_result(
+            mutated_result, kg_updates, aux_graph_updates = self._mutate_clinical_trials_result(
                 result,
                 knowledge_graph,
                 qnode_id_disease_node,
@@ -412,7 +413,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
                     self.node_id_compound: [NodeBinding(
                         id=biolink_id,
                         attributes=[],
-                    )]
+                    )],
                 },
                 analyses=[Analysis(
                     resource_id=INFORES_IMPROVING_AGENT.infores_id,
@@ -422,7 +423,7 @@ class DrugMayTreatDisease(TemplateQueryBase):
                     )]},
                     score=sorted_compound_scores[spoke_id] * 10000,
                     support_graphs=[aux_graph_id],
-                )]
+                )],
             ))
         mutated_results.extend(new_results)
         results = normalize_results_scores(mutated_results)

@@ -3,13 +3,13 @@ from typing import Dict, List, Optional, Union
 
 from improving_agent.src.biolink.spoke_biolink_constants import SPOKE_LABEL_COMPOUND
 
+from improving_agent.models import QNode
+from improving_agent.src.config import app_config
 from .psev_client import (
     PsevClient,
     PSEV_SERVICE_SUPPORTED_NODE_TYPES,
-    PSEV_SERVICE_SUPPORTED_PSEV_CONCEPT_TYPES
+    PSEV_SERVICE_SUPPORTED_PSEV_CONCEPT_TYPES,
 )
-from improving_agent.models import QNode
-from improving_agent.src.config import app_config
 
 logger = logging.getLogger(__name__)
 
@@ -58,7 +58,7 @@ def get_psev_scores(concepts: List[Union[int, str]],
         result = psev_client.get_psev_scores(q_concepts, q_ids, node_type)
     except Exception as e:
         logger.exception(
-            f'Failed to retrieve PSEV values from psev service, error was: {e}'
+            f'Failed to retrieve PSEV values from psev service, error was: {str(e)}',
         )
         return {concept: {} for concept in concepts}
 
@@ -73,7 +73,7 @@ def get_psev_scores(concepts: List[Union[int, str]],
                 'This is a safety exception. Only some node types are '
                 'supported. Ensure that new node types do not need to be '
                 'converted back to a non-str and add them to the test '
-                'that raises this error.'
+                'that raises this error.',
             )
         return result
 
@@ -92,9 +92,9 @@ def get_psev_scores(concepts: List[Union[int, str]],
 
 
 def _get_supported_psev_concepts(qnode: QNode) -> List[Union[str, int]]:
-    '''Returns a list of identifiers from a single QNode that may be
+    """Returns a list of identifiers from a single QNode that may be
     supported as PSEVs
-    '''
+    """
     for spoke_label in qnode.spoke_labels:
         if spoke_label in PSEV_SERVICE_SUPPORTED_PSEV_CONCEPT_TYPES:
             return qnode.spoke_identifiers
@@ -103,7 +103,7 @@ def _get_supported_psev_concepts(qnode: QNode) -> List[Union[str, int]]:
 
 
 def get_psev_concepts(qnodes: Dict[str, QNode]) -> List[Union[str, int]]:
-    '''Returns a list of identifiers that may have PSEV contexts. As of
+    """Returns a list of identifiers that may have PSEV contexts. As of
     2021-09, this is only for nodes that are identifiable as Disease
     or Compound
 
@@ -112,7 +112,7 @@ def get_psev_concepts(qnodes: Dict[str, QNode]) -> List[Union[str, int]]:
     qnodes:
         dict of QNode: Qnodes that have been normalized and given their
         SPOKE label equivalents
-    '''
+    """
     psev_concepts = []
     for qnode in qnodes.values():
         psev_concepts.extend(_get_supported_psev_concepts(qnode))
