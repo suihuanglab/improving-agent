@@ -11,7 +11,7 @@ from improving_agent.src.biolink.spoke_biolink_constants import (
     SPOKE_ANY_TYPE,
     SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS,
     SPOKE_BIOLINK_NODE_ATTRIBUTE_MAPPINGS,
-    SPOKE_BIOLINK_NODE_MAPPINGS
+    SPOKE_BIOLINK_NODE_MAPPINGS,
 )
 
 
@@ -27,12 +27,12 @@ TRAPI_CONSTRAINT_CYPHER_OPERATOR_MAP = {
     '==': '=',
     TRAPI_CONSTRAINT_MATCHES_OPERATOR: '=~',
     '>': '>',
-    '<': '<'
+    '<': '<',
 }
 NEGATED_TRAPI_CONSTRAINT_CYPHER_OPERATOR_MAP = {
     '==': '<>',
     '>': '<=',
-    '<': '>='
+    '<': '>=',
 }
 # this could be moved into the big constants file, but for now, it's only
 # needed here and we may want some logic to dedupe many-to-one mappings
@@ -48,6 +48,7 @@ for node, attributes in SPOKE_BIOLINK_EDGE_ATTRIBUTE_MAPPINGS.items():
     for spoke_property, biolink_mapping in attributes.items():
         BIOLINK_SPOKE_EDGE_ATTRIBUTE_MAPPINGS[node][biolink_mapping.biolink_type].append(spoke_property)
 
+
 def special_constraint(biolink_slot):
     def wrapper(f):
         SPECIAL_CONSTRAINT_HANDLERS[biolink_slot] = f
@@ -56,16 +57,16 @@ def special_constraint(biolink_slot):
 
 
 def validate_constraint_support(constraint, spoke_labels):
-    '''Raises if a constraint is not supported for any of spoke_labels
+    """Raises if a constraint is not supported for any of spoke_labels
 
     Parameters
     ----------
     constraint (models.AttributeConstraint): single constraint on a QNode
     spoke_labels (list of str): list of spoke labels attached to a QNode
-    '''
+    """
     if constraint.unit_id is not None or constraint.unit_name is not None:
         raise UnsupportedConstraint(
-            'imProving Agent does not support constraints with units'
+            'imProving Agent does not support constraints with units',
         )
 
     # TODO: eventually, all properties/attrs should be supported and this check
@@ -73,7 +74,7 @@ def validate_constraint_support(constraint, spoke_labels):
     # to the Entity or predicate
     if constraint.id not in SUPPORTED_CONSTRAINT_ATTRIBUTES:
         raise UnsupportedConstraint(
-            f'imProving Agent does not support constraints on {constraint.id}'
+            f'imProving Agent does not support constraints on {constraint.id}',
         )
 
     if not spoke_labels:
@@ -93,7 +94,7 @@ def validate_constraint_support(constraint, spoke_labels):
 
     raise UnsupportedConstraint(
         f'imProving Agent does not support constraints on {constraint.id} for the '
-        f'given or inferred nodes of types={", ".join(inspected_biolink_types)}'
+        f'given or inferred nodes of types={", ".join(inspected_biolink_types)}',
     )
 
 
@@ -102,7 +103,7 @@ def _map_fda_enum(constraint_value):
     mapped_val = FDA_APPROVAL_MAX_PHASE_MAP.get(constraint_value)
     if not mapped_val:
         raise UnsupportedConstraint(
-            f'Cannot handle "{constraint_value}" for constraint "{BIOLINK_SLOT_HIGHEST_FDA_APPROVAL}"'
+            f'Cannot handle "{constraint_value}" for constraint "{BIOLINK_SLOT_HIGHEST_FDA_APPROVAL}"',
         )
     return mapped_val
 
@@ -112,13 +113,13 @@ def _map_research_phase_enum(constraint_value):
     mapped_val = BL_MAX_RESEARCH_PHASE_SPOKE_PHASE_ENUM_MAP.get(constraint_value)
     if not mapped_val:
         raise UnsupportedConstraint(
-            f'Cannot handle "{constraint_value}" for constraint "{BIOLINK_SLOT_MAX_RESEARCH_PHASE}"'
+            f'Cannot handle "{constraint_value}" for constraint "{BIOLINK_SLOT_MAX_RESEARCH_PHASE}"',
         )
     return mapped_val
 
 
 def _get_constraint_value(constraint_id, constraint_value):
-    '''Inspects a constraint's id and value to determine if it needs to
+    """Inspects a constraint's id and value to determine if it needs to
     be transformed before looking in SPOKE.
 
     Parameters:
@@ -131,7 +132,7 @@ def _get_constraint_value(constraint_id, constraint_value):
 
     NOTE: hopefully temporary to work with some of the enums in Biolink
     that have different values in SPOKE
-    '''
+    """
     constraint_transformer = SPECIAL_CONSTRAINT_HANDLERS.get(constraint_id)
     if not constraint_transformer:
         return constraint_value
@@ -189,7 +190,7 @@ def _build_cypher_constraint_clause(
 
 
 def get_node_constraint_cypher_clause(qnode, name, constraint):
-    '''Returns a Cypher "WHERE" fragment that can be used when
+    """Returns a Cypher "WHERE" fragment that can be used when
     querying SPOKE.
 
     Parameters
@@ -199,7 +200,7 @@ def get_node_constraint_cypher_clause(qnode, name, constraint):
     constraint (models.AttributeConstraint): a constraint on `qnode`
 
     TODO: consider moving to a dedicated Cypher compiler module
-    '''
+    """
     spoke_properties = []
     for spoke_label in qnode.spoke_labels:
         if spoke_label == SPOKE_ANY_TYPE:
@@ -211,7 +212,7 @@ def get_node_constraint_cypher_clause(qnode, name, constraint):
     if constraint._not:
         if constraint.operator == TRAPI_CONSTRAINT_MATCHES_OPERATOR:
             raise UnsupportedConstraint(
-                'imProving Agent can not reliably invert a regular expression'
+                'imProving Agent can not reliably invert a regular expression',
             )
         operator = NEGATED_TRAPI_CONSTRAINT_CYPHER_OPERATOR_MAP[constraint.operator]
     else:
@@ -224,6 +225,7 @@ def get_node_constraint_cypher_clause(qnode, name, constraint):
         spoke_properties,
     )
 
+
 def get_edge_constraint_cypher_clause(
     qedge: QEdge,
     name: str,
@@ -235,11 +237,11 @@ def get_edge_constraint_cypher_clause(
             continue
         edge_attributes = BIOLINK_SPOKE_EDGE_ATTRIBUTE_MAPPINGS[edge_type]
         spoke_properties.extend(edge_attributes.get(constraint.id, []))
-    
+
     if constraint._not:
         if constraint.operator == TRAPI_CONSTRAINT_MATCHES_OPERATOR:
             raise UnsupportedConstraint(
-                'imProving Agent can not reliably invert a regular expression'
+                'imProving Agent can not reliably invert a regular expression',
             )
         operator = NEGATED_TRAPI_CONSTRAINT_CYPHER_OPERATOR_MAP[constraint.operator]
     else:
